@@ -96,7 +96,7 @@ def customer_login():
 
         if not username or not password:
             flash("กรุณากรอกชื่อผู้ใช้และรหัสผ่าน", "error")
-            return render_template('login.html', next=next_url)
+            return redirect(url_for('customer.home') + "#login")
 
         try:
             cursor = get_cursor()
@@ -132,12 +132,12 @@ def customer_login():
                     return redirect(url_for('customer.home'))
             else:
                 flash("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง", "error")
-                return render_template('login.html', next=next_url)
+                return redirect(url_for('customer.home') + "#login")
 
         except Exception as e:
             print(f"Customer login error: {e}")
             flash("เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง", "error")
-            return render_template('login.html', next=next_url)
+            return redirect(url_for('customer.home') + "#login")
 
 @auth.route('/register', methods=['GET', 'POST'])
 def register():

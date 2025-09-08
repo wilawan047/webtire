@@ -1568,17 +1568,33 @@ def update_avatar():
                 session['customer_avatar'] = filename
                 
                 print(f"Updated session with avatar: {filename}")
-                flash('อัปเดตรูปโปรไฟล์สำเร็จ', 'success')
+                
+                # ส่ง JSON response สำหรับ AJAX
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': True, 'message': 'อัปเดตรูปโปรไฟล์สำเร็จ'})
+                else:
+                    flash('อัปเดตรูปโปรไฟล์สำเร็จ', 'success')
             else:
-                flash('นามสกุลไฟล์ไม่ถูกต้อง กรุณาใช้ไฟล์ JPG, PNG เท่านั้น', 'error')
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': False, 'message': 'นามสกุลไฟล์ไม่ถูกต้อง กรุณาใช้ไฟล์ JPG, PNG เท่านั้น'})
+                else:
+                    flash('นามสกุลไฟล์ไม่ถูกต้อง กรุณาใช้ไฟล์ JPG, PNG เท่านั้น', 'error')
         else:
-            flash('กรุณาเลือกไฟล์รูปภาพ', 'error')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'กรุณาเลือกไฟล์รูปภาพ'})
+            else:
+                flash('กรุณาเลือกไฟล์รูปภาพ', 'error')
             
     except Exception as e:
         print(f"Error updating avatar: {e}")
-        flash('เกิดข้อผิดพลาดในการอัปเดตรูปโปรไฟล์', 'error')
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'เกิดข้อผิดพลาดในการอัปเดตรูปโปรไฟล์'})
+        else:
+            flash('เกิดข้อผิดพลาดในการอัปเดตรูปโปรไฟล์', 'error')
     
-    return redirect(url_for('customer.profile'))
+    # สำหรับ non-AJAX request ให้ redirect
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return redirect(url_for('customer.profile'))
 
 
 

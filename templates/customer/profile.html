@@ -270,10 +270,14 @@
                             
                             fetch('/update-avatar', {
                                 method: 'POST',
-                                body: formData
+                                body: formData,
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
                             })
-                            .then(response => {
-                                if (response.ok) {
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
                                     // แสดงข้อความสำเร็จ
                                     const messageBox = document.getElementById('message-box');
                                     if (messageBox) {
@@ -292,14 +296,15 @@
                                         window.location.reload();
                                     }, 2000);
                                 } else {
-                                    throw new Error('Upload failed');
+                                    throw new Error(data.message || 'Upload failed');
                                 }
                             })
                             .catch(error => {
+                                console.error('Upload error:', error);
                                 const messageBox = document.getElementById('message-box');
                                 if (messageBox) {
-                                    messageBox.textContent = 'เกิดข้อผิดพลาดในการอัปโหลดรูป';
-                                    messageBox.className = 'p-3 my-2 rounded-lg bg-red-100 text-green-700';
+                                    messageBox.textContent = 'เกิดข้อผิดพลาดในการอัปโหลดรูป: ' + error.message;
+                                    messageBox.className = 'p-3 my-2 rounded-lg bg-red-100 text-red-700';
                                     messageBox.classList.remove('hidden');
                                 }
                             });
