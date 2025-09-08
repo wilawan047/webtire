@@ -1,0 +1,298 @@
+{% extends 'customer/layout.html' %}
+{% block title %}ยาง {{ brand }}{% endblock %}
+{% block content %}
+  <!-- Breadcrumb และส่วนแสดงผลแยกตามประเภทการค้นหา -->
+  {% if has_search %}
+    <!-- ตรวจสอบว่ามาจากหน้า recommend หรือ home -->
+    {% if usage_type_id %}
+      <!-- การค้นหาจากหน้า recommend.html -->
+      <h1 class="text-2xl font-bold mb-4" style="color: #0c5e28;">ยางที่แนะนำ</h1>
+      <nav class="text-gray-500 text-base mb-2 flex items-center flex-wrap" aria-label="Breadcrumb">
+        <a href="/" class="font-bold text-[#0c5e28] hover:underline">หน้าแรก</a>
+        <span class="mx-2">›</span>
+        <a href="{{ url_for('customer.recommend') }}" class="font-bold text-[#0c5e28] hover:underline">แนะนำยาง</a>
+        <span class="mx-2">›</span>
+        <span class="text-black text-sm max-w-xs truncate">ยางที่แนะนำ</span>
+      </nav>
+      
+      <!-- แสดงเงื่อนไขการค้นหาจาก recommend -->
+      {% if search_criteria %}
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+          <h3 class="text-lg font-semibold text-green-800 mb-2">เงื่อนไขการแนะนำ:</h3>
+          <div class="flex flex-wrap gap-2">
+            {% for criterion in search_criteria %}
+              <span class="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full font-medium">
+                {{ criterion }}
+              </span>
+            {% endfor %}
+          </div>
+          <div class="mt-4">
+            <a href="{{ url_for('customer.recommend') }}" class="text-green-600 hover:text-green-800 font-medium">
+              ← กลับไปแนะนำยางใหม่
+            </a>
+          </div>
+        </div>
+      {% endif %}
+    {% elif car_brand_id or car_model_id %}
+      <!-- การค้นหาจากหน้า home.html -->
+      <h1 class="text-2xl font-bold mb-4" style="color: #0c5e28;">ผลการค้นหายาง</h1>
+      <nav class="text-gray-500 text-base mb-2 flex items-center flex-wrap" aria-label="Breadcrumb">
+        <a href="/" class="font-bold text-[#0c5e28] hover:underline">หน้าแรก</a>
+        <span class="mx-2">›</span>
+        <span class="text-black text-sm max-w-xs truncate">ผลการค้นหายาง</span>
+      </nav>
+      
+      <!-- แสดงเงื่อนไขการค้นหาจาก home -->
+      {% if search_criteria %}
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h3 class="text-lg font-semibold text-blue-800 mb-2">เงื่อนไขการค้นหา:</h3>
+          <div class="flex flex-wrap gap-2">
+            {% for criterion in search_criteria %}
+              <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full font-medium">
+                {{ criterion }}
+              </span>
+            {% endfor %}
+          </div>
+          <div class="mt-4">
+            <a href="{{ url_for('customer.home') }}" class="text-blue-600 hover:text-blue-800 font-medium">
+              ← กลับไปค้นหาใหม่
+            </a>
+          </div>
+        </div>
+      {% endif %}
+    {% else %}
+      <!-- การค้นหาทั่วไป (ขนาดยาง, ยี่ห้อ, คำค้นหา) -->
+      <h1 class="text-2xl font-bold mb-4" style="color: #0c5e28;">ผลการค้นหายาง</h1>
+      <nav class="text-gray-500 text-base mb-2 flex items-center flex-wrap" aria-label="Breadcrumb">
+        <a href="/" class="font-bold text-[#0c5e28] hover:underline">หน้าแรก</a>
+        <span class="mx-2">›</span>
+        <span class="text-black text-sm max-w-xs truncate">ผลการค้นหายาง</span>
+      </nav>
+      
+      <!-- แสดงเงื่อนไขการค้นหาทั่วไป -->
+      {% if search_criteria %}
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h3 class="text-lg font-semibold text-blue-800 mb-2">เงื่อนไขการค้นหา:</h3>
+          <div class="flex flex-wrap gap-2">
+            {% for criterion in search_criteria %}
+              <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full font-medium">
+                {{ criterion }}
+              </span>
+            {% endfor %}
+          </div>
+          <div class="mt-4">
+            <a href="{{ url_for('customer.home') }}" class="text-blue-600 hover:text-blue-800 font-medium">
+              ← กลับไปค้นหาใหม่
+            </a>
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+  {% else %}
+    <!-- หน้าแสดงยางทั้งหมด -->
+    <h1 class="text-2xl font-bold mb-4" style="color: #0c5e28;">ยาง {{ brand }}</h1>
+    <nav class="text-gray-500 text-base mb-2 flex items-center flex-wrap" aria-label="Breadcrumb">
+      <a href="/" class="font-bold text-[#0c5e28] hover:underline">หน้าแรก</a>
+      <span class="mx-2">›</span>
+      <span class="text-black text-sm max-w-xs truncate">ยาง {{ brand }}</span>
+    </nav>
+  {% endif %}
+  
+  <div class="space-y-6">
+    {% if tires %}
+      {% for tire in tires %}
+        <div class="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+          <div class="flex flex-col md:flex-row items-center md:items-start p-4 md:p-6">
+            <!-- รูปภาพยาง (บนสุดใน mobile, ซ้ายใน desktop) -->
+            <div class="flex-shrink-0 mb-4 md:mb-0 md:mr-6">
+              {% if tire.tire_image_url %}
+                <img src="{{ url_for('static', filename='uploads/tires/' + tire.tire_image_url) }}"
+                     alt="{{ brand }} Tire"
+                     class="w-48 h-48 md:w-56 md:h-56 object-contain rounded-lg tire-image mx-auto"
+                     style="width: 192px; height: 192px; min-width: 192px; min-height: 192px;"
+                     data-fallback="{{ url_for('static', filename='uploads/tires/no-image.png') }}">
+              {% else %}
+                <img src="{{ url_for('static', filename='uploads/tires/no-image.png') }}"
+                     alt="{{ brand }} Tire"
+                     class="w-48 h-48 md:w-56 md:h-56 object-contain rounded-lg mx-auto"
+                     style="width: 192px; height: 192px; min-width: 192px; min-height: 192px;">
+              {% endif %}
+            </div>
+
+            <!-- ข้อมูลยาง -->
+            <div class="flex-1 w-full text-center md:text-left">
+              <!-- ข้อมูลพื้นฐาน -->
+              <div class="mb-2">
+                <!-- โลโก้ยี่ห้อ (ด้านบนของขนาดยาง) -->
+                {% if tire.brand_id == 1 %}
+                  <img id="brand-logo-{{ loop.index }}"
+                      src="{{ url_for('static', filename='uploads/brands/michelin.png') }}"
+                      alt="Michelin Logo"
+                      class="w-36 h-16 md:w-32 md:h-16 object-contain rounded-xl bg-white mb-1 mx-auto md:mx-0">
+                {% elif tire.brand_id == 2 %}
+                  <img id="brand-logo-{{ loop.index }}"
+                      src="{{ url_for('static', filename='uploads/brands/bfgoodrich.png') }}"
+                      alt="BFGoodrich Logo"
+                      class="w-36 h-16 md:w-32 md:h-16 object-contain rounded-xl bg-white mb-1 mx-auto md:mx-0">
+                {% elif tire.brand_id == 3 %}
+                  <img id="brand-logo-{{ loop.index }}"
+                      src="{{ url_for('static', filename='uploads/brands/maxxis.png') }}"
+                      alt="Maxxis Logo"
+                      class="w-36 h-16 md:w-32 md:h-16 object-contain rounded-xl bg-white mb-1 mx-auto md:mx-0">
+                {% else %}
+                  <img id="brand-logo-{{ loop.index }}"
+                      src="{{ url_for('static', filename='uploads/logos/logotyreplus.png') }}"
+                      alt="Default Logo"
+                      class="w-36 h-16 md:w-32 md:h-16 object-contain rounded-xl bg-white mb-1 mx-auto md:mx-0">
+                {% endif %}
+
+                <script>
+                  document.getElementById("brand-logo-{{ loop.index }}").onerror = function() {
+                    this.src = "{{ url_for('static', filename='uploads/logos/logotyreplus.png') }}";
+                  };
+                </script>
+                
+                <h3 class="text-xl font-semibold text-green-800">{{ tire.full_size }}</h3>
+                <p class="text-gray-600">{{ tire.model_name or 'ไม่ระบุรุ่น' }}</p>
+              </div>
+
+              <!-- คุณสมบัติยาง -->
+              <div class="flex flex-wrap gap-2 mb-3">
+                {% if tire.service_description %}
+                  <span class="px-3 py-1 bg-yellow-100 text-yellow-800 text-sm rounded-full font-medium">
+                    Extra Load
+                  </span>
+                {% endif %}
+                {% if tire.high_speed_rating %}
+                  <span class="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full font-medium">
+                    รองรับความเร็วสูง
+                  </span>
+                {% endif %}
+                                  {% if tire.load_index %}
+                    {% set load_weights = {
+                      '75': '387', '76': '400', '77': '412', '78': '425', '79': '437', '80': '450',
+                      '81': '462', '82': '475', '83': '487', '84': '500', '85': '515', '86': '530',
+                      '87': '545', '88': '560', '89': '580', '90': '600', '91': '615', '92': '630',
+                      '93': '650', '94': '670', '95': '690', '96': '710', '97': '730', '98': '750',
+                      '99': '775', '100': '800', '101': '825', '102': '850', '103': '875', '104': '900',
+                      '105': '925', '106': '950', '107': '975', '108': '1000', '109': '1030', '110': '1060',
+                      '111': '1090', '112': '1120', '113': '1150', '114': '1180', '115': '1215', '116': '1250',
+                      '117': '1285', '118': '1320', '119': '1360', '120': '1400', '121': '1450', '122': '1500',
+                      '123': '1550', '124': '1600', '125': '1650', '126': '1700', '127': '1750', '128': '1800',
+                      '129': '1850', '130': '1900', '131': '1950', '132': '2000', '133': '2060', '134': '2120',
+                      '135': '2180', '136': '2240', '137': '2300', '138': '2360', '139': '2430', '140': '2500'
+                    } %}
+                    {% if '/' in tire.load_index %}
+                      {% set load_parts = tire.load_index.split('/') %}
+                      {% set first_load = load_weights.get(load_parts[0], load_parts[0]) %}
+                      {% set second_load = load_weights.get(load_parts[1], load_parts[1]) %}
+                      <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full font-medium">
+                        รับน้ำหนัก {{ first_load }}/{{ second_load }} kg
+                      </span>
+                    {% else %}
+                      <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full font-medium">
+                        รับน้ำหนัก {{ load_weights.get(tire.load_index, tire.load_index) }} kg
+                      </span>
+                    {% endif %}
+                  {% endif %}
+                {% if tire.tubeless_type %}
+                  <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full font-medium">
+                    ไม่มียางใน
+                  </span>
+                {% endif %}
+              </div>
+
+              <!-- ราคา -->
+              <div class="flex flex-row items-center justify-start space-x-4 md:space-x-6">
+                {% if tire.price_each %}
+                  <div class="text-left">
+                    <p class="text-xs md:text-sm text-gray-500 mb-1">ราคา/เส้น</p>
+                    <p class="text-lg md:text-xl font-bold text-green-800">{{ "{:,.0f}".format(tire.price_each) }} บาท</p>
+                  </div>
+                {% endif %}
+                
+                {% if tire.price_set %}
+                  <div class="text-left">
+                    <p class="text-xs md:text-sm text-gray-500 mb-1">ราคา/ชุด (4 เส้น)</p>
+                    <p class="text-lg md:text-xl font-bold text-yellow-600">{{ "{:,.0f}".format(tire.price_set) }} บาท</p>
+                  </div>
+                {% endif %}
+              </div>
+              
+              <!-- ส่วนประหยัด -->
+              {% if tire.price_each and tire.price_set %}
+                {% set savings = (tire.price_each * 4) - tire.price_set %}
+                {% if savings > 0 %}
+                  <div class="text-left mt-2">
+                    <p class="text-sm text-green-600 font-medium">ประหยัด {{ "{:,.0f}".format(savings) }} บาท</p>
+                  </div>
+                {% endif %}
+              {% endif %}
+            </div>
+
+
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <!-- ไม่พบข้อมูล -->
+      <div class="text-center py-12">
+        <div class="mb-4">
+          <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.08-2.33"></path>
+          </svg>
+        </div>
+                  {% if has_search %}
+            {% if usage_type_id %}
+              <!-- ไม่พบยางที่แนะนำ -->
+              <h3 class="text-lg font-medium text-gray-900 mb-2">ไม่พบยางที่แนะนำ</h3>
+              <p class="text-gray-500 mb-4">ขออภัย ไม่มียางที่ตรงกับเงื่อนไขการแนะนำของคุณ</p>
+              <div class="flex justify-center space-x-4">
+                <a href="{{ url_for('customer.recommend') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+                  แนะนำยางใหม่
+                </a>
+                <a href="{{ url_for('customer.tires') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                  ดูยางทั้งหมด
+                </a>
+              </div>
+            {% else %}
+              <!-- ไม่พบยางจากการค้นหา -->
+              <h3 class="text-lg font-medium text-gray-900 mb-2">ไม่พบยางที่ตรงกับเงื่อนไข</h3>
+              <p class="text-gray-500 mb-4">ขออภัย ไม่มียางที่ตรงกับเงื่อนไขการค้นหาของคุณ กรุณาลองเปลี่ยนขนาดยางหรือดูยางทั้งหมด</p>
+              <div class="flex justify-center space-x-4">
+                <a href="{{ url_for('customer.home') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                  ค้นหาใหม่
+                </a>
+                <a href="{{ url_for('customer.tires') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                  ดูยางทั้งหมด
+                </a>
+              </div>
+            {% endif %}
+        {% else %}
+          <h3 class="text-lg font-medium text-gray-900 mb-2">ไม่พบข้อมูลยาง</h3>
+          <p class="text-gray-500">ขออภัย ไม่มียางในระบบขณะนี้</p>
+          <div class="mt-6">
+            <a href="{{ url_for('customer.home') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+              กลับหน้าหลัก
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+    // Handle image loading errors
+    document.addEventListener('DOMContentLoaded', function() {
+      const tireImages = document.querySelectorAll('.tire-image');
+      tireImages.forEach(function(img) {
+        img.addEventListener('error', function() {
+          const fallbackSrc = this.getAttribute('data-fallback');
+          if (fallbackSrc) {
+            this.src = fallbackSrc;
+          }
+        });
+      });
+    });
+  </script>
+{% endblock %} 

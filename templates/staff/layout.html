@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TireWeb Staff{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+      body, .font-sans, .font-sans * {
+        font-family: 'Noto Sans Thai', sans-serif !important;
+      }
+    </style>
+</head>
+<body class="bg-[#f4f7fa] min-h-screen font-sans">
+    <div class="flex min-h-screen">
+      <!-- Sidebar Navigation -->
+      <nav class="fixed top-0 left-0 h-screen w-20 md:w-64 bg-white shadow-lg border-r flex flex-col justify-between py-6 px-2 z-30">
+        <div>
+          <a href="{{ url_for('staff.dashboard') }}" class="flex items-center gap-2 px-2 mb-8 group" title="ไปหน้าแดชบอร์ด">
+            <img src="{{ url_for('static', filename='uploads/logos/saengjaroen.jpg') }}"
+            alt="TIREWEB Logo"
+            class="h-8 w-auto md:h-10 object-contain">
+            <span class="text-sm md:text-base font-bold text-green-900 whitespace-nowrap">TYREPLUS BSG</span>
+          </a>
+          <ul class="flex flex-col gap-2">
+            <li><a href="{{ url_for('staff.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-green-900 hover:bg-green-50 transition {% if request.path=='/staff/dashboard' %}bg-green-100{% endif %}">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8v-8h-8zm0-18v6h8V3z"/>
+              </svg>
+              <span class="hidden md:inline">แดชบอร์ด</span>
+            </a></li>
+            <li><a href="{{ url_for('staff.bookings') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-green-900 hover:bg-green-50 transition {% if request.path == '/staff/bookings' %}bg-green-100{% endif %}">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <path d="M16 2v4M8 2v4M3 10h18"/>
+              </svg>
+              <span class="hidden md:inline">การจอง</span>
+            </a></li>
+            <li><a href="{{ url_for('staff.booking_history') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-green-900 hover:bg-green-50 transition {% if request.path == '/staff/bookings/history' %}bg-green-100{% endif %}">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5h2a2 2 0 012 2"/>
+              </svg>
+              <span class="hidden md:inline">ประวัติการจอง</span>
+            </a></li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- Main Content Area -->
+      <div class="flex-1 flex flex-col min-h-screen ml-20 md:ml-64">
+        <!-- Top Bar -->
+        <div class="flex justify-end items-center h-20 px-8 bg-[#f4f7fa] border-b border-gray-200">
+          {% if session.get('username') %}
+            <div x-data="{ open: false }" class="relative flex items-center gap-3">
+              
+              <!-- Avatar / Fallback -->
+              {% if session.get('avatar') %}
+                <img src="{{ url_for('static', filename='uploads/profile/' + session['avatar']) }}"
+                     class="w-12 h-12 rounded-full object-cover border-2 border-green-700">
+              {% else %}
+                <div class="w-12 h-12 rounded-full bg-green-200 flex items-center justify-center text-green-900 text-xl font-bold">
+                  {{ session.get('name', '')[:1]|upper }}
+                </div>
+              {% endif %}
+
+              <button @click="open = !open" class="inline-flex items-center text-base text-gray-700 font-semibold focus:outline-none gap-1">
+                {{ session.get('name', 'Guest') }}
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              <div x-show="open" @click.away="open = false" class="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border z-50 py-2 text-sm" x-transition>
+                <!-- Actions -->
+                <a href="{{ url_for('staff.profile') }}" class="block px-4 py-2 text-gray-700 hover:bg-green-50 transition">แก้ไขข้อมูลผู้ใช้</a>
+                <a href="{{ url_for('staff.logout') }}" class="block px-4 py-2 text-red-600 hover:bg-red-50 transition">ออกจากระบบ</a>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Main Content -->
+        <main class="flex-1 py-6 px-4 md:px-6 lg:px-8 xl:px-12 overflow-x-auto">
+          {% block content %}{% endblock %}
+        </main>
+      </div>
+    </div>
+</body>
+</html>
+

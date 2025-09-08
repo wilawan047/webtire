@@ -1,0 +1,987 @@
+{% extends 'customer/layout.html' %}
+{% block title %}จองบริการ | TireWeb{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4" style="color: #0c5e28;">จองบริการ</h1>
+<nav class="text-gray-500 text-base mb-2 flex items-center flex-wrap" aria-label="Breadcrumb">
+  <a href="/" class="font-bold text-[#0c5e28] hover:underline">หน้าแรก</a>
+  <span class="mx-2">›</span>
+  <span class="text-black text-sm max-w-xs truncate">จองบริการ</span>
+</nav>
+<div class="container mx-auto px-2 sm:px-4 py-4">
+    {% if user_name %}
+    <div id="welcome-message" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+        <p class="text-green-800 font-semibold">สวัสดี {{ user_name }}</p>
+        <p class="text-green-700 text-sm">คุณเข้าสู่ระบบแล้ว สามารถจองบริการได้เลย</p>
+    </div>
+    {% endif %}
+    <p class="mb-6" style="color: #0c5e28;">กรุณากรอกข้อมูลเพื่อจองบริการ</p>
+    
+    <div class="bg-white rounded-lg shadow-md p-3 sm:p-6">
+        <form method="POST" action="{{ url_for('customer.booking') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <!-- ข้อมูลรถ -->
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">ข้อมูลรถ</h3>
+                
+
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                    <!-- ประเภทรถ -->
+                    <div class="col-span-full">
+                        <label class="block text-sm font-medium text-green-800 mb-2">ประเภทรถ <span class="text-red-600">*</span></label>
+                        <!-- Debug: {{ vehicle_types|length }} types found -->
+                        <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4">
+                            {% for vt in vehicle_types %}
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="vehicle_type_id" value="{{ vt.vehicle_type_id }}" 
+                                       class="mr-2">
+                                <span class="text-sm">{{ vt.vehicle_type_name }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- ระบบรถ -->
+                    <div class="col-span-full">
+                        <label class="block text-sm font-medium text-green-800 mb-2">ระบบรถ</label>
+                        <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="engine_type" value="เบนซิน" 
+                                       class="mr-2">
+                                <span class="text-sm">เบนซิน</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="engine_type" value="ดีเซล" 
+                                       class="mr-2">
+                                <span class="text-sm">ดีเซล</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="engine_type" value="ไฮบริด" 
+                                       class="mr-2">
+                                <span class="text-sm">ไฮบริด</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="engine_type" value="ไฟฟ้า (EV)" 
+                                       class="mr-2">
+                                <span class="text-sm">ไฟฟ้า (EV)</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                                        <!-- ทะเบียนรถ/จังหวัด/ยี่ห้อรถ -->
+                    <div class="col-span-full">
+
+                        
+                        <!-- ปุ่มเลือกรถและปุ่มเริ่มใหม่ -->
+                        <div class="mt-2 flex flex-row justify-between items-center gap-2">
+                            <!-- ปุ่มเลือกรถ (ถ้ามีหลายคัน) -->
+                            {% if customer_logged_in and customer_vehicles and customer_vehicles|length > 1 and customer_data %}
+                            <div class="flex flex-wrap gap-2 w-auto">
+                                {% for vehicle in customer_vehicles %}
+                                <button type="button" 
+                                        class="vehicle-btn px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-green-50 hover:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 min-w-0 flex-shrink-0 w-auto sm:min-w-0 sm:flex-shrink-0 sm:w-auto sm:min-w-0 sm:flex-shrink-0 sm:w-auto sm:min-w-0 sm:flex-shrink-0 sm:w-auto sm:min-w-0 sm:flex-shrink-0 sm:w-auto sm:min-w-0 sm:flex-shrink-0 sm:w-auto sm:min-w-0 sm:flex-shrink-0 sm:w-auto sm:min-w-0 sm:flex-shrink-0 sm:w-auto sm:min-w-0 sm:flex-shrink-0 sm:w-auto sm:min-w-0 sm:flex-shrink-0 sm:w-auto sm:min-w-0 sm:flex-shrink-0 sm:w-auto sm:min-w-0 sm:flex-shrink-0 sm:w-auto sm:min-w-0 sm:flex-shrink-0 sm:w-auto sm:min-w-0"
+                                        data-vehicle='{{ vehicle | tojson | safe }}'>
+                                    {{ vehicle.license_plate }}
+                                </button>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="flex-1"></div>
+                            {% endif %}
+                            
+                            <!-- ปุ่มเริ่มใหม่ -->
+                            <button type="button" 
+                                    onclick="location.reload()"
+                                    class="text-xs px-3 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 hover:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-500 border border-blue-300 rounded-md w-auto"
+                                    title="รีเฟรชหน้าเพื่อเริ่มใหม่">
+                                เริ่มใหม่
+                            </button>
+                        </div>
+                        
+                        <!-- Input fields ในบรรทัดเดียวกัน -->
+                        <div class="flex flex-col md:flex-row gap-4 mt-3">
+                            <!-- ทะเบียนรถ -->
+                            <div class="flex-1">
+                                <label for="license_plate" class="block mb-1 text-sm font-medium text-green-800">
+                                    ทะเบียนรถ (เช่น บษ 9990)
+                                </label>
+                                <input type="text" id="license_plate" name="license_plate" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                            </div>
+                            
+                            <!-- จังหวัด -->
+                            <div class="flex-1 relative">
+                                <label for="license_province" class="block mb-1 text-sm font-medium text-green-800">
+                                    จังหวัด
+                                </label>
+                                <input type="text" id="license_province_search" 
+                                       placeholder="พิมพ์ค้นหาจังหวัด..."
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                                <input type="hidden" id="license_province" name="license_province" value="">
+                                <div id="province_dropdown" class="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto hidden">
+                                    <div class="p-2 border-b border-gray-200">
+                                        <div class="text-sm text-gray-500">เลือกจังหวัด:</div>
+                                    </div>
+                                    {% for p in provinces %}
+                                    <div class="province-option px-3 py-2 hover:bg-gray-100 cursor-pointer" 
+                                         data-value="{{ p }}">
+                                        {{ p }}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <!-- ยี่ห้อรถ -->
+                            <div class="flex-1">
+                                <label for="brand_id" class="block mb-1 text-sm font-medium text-green-800">
+                                    ยี่ห้อรถ
+                                </label>
+                                <select id="brand_id" name="brand_id" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                                    <option value="">-- เลือกยี่ห้อ --</option>
+                                    {% for brand in vehicle_brands %}
+                                    <option value="{{ brand.brand_id }}">{{ brand.brand_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+
+                    </div>
+                    
+                    <!-- รุ่น -->
+                    <div>
+                        <label for="model_name" class="block text-sm font-medium text-green-800 mb-1">รุ่น</label>
+                        <!-- Debug: vehicle_data = {{ vehicle_data }} -->
+                        <!-- Debug: vehicle_data.brand_name = {{ vehicle_data.brand_name if vehicle_data else 'None' }} -->
+                        <!-- Debug: vehicle_data.model_name = {{ vehicle_data.model_name if vehicle_data else 'None' }} -->
+                        <select id="model_name" name="model_name" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <option value="">-- เลือกรุ่น --</option>
+                        </select>
+                        <!-- Debug: Selected model = {{ vehicle_data.model_name if vehicle_data else 'None' }} -->
+                        <!-- Debug: Vehicle data model_name = {{ vehicle_data.model_name if vehicle_data else 'None' }} -->
+                    </div>
+                    
+                    <!-- สี -->
+                    <div>
+                        <label for="color" class="block text-sm font-medium text-green-800 mb-1">สี</label>
+                        <input type="text" id="color" name="color" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    
+                    <!-- ปีที่ผลิต -->
+                    <div>
+                        <label for="production_year" class="block text-sm font-medium text-green-800 mb-1">ปีที่ผลิต</label>
+                        <input type="number" id="production_year" name="production_year" min="1900" max="2030"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ข้อมูลลูกค้า -->
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">ข้อมูลลูกค้า</h3>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                    <!-- เพศ -->
+                    <div class="col-span-full">
+                        <label class="block text-sm font-medium text-green-800 mb-2">เพศ</label>
+                        <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="gender" value="ชาย" 
+                                       {% if customer_data and customer_data.gender == 'ชาย' %}checked{% endif %}
+                                       class="mr-2">
+                                <span class="text-sm">ชาย</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="gender" value="หญิง" 
+                                       {% if customer_data and customer_data.gender == 'หญิง' %}checked{% endif %}
+                                       class="mr-2">
+                                <span class="text-sm">หญิง</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="gender" value="ไม่ระบุ" 
+                                       {% if customer_data and customer_data.gender == 'ไม่ระบุ' %}checked{% endif %}
+                                       class="mr-2">
+                                <span class="text-sm">ไม่ระบุ</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- ชื่อ-นามสกุล -->
+                    <div>
+                        <label for="booking_first_name" class="block text-sm font-medium text-green-800 mb-1">ชื่อ <span class="text-red-600">*</span></label>
+                        <input type="text" id="booking_first_name" name="first_name"
+                               value="{{ customer_data.first_name if customer_data else '' }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    
+                    <div>
+                        <label for="booking_last_name" class="block text-sm font-medium text-green-800 mb-1">นามสกุล <span class="text-red-600">*</span></label>
+                        <input type="text" id="booking_last_name" name="last_name"
+                               value="{{ customer_data.last_name if customer_data else '' }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    
+                    <!-- วันเกิด -->
+                    <div>
+                        <label for="booking_birthdate" class="block text-sm font-medium text-green-800 mb-1">วันเกิด</label>
+                        <input type="date" id="booking_birthdate" name="birthdate"
+                               value="{{ customer_data.birthdate.strftime('%Y-%m-%d') if customer_data and customer_data.birthdate else '' }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    
+                    <!-- เบอร์โทรศัพท์ -->
+                    <div>
+                        <label for="booking_phone" class="block text-sm font-medium text-green-800 mb-1">เบอร์โทรศัพท์ <span class="text-red-600">*</span></label>
+                        <input type="tel" id="booking_phone" name="phone"
+                               value="{{ customer_data.phone if customer_data else '' }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    
+                    <!-- อีเมล -->
+                    <div>
+                        <label for="booking_email" class="block text-sm font-medium text-green-800 mb-1">อีเมล</label>
+                        <input type="email" id="booking_email" name="email"
+                               value="{{ customer_data.email if customer_data else '' }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    
+                    <!-- ที่อยู่ -->
+                    <div class="col-span-full mt-4">
+                        <h4 class="text-md font-bold text-green-900 mb-3">ที่อยู่</h4>
+                        <!-- Debug: customer_data = {{ customer_data }} -->
+                        <!-- Debug: customer_data type = {{ customer_data.__class__.__name__ if customer_data else 'None' }} -->
+                        <!-- Debug: customer_data keys = {{ customer_data.keys() if customer_data else 'None' }} -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                            <div>
+                                <label for="address_no" class="block text-sm font-medium text-green-800 mb-1">เลขที่</label>
+                                <input type="text" id="address_no" name="address_no"
+                                       value="{{ customer_data.address_no if customer_data else '' }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                            </div>
+                            
+                            <div>
+                                <label for="village" class="block text-sm font-medium text-green-800 mb-1">หมู่</label>
+                                <input type="text" id="village" name="village"
+                                       value="{{ customer_data.village if customer_data else '' }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                            </div>
+                            
+                            <div>
+                                <label for="road" class="block text-sm font-medium text-green-800 mb-1">ถนน</label>
+                                <input type="text" id="road" name="road"
+                                       value="{{ customer_data.road if customer_data else '' }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                            </div>
+                            
+                            <div>
+                                <label for="subdistrict" class="block text-sm font-medium text-green-800 mb-1">ตำบล/แขวง</label>
+                                <input type="text" id="subdistrict" name="subdistrict"
+                                       value="{{ customer_data.subdistrict if customer_data else '' }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                            </div>
+                            
+                            <div>
+                                <label for="district" class="block text-sm font-medium text-green-800 mb-1">อำเภอ/เขต</label>
+                                <input type="text" id="district" name="district"
+                                       value="{{ customer_data.district if customer_data else '' }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                            </div>
+                            
+                            <div>
+                                <label for="province" class="block text-sm font-medium text-green-800 mb-1">จังหวัด</label>
+                                <select id="province" name="province" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                                    <option value="">-- เลือกจังหวัด --</option>
+                                    {% for p in provinces %}
+                                    <option value="{{ p }}" {% if customer_data and customer_data.province == p %}selected{% endif %}>{{ p }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="zipcode" class="block text-sm font-medium text-green-800 mb-1">รหัสไปรษณีย์</label>
+                                <input type="text" id="zipcode" name="zipcode"
+                                       value="{{ customer_data.zipcode if customer_data else '' }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- บริการที่ต้องการ -->
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">บริการที่ต้องการ</h3>
+                <!-- Debug: service_groups = {{ service_groups }} -->
+                <!-- Debug: service_groups length = {{ service_groups|length }} -->
+                <div class="space-y-6">
+                    <!-- Debug: Starting loop -->
+                    {% for category, services in service_groups.items() %}
+                    <!-- Debug: Processing category = {{ category }}, services count = {{ services|length }} -->
+                    <div>
+                        <div class="font-bold text-green-800 text-lg {% if category == 'ยาง' %}mb-1{% elif category == 'ระบบเบรก' %}mt-6 mb-2{% elif category == 'ไฟฟ้า' %}mt-6 mb-2{% elif category == 'บำรุงรักษา' %}mt-6 mb-2{% elif category == 'ช่วงล่าง' %}mt-6 mb-2{% else %}mb-2{% endif %}">{{ category }}</div>
+                        {% if category == 'ยาง' %}
+                        <div>
+                            <div class="flex flex-col lg:flex-row gap-4 lg:gap-8">
+                                <!-- ซ้าย: ฟอร์มข้อมูลยางหน้า-หลัง -->
+                                <div class="flex-1">
+                                    <!-- ยางด้านหน้า -->
+                                    <div class="mb-4">
+                                        <h4 class="font-semibold text-gray-800 mb-2">ยางด้านหน้า</h4>
+                                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-2">
+                                            <div>
+                                                <label class="block text-xs font-medium text-green-800">ขนาดยาง</label>
+                                                <input type="text" name="tire_front_size" class="w-full border rounded px-3 py-2" placeholder="">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-green-800">ยี่ห้อยาง</label>
+                                                <select name="tire_front_brand_id" id="tire_front_brand" class="w-full border rounded px-3 py-2">
+                                                    <option value="">-- เลือกยี่ห้อ --</option>
+                                                    {% for brand in brands %}
+                                                    <option value="{{ brand.brand_id }}">{{ brand.brand_name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-green-800">รุ่นยาง</label>
+                                                <select name="tire_front_model_id" id="tire_front_model" class="w-full border rounded px-3 py-2">
+                                                    <option value="">-- เลือกรุ่น --</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ยางด้านหลัง -->
+                                <div class="flex-1 mb-4">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h4 class="font-semibold text-gray-800">ยางด้านหลัง</h4>
+                                        <button type="button" id="copyFrontToRear" 
+                                                class="text-xs px-3 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 hover:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-500 border border-blue-300 rounded-md"
+                                                title="คัดลอกข้อมูลยางหน้าไปยังยางหลัง">
+                                            คัดลอกจากยางหน้า
+                                        </button>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-2">
+                                        <div>
+                                            <label class="block text-xs font-medium text-green-800">ขนาดยาง</label>
+                                            <input type="text" name="tire_rear_size" class="w-full border rounded px-3 py-2" placeholder="">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-green-800">ยี่ห้อยาง</label>
+                                            <select name="tire_rear_brand_id" id="tire_rear_brand" class="w-full border rounded px-3 py-2">
+                                                <option value="">-- เลือกยี่ห้อ --</option>
+                                                {% for brand in brands %}
+                                                <option value="{{ brand.brand_id }}">{{ brand.brand_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-green-800">รุ่นยาง</label>
+                                            <select name="tire_rear_model_id" id="tire_rear_model" class="w-full border rounded px-3 py-2">
+                                                <option value="">-- เลือกรุ่น --</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+
+                            <!-- ขวา: ฟอร์ม DOT -->
+                            <div class="mt-4 lg:mt-0">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-semibold text-gray-800">DOT ของยาง</h4>
+                                    <button type="button" id="copyDotToAll" 
+                                            class="text-xs px-3 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 hover:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-500 border border-blue-300 rounded-md w-auto"
+                                            title="คัดลอกข้อมูล DOT จากหน้าซ้ายไปยังส่วนอื่น ๆ">
+                                        คัดลอกทั้งหมด
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-green-800">หน้าซ้าย</label>
+                                        <input type="text" name="dot_front_left" 
+                                            class="w-full border rounded px-3 py-2 text-center" 
+                                            placeholder="10/23">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-green-800">หน้าขวา</label>
+                                        <input type="text" name="dot_front_right" 
+                                            class="w-full border rounded px-3 py-2 text-center" 
+                                            placeholder="10/23">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-green-800">หลังซ้าย</label>
+                                        <input type="text" name="dot_rear_left" 
+                                            class="w-full border rounded px-3 py-2 text-center" 
+                                            placeholder="09/23">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-green-800">หลังขวา</label>
+                                        <input type="text" name="dot_rear_right" 
+                                            class="w-full border rounded px-3 py-2 text-center" 
+                                            placeholder="09/23">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        
+                        <div class="space-y-2">
+                            {% for s in services %}
+                            {% if s.service_name == 'เติมลม' %}
+                            <div>
+                                <label class="inline-flex items-center gap-2 font-semibold">
+                                    <input type="checkbox" name="service_id" value="{{ s.service_id }}">
+                                    {{ s.service_name }}
+                                </label>
+                                <div class="ml-8 mt-1 flex flex-row gap-4 flex-wrap">
+                                    {% for opt in s.options %}
+                                    <label class="inline-flex items-center gap-2 text-sm font-normal">
+                                        <input type="checkbox" name="service_option_{{ s.service_id }}" value="{{ opt.option_id }}">
+                                        {{ opt.option_name }}{% if 'ไนโตรเจน' in opt.option_name %} (มีค่าใช้จ่าย){% endif %}
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% elif s.service_name == 'ยางเก่า' %}
+                            <div>
+                                <label class="inline-flex items-center gap-2 font-semibold">
+                                    <input type="checkbox" name="service_id" value="{{ s.service_id }}">
+                                    {{ s.service_name }}
+                                </label>
+                                <div class="ml-8 mt-1 flex flex-row gap-4 flex-wrap">
+                                    {% for opt in s.options %}
+                                    {% if opt.option_name != 'ไนโตรเจน' %}
+                                    <label class="inline-flex items-center gap-2 text-sm font-normal">
+                                        <input type="checkbox" name="service_option_{{ s.service_id }}" value="{{ opt.option_id }}">
+                                        {{ opt.option_name }}
+                                    </label>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div>
+                                <label class="inline-flex items-center gap-2 font-semibold">
+                                    <input type="checkbox" name="service_id" value="{{ s.service_id }}">
+                                    {{ s.service_name }}
+                                </label>
+                                {% if s.options %}
+                                <div class="ml-8 mt-1 flex flex-row gap-4 flex-wrap">
+                                    {% for opt in s.options %}
+                                    <label class="inline-flex items-center gap-2 text-sm font-normal">
+                                        <input type="checkbox" name="service_option_{{ s.service_id }}" value="{{ opt.option_id }}">
+                                        {{ opt.option_name }}
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- วันและเวลาที่ต้องการ -->
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">วันและเวลาที่ต้องการ</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="preferred_date" class="block text-sm font-medium text-green-800 mb-1">วันที่เข้าใช้บริการ <span class="text-red-600">*</span></label>
+                        <input type="date" id="preferred_date" name="preferred_date"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label for="preferred_time" class="block text-sm font-medium text-green-800 mb-1">เวลาเข้ารับบริการ <span class="text-red-600">*</span></label>
+                        <input type="time" id="preferred_time" name="preferred_time"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- หมายเหตุ -->
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">หมายเหตุ</h3>
+                <textarea id="notes" name="notes" rows="3"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                          placeholder="กรุณาระบุรายละเอียดเพิ่มเติม (ถ้ามี)"></textarea>
+            </div>
+            
+            <!-- ปุ่มส่งฟอร์ม -->
+            <div class="mt-8 flex justify-center">
+                <button type="submit" 
+                class="w-32 px-4 py-3 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200">
+                    ส่งคำจอง
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// ข้อมูลยี่ห้อและรุ่นรถจาก JSON
+var vehicleBrandsData = JSON.parse(`{{ vehicle_brands | tojson | safe }}`);
+
+// JavaScript สำหรับ dropdown ยางและรถ
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, setting up vehicle brand dropdown...');
+    
+    // ตรวจสอบว่า elements มีอยู่หรือไม่
+    const brandSelect = document.getElementById('brand_id');
+    const modelSelect = document.getElementById('model_name');
+    
+    console.log('Brand select element:', brandSelect);
+    console.log('Model select element:', modelSelect);
+    
+    if (!brandSelect) {
+        console.error('Brand select element not found!');
+        return;
+    }
+    
+    if (!modelSelect) {
+        console.error('Model select element not found!');
+        return;
+    }
+    
+    // ตรวจสอบ options ใน brand dropdown
+    console.log('Brand dropdown options:', brandSelect.options.length);
+    for (let i = 0; i < brandSelect.options.length; i++) {
+        console.log(`Option ${i}: ${brandSelect.options[i].text} (value: ${brandSelect.options[i].value})`);
+    }
+    
+    // ตรวจสอบว่า dropdown ยี่ห้อรถมีข้อมูลหรือไม่
+    if (brandSelect.options.length <= 1) {
+        console.error('Brand dropdown has no options! Only has default option.');
+        console.log('Vehicle brands data:', vehicleBrandsData);
+    } else {
+        console.log('Brand dropdown has options, ready to work!');
+    }
+    
+    // ตรวจสอบว่า event listener ถูกเพิ่มหรือไม่
+    console.log('Adding change event listener to brand select...');
+    
+    // เพิ่ม event listener แบบง่ายๆ ก่อน
+    brandSelect.addEventListener('change', function() {
+        console.log('Brand change event triggered!');
+        var brandId = this.value;
+        console.log('Brand changed to:', brandId);
+        
+        // ล้าง dropdown รุ่นรถ
+        modelSelect.innerHTML = '<option value="">-- เลือกรุ่น --</option>';
+        
+        if (!brandId) {
+            console.log('No brand selected, returning');
+            return;
+        }
+        
+        // ใช้ข้อมูล fallback ที่ถูกต้องทันที
+        console.log('Using fallback data for brand ID:', brandId);
+        const fallbackModels = {
+            1: ['Vios', 'Yaris', 'Fortuner', 'Hilux Revo', 'Camry', 'Corolla'],  // Toyota
+            2: ['Civic', 'City', 'Accord', 'Jazz', 'CR-V', 'HR-V'],  // Honda
+            3: ['D-Max', 'MU-X', 'Hi-Lander', 'Rodeo'],  // Isuzu
+            4: ['Almera', 'Navara', 'Terra', 'Note', 'X-Trail', 'Kicks'],  // Nissan
+            5: ['Attrage', 'Mirage', 'Xpander', 'Triton', 'Pajero Sport', 'Lancer'],  // Mitsubishi
+            6: ['Swift', 'Ciaz', 'Ertiga', 'Carry', 'XL7', 'Jimny'],  // Suzuki
+            7: ['Ranger', 'Everest', 'EcoSport', 'Focus', 'Fiesta'],  // Ford
+            8: ['Mazda2', 'Mazda3', 'CX-5', 'BT-50', 'CX-3', 'CX-8'],  // Mazda
+            9: ['H-1', 'Staria', 'Tucson', 'Santa Fe', 'IONIQ 5', 'Creta'],  // Hyundai
+            10: ['MG3', 'MG5', 'MG ZS', 'MG HS', 'Extender', 'MG RX5'],  // MG
+            11: ['Picanto', 'Seltos', 'Carnival', 'Sportage', 'EV6', 'Cerato'],  // Kia
+            12: ['Captiva', 'Colorado', 'Trailblazer', 'Cruze', 'Sonic', 'Equinox'],  // Chevrolet
+            13: ['Saga', 'Persona', 'Iriz', 'X50', 'X70', 'Exora'],  // Proton
+            14: ['XV', 'Forester', 'Outback', 'Impreza', 'BRZ', 'Legacy'],  // Subaru
+            15: ['2008', '3008', '5008', '508', 'Partner', '208'],  // Peugeot
+            16: ['XC40', 'XC60', 'XC90', 'S60', 'S90', 'V40'],  // Volvo
+            17: ['3 Series', '5 Series', 'X1', 'X3', 'iX3', 'X5'],  // BMW
+            18: ['C-Class', 'E-Class', 'GLC', 'GLA', 'EQB', 'A-Class'],  // Mercedes-Benz
+            19: ['A3', 'A4', 'Q3', 'Q5', 'e-tron', 'A6'],  // Audi
+            20: ['Tiguan', 'Passat', 'Golf', 'Polo', 'Caravelle', 'Jetta']  // Volkswagen
+        };
+        
+        if (fallbackModels[brandId]) {
+            console.log('Found models for brand ID:', brandId, ':', fallbackModels[brandId]);
+            fallbackModels[brandId].forEach(function(modelName) {
+                const option = document.createElement('option');
+                option.value = modelName;
+                option.textContent = modelName;
+                modelSelect.appendChild(option);
+            });
+            console.log('Added', fallbackModels[brandId].length, 'models to dropdown');
+        } else {
+            console.log('No models found for brand ID:', brandId);
+        }
+    });
+    
+    console.log('Event listener added successfully!');
+    
+    // ฟอร์มจะเริ่มต้นเป็นค่าว่าง - ไม่มีการ populate อัตโนมัติ
+    console.log('Form starts empty - customer needs to select a vehicle or enter new data');
+    
+    // ตรวจสอบว่า model dropdown มีข้อมูลหรือไม่
+    console.log('Model dropdown options:', modelSelect.options.length);
+    for (let i = 0; i < modelSelect.options.length; i++) {
+        console.log(`Model Option ${i}: ${modelSelect.options[i].text} (value: ${modelSelect.options[i].value})`);
+    }
+    
+    // Front tire brand change (ถ้ามี element)
+    const tireFrontBrand = document.getElementById('tire_front_brand');
+    if (tireFrontBrand) {
+        tireFrontBrand.addEventListener('change', function() {
+            var brandId = this.value;
+            var modelSelect = document.getElementById('tire_front_model');
+            if (modelSelect) {
+                modelSelect.innerHTML = '<option value="">-- เลือกรุ่น --</option>';
+                if (!brandId) return;
+                
+                fetch('/api/tire-models/' + brandId)
+                    .then(response => response.json())
+                    .then(models => {
+                        models.forEach(function(model) {
+                            modelSelect.innerHTML += `<option value="${model.model_id}">${model.model_name}</option>`;
+                        });
+                    });
+            }
+        });
+    }
+
+    // Rear tire brand change (ถ้ามี element)
+    const tireRearBrand = document.getElementById('tire_rear_brand');
+    if (tireRearBrand) {
+        tireRearBrand.addEventListener('change', function() {
+            var brandId = this.value;
+            var modelSelect = document.getElementById('tire_rear_model');
+            if (modelSelect) {
+                modelSelect.innerHTML = '<option value="">-- เลือกรุ่น --</option>';
+                if (!brandId) return;
+                
+                fetch('/api/tire-models/' + brandId)
+                    .then(response => response.json())
+                    .then(models => {
+                        models.forEach(function(model) {
+                            modelSelect.innerHTML += `<option value="${model.model_id}">${model.model_name}</option>`;
+                        });
+                    });
+            }
+        });
+    }
+
+
+
+    // ตั้งค่าวันที่เริ่มต้นเป็นวันพรุ่งนี้
+    var tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    var tomorrowStr = tomorrow.toISOString().split('T')[0];
+    document.getElementById('preferred_date').value = tomorrowStr;
+
+    // Dropdown จังหวัดที่สามารถค้นหาได้
+    const provinceSearch = document.getElementById('license_province_search');
+    const provinceDropdown = document.getElementById('province_dropdown');
+    const provinceHidden = document.getElementById('license_province');
+    const provinceOptions = document.querySelectorAll('.province-option');
+
+    // แสดง dropdown เมื่อคลิกที่ input
+    provinceSearch.addEventListener('focus', function() {
+        provinceDropdown.classList.remove('hidden');
+        // ตั้งค่าจังหวัดที่เลือกไว้แล้ว
+        const selectedValue = provinceHidden.value;
+        if (selectedValue) {
+            provinceSearch.value = selectedValue;
+        }
+    });
+
+    // ซ่อน dropdown เมื่อคลิกที่อื่น
+    document.addEventListener('click', function(e) {
+        if (!provinceSearch.contains(e.target) && !provinceDropdown.contains(e.target)) {
+            provinceDropdown.classList.add('hidden');
+        }
+    });
+
+    // ค้นหาจังหวัด
+    provinceSearch.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        let hasVisibleOptions = false;
+
+        provinceOptions.forEach(option => {
+            const provinceName = option.textContent.toLowerCase();
+            if (provinceName.includes(searchTerm)) {
+                option.style.display = 'block';
+                hasVisibleOptions = true;
+            } else {
+                option.style.display = 'none';
+            }
+        });
+
+        // แสดงหรือซ่อน dropdown ตามผลการค้นหา
+        if (searchTerm === '' || hasVisibleOptions) {
+            provinceDropdown.classList.remove('hidden');
+        } else {
+            provinceDropdown.classList.add('hidden');
+        }
+    });
+
+    // เลือกจังหวัด
+    provinceOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const provinceName = this.textContent;
+            const provinceValue = this.getAttribute('data-value');
+            
+            provinceSearch.value = provinceName;
+            provinceHidden.value = provinceValue;
+            provinceDropdown.classList.add('hidden');
+        });
+    });
+
+    // ไม่มีการตั้งค่าจังหวัดเริ่มต้น - ฟอร์มเป็นค่าว่าง
+
+    // ซ่อนข้อความต้อนรับหลังจาก 5 วินาที
+    const welcomeMessage = document.getElementById('welcome-message');
+    if (welcomeMessage) {
+        setTimeout(function() {
+            welcomeMessage.style.transition = 'opacity 0.5s ease-out';
+            welcomeMessage.style.opacity = '0';
+            setTimeout(function() {
+                welcomeMessage.style.display = 'none';
+            }, 500);
+        }, 5000);
+    }
+    
+    // ===== SERVICE CHECKBOX FUNCTIONALITY =====
+    // Handle main service checkboxes
+    const mainServiceCheckboxes = document.querySelectorAll('input[name="service_id"]');
+    mainServiceCheckboxes.forEach(function(mainCheckbox) {
+        mainCheckbox.addEventListener('change', function() {
+            const serviceId = this.value;
+            const subCheckboxes = document.querySelectorAll(`input[name="service_option_${serviceId}"]`);
+            
+            if (this.checked) {
+                // Enable sub-checkboxes when main is checked
+                subCheckboxes.forEach(function(subCheckbox) {
+                    subCheckbox.disabled = false;
+                    subCheckbox.parentElement.style.opacity = '1';
+                });
+            } else {
+                // Disable and uncheck sub-checkboxes when main is unchecked
+                subCheckboxes.forEach(function(subCheckbox) {
+                    subCheckbox.disabled = true;
+                    subCheckbox.checked = false;
+                    subCheckbox.parentElement.style.opacity = '0.5';
+                });
+            }
+        });
+        
+        // Initialize state on page load
+        const serviceId = mainCheckbox.value;
+        const subCheckboxes = document.querySelectorAll(`input[name="service_option_${serviceId}"]`);
+        
+        if (!mainCheckbox.checked) {
+            subCheckboxes.forEach(function(subCheckbox) {
+                subCheckbox.disabled = true;
+                subCheckbox.parentElement.style.opacity = '0.5';
+            });
+        }
+    });
+
+    // ===== DOT DATA COPY FUNCTIONALITY =====
+    const copyDotToAllBtn = document.getElementById('copyDotToAll');
+    if (copyDotToAllBtn) {
+        copyDotToAllBtn.addEventListener('click', function() {
+            // Get front left DOT data
+            const frontLeftDot = document.querySelector('input[name="dot_front_left"]').value;
+            
+            // Copy to other DOT fields
+            document.querySelector('input[name="dot_front_right"]').value = frontLeftDot;
+            document.querySelector('input[name="dot_rear_left"]').value = frontLeftDot;
+            document.querySelector('input[name="dot_rear_right"]').value = frontLeftDot;
+            
+            // Show success message
+            this.textContent = 'คัดลอกแล้ว!';
+            this.classList.remove('text-blue-600', 'hover:text-blue-800', 'hover:bg-blue-50', 'hover:border-blue-300', 'border-blue-300');
+            this.classList.add('text-green-600', 'hover:text-green-800', 'hover:bg-green-50', 'hover:border-green-300', 'border-green-300');
+            
+            // Reset button after 2 seconds
+            setTimeout(() => {
+                this.textContent = 'คัดลอกทั้งหมด';
+                this.classList.remove('text-green-600', 'hover:text-green-800', 'hover:bg-green-50', 'hover:border-green-300', 'border-green-300');
+                this.classList.add('text-blue-600', 'hover:text-blue-800', 'hover:bg-blue-50', 'hover:border-blue-300', 'border-blue-300');
+            }, 2000);
+        });
+    }
+
+    // ===== TIRE DATA COPY FUNCTIONALITY =====
+    const copyFrontToRearBtn = document.getElementById('copyFrontToRear');
+    if (copyFrontToRearBtn) {
+        copyFrontToRearBtn.addEventListener('click', function() {
+            // Get front tire data
+            const frontSize = document.querySelector('input[name="tire_front_size"]').value;
+            const frontBrandId = document.querySelector('select[name="tire_front_brand_id"]').value;
+            const frontModelId = document.querySelector('select[name="tire_front_model_id"]').value;
+            
+            // Copy to rear tire fields
+            document.querySelector('input[name="tire_rear_size"]').value = frontSize;
+            document.querySelector('select[name="tire_rear_brand_id"]').value = frontBrandId;
+            
+            // If front brand is selected, trigger change event to populate models
+            if (frontBrandId) {
+                const rearBrandSelect = document.querySelector('select[name="tire_rear_brand_id"]');
+                rearBrandSelect.dispatchEvent(new Event('change'));
+                
+                // Set model after a short delay to allow models to load
+                setTimeout(function() {
+                    document.querySelector('select[name="tire_rear_model_id"]').value = frontModelId;
+                }, 200);
+            }
+            
+            // Show success message
+            this.textContent = 'คัดลอกแล้ว!';
+            this.classList.remove('text-blue-600', 'hover:text-blue-800', 'hover:bg-blue-50', 'hover:border-blue-300', 'border-blue-300');
+            this.classList.add('text-green-600', 'hover:text-green-800', 'hover:bg-green-50', 'hover:border-green-300', 'border-green-300');
+            
+            // Reset button after 2 seconds
+            setTimeout(() => {
+                this.textContent = 'คัดลอกจากยางหน้า';
+                this.classList.remove('text-green-600', 'hover:text-green-800', 'hover:bg-green-50', 'hover:border-green-300', 'border-green-300');
+                this.classList.add('text-blue-600', 'hover:text-blue-800', 'hover:bg-blue-50', 'hover:border-blue-300', 'border-blue-300');
+            }, 2000);
+        });
+    }
+
+    // ===== VEHICLE SELECTOR FUNCTIONALITY =====
+    const vehicleButtons = document.querySelectorAll('.vehicle-btn');
+    vehicleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active style from all buttons
+            vehicleButtons.forEach(btn => {
+                btn.style.backgroundColor = '';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+            });
+            
+            // Add active style to clicked button
+            this.style.backgroundColor = '#dcfce7';
+            this.style.borderColor = '#16a34a';
+            this.style.color = '#15803d';
+            
+            // Get vehicle data and populate form
+            const vehicleData = JSON.parse(this.getAttribute('data-vehicle'));
+            console.log('Selected vehicle data:', vehicleData);
+            
+            // Auto-populate form fields with selected vehicle data
+            populateVehicleForm(vehicleData);
+        });
+    });
+    
+    function populateVehicleForm(vehicleData) {
+        // Populate vehicle type
+        const vehicleTypeRadios = document.querySelectorAll('input[name="vehicle_type_id"]');
+        vehicleTypeRadios.forEach(radio => {
+            if (radio.value == vehicleData.vehicle_type_id) {
+                radio.checked = true;
+            }
+        });
+        
+        // Populate engine type
+        const engineTypeRadios = document.querySelectorAll('input[name="engine_type"]');
+        engineTypeRadios.forEach(radio => {
+            if (radio.value === vehicleData.engine_type_name) {
+                radio.checked = true;
+            }
+        });
+        
+        // Populate license plate
+        const licensePlateInput = document.getElementById('license_plate');
+        if (licensePlateInput) {
+            licensePlateInput.value = vehicleData.license_plate || '';
+        }
+        
+        // Populate license province
+        const licenseProvinceInput = document.getElementById('license_province');
+        const licenseProvinceSearch = document.getElementById('license_province_search');
+        if (licenseProvinceInput && licenseProvinceSearch) {
+            licenseProvinceInput.value = vehicleData.license_province || '';
+            licenseProvinceSearch.value = vehicleData.license_province || '';
+        }
+        
+        // Populate brand
+        const brandSelect = document.getElementById('brand_id');
+        if (brandSelect) {
+            for (let i = 0; i < brandSelect.options.length; i++) {
+                if (brandSelect.options[i].text === vehicleData.brand_name) {
+                    brandSelect.value = brandSelect.options[i].value;
+                    // Trigger change event to populate models
+                    brandSelect.dispatchEvent(new Event('change'));
+                    break;
+                }
+            }
+        }
+        
+        // Populate model (after brand is set)
+        setTimeout(function() {
+            const modelSelect = document.getElementById('model_name');
+            if (modelSelect) {
+                for (let i = 0; i < modelSelect.options.length; i++) {
+                    if (modelSelect.options[i].text === vehicleData.model_name) {
+                        modelSelect.value = modelSelect.options[i].value;
+                        break;
+                    }
+                }
+            }
+        }, 200);
+        
+        // Populate color
+        const colorInput = document.getElementById('color');
+        if (colorInput) {
+            colorInput.value = vehicleData.color || '';
+        }
+        
+        // Populate production year
+        const productionYearInput = document.getElementById('production_year');
+        if (productionYearInput) {
+            productionYearInput.value = vehicleData.production_year || '';
+        }
+    }
+    
+    function clearVehicleForm() {
+        // Clear all vehicle form fields
+        const licensePlateInput = document.getElementById('license_plate');
+        if (licensePlateInput) licensePlateInput.value = '';
+        
+        const licenseProvinceInput = document.getElementById('license_province');
+        const licenseProvinceSearch = document.getElementById('license_province_search');
+        if (licenseProvinceInput) licenseProvinceInput.value = '';
+        if (licenseProvinceSearch) licenseProvinceSearch.value = '';
+        
+        const brandSelect = document.getElementById('brand_id');
+        if (brandSelect) brandSelect.value = '';
+        
+        const modelSelect = document.getElementById('model_name');
+        if (modelSelect) {
+            modelSelect.innerHTML = '<option value="">-- เลือกรุ่น --</option>';
+            modelSelect.value = '';
+        }
+        
+        const colorInput = document.getElementById('color');
+        if (colorInput) colorInput.value = '';
+        
+        const productionYearInput = document.getElementById('production_year');
+        if (productionYearInput) productionYearInput.value = '';
+        
+        // Uncheck all radio buttons
+        const vehicleTypeRadios = document.querySelectorAll('input[name="vehicle_type_id"]');
+        vehicleTypeRadios.forEach(radio => radio.checked = false);
+        
+        const engineTypeRadios = document.querySelectorAll('input[name="engine_type"]');
+        engineTypeRadios.forEach(radio => radio.checked = false);
+    }
+});
+</script>
+{% endblock %} 

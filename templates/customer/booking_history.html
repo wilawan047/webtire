@@ -1,0 +1,472 @@
+{% extends "customer/layout.html" %}
+
+{% block title %}ประวัติการจอง - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Page Header -->
+    <div>
+        <h1 class="text-2xl font-bold mb-4" style="color: #0c5e28;">ประวัติการจอง</h1>
+        <p class="text-green-800">ดูประวัติการจองบริการทั้งหมดของคุณ</p>
+    </div>
+
+    <!-- Bookings List -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        {% if bookings %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่จอง</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่บริการ</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เวลา</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รถ</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">การดำเนินการ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for booking in bookings %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ booking.booking_date.strftime('%d/%m/%Y') if booking.booking_date else '-' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ booking.service_date.strftime('%d/%m/%Y') if booking.service_date else '-' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ booking.service_time if booking.service_time else '-' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <div>
+                                    <div class="font-medium">{{ booking.license_plate or '-' }}</div>
+                                    <div class="text-gray-500">{{ booking.brand_name or '' }} {{ booking.model_name or '' }}</div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if booking.status == 'รอดำเนินการ' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        รอดำเนินการ
+                                    </span>
+                                {% elif booking.status == 'สำเร็จ' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        สำเร็จ
+                                    </span>
+                                {% elif booking.status == 'ยกเลิก' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        ยกเลิก
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        {{ booking.status or 'ไม่ระบุ' }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                <!-- ปุ่มดูข้อมูลการจอง -->
+                                <button data-booking-id="{{ booking.booking_id }}" 
+                                        class="view-booking-btn inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    ดูข้อมูลการจอง
+                                </button>
+                                
+                                <!-- ปุ่มยกเลิกการจอง (แสดงเฉพาะเมื่อสถานะเป็น "รอดำเนินการ") -->
+                                {% if booking.status == 'รอดำเนินการ' %}
+                                    <button data-booking-id="{{ booking.booking_id }}" 
+                                            class="cancel-booking-btn inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                        ยกเลิกการจอง
+                                    </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if total_pages > 1 %}
+            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    {% if page > 1 %}
+                        <a href="{{ url_for('customer.booking_history', page=page-1) }}" 
+                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            ก่อนหน้า
+                        </a>
+                    {% endif %}
+                    {% if page < total_pages %}
+                        <a href="{{ url_for('customer.booking_history', page=page+1) }}" 
+                           class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            ถัดไป
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            แสดง <span class="font-medium">{{ (page - 1) * per_page + 1 }}</span> ถึง <span class="font-medium">{{ min(page * per_page, total_bookings) }}</span> จาก <span class="font-medium">{{ total_bookings }}</span> รายการ
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            {% if page > 1 %}
+                                <a href="{{ url_for('customer.booking_history', page=page-1) }}" 
+                                   class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Previous</span>
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            {% endif %}
+                            
+                            {% for p in range(1, total_pages + 1) %}
+                                {% if p == page %}
+                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
+                                        {{ p }}
+                                    </span>
+                                {% elif p <= 3 or p > total_pages - 3 or (p >= page - 1 and p <= page + 1) %}
+                                    <a href="{{ url_for('customer.booking_history', page=p) }}" 
+                                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        {{ p }}
+                                    </a>
+                                {% elif p == 4 and page > 6 %}
+                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                        ...
+                                    </span>
+                                {% elif p == total_pages - 3 and page < total_pages - 5 %}
+                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                        ...
+                                    </span>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page < total_pages %}
+                                <a href="{{ url_for('customer.booking_history', page=page+1) }}" 
+                                   class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Next</span>
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            {% endif %}
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">ไม่มีการจอง</h3>
+                <p class="mt-1 text-sm text-gray-500">คุณยังไม่มีการจองบริการใดๆ</p>
+                <div class="mt-6">
+                    <a href="{{ url_for('customer.booking') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        จองบริการ
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal สำหรับแสดงรายละเอียดการจอง -->
+<div id="bookingDetailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-[500px] shadow-2xl rounded-xl bg-gradient-to-br from-white to-green-50">
+        <div class="mt-3">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-6 pb-4 border-b-2 border-green-200">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-green-800">รายละเอียดการจอง</h3>
+                </div>
+                <button onclick="closeBookingDetailsModal()" class="w-8 h-8 bg-red-100 hover:bg-red-200 text-red-600 rounded-full flex items-center justify-center transition-colors duration-200">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Content -->
+            <div id="bookingDetailsContent" class="text-sm text-gray-700 space-y-4">
+                <!-- เนื้อหาจะถูกเติมด้วย JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal สำหรับยืนยันการยกเลิก -->
+<div id="cancelBookingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">ยืนยันการยกเลิก</h3>
+                <button onclick="closeCancelModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">คุณต้องการยกเลิกการจองนี้หรือไม่?</p>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeCancelModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
+                    ยกเลิก
+                </button>
+                <button id="confirmCancelBtn" onclick="confirmCancelBooking()" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700">
+                    ยืนยัน
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentBookingId = null;
+
+// Event Listeners เมื่อโหลดหน้า
+document.addEventListener('DOMContentLoaded', function() {
+    // Event listener สำหรับปุ่มดูข้อมูลการจอง
+    document.querySelectorAll('.view-booking-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const bookingId = this.getAttribute('data-booking-id');
+            viewBookingDetails(bookingId);
+        });
+    });
+    
+    // Event listener สำหรับปุ่มยกเลิกการจอง
+    document.querySelectorAll('.cancel-booking-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const bookingId = this.getAttribute('data-booking-id');
+            cancelBooking(bookingId);
+        });
+    });
+});
+
+function viewBookingDetails(bookingId) {
+    // เรียก API เพื่อดึงรายละเอียดการจอง
+    fetch(`/api/bookings/${bookingId}/detail`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const content = document.getElementById('bookingDetailsContent');
+                
+                // จัดรูปแบบข้อมูลให้เหมาะสม
+                const booking = data.data.booking;
+                const services = data.data.services;
+                
+                // สร้างข้อความสำหรับบริการ
+                let servicesText = 'ไม่มีบริการ';
+                if (services && services.length > 0) {
+                    servicesText = services.map(service => {
+                        let serviceInfo = service.service_name;
+                        if (service.quantity > 1) {
+                            serviceInfo += ` (จำนวน: ${service.quantity})`;
+                        }
+                        if (service.options) {
+                            serviceInfo += ` [${service.options}]`;
+                        }
+                        return serviceInfo;
+                    }).join('<br>');
+                }
+                
+                // จัดรูปแบบวันที่
+                const formatDate = (dateStr) => {
+                    if (!dateStr) return '-';
+                    const date = new Date(dateStr);
+                    return date.toLocaleDateString('th-TH');
+                };
+                
+                content.innerHTML = `
+                    <!-- ข้อมูลการจอง -->
+                    <div class="bg-white rounded-lg p-4 border border-green-200 shadow-sm mb-4">
+                        <h4 class="text-lg font-semibold text-green-800 mb-3 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            ข้อมูลการจอง
+                        </h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="text-xs text-green-600 font-medium mb-1">เลขที่การจอง</div>
+                                <div class="text-lg font-bold text-green-800">#${booking.booking_id}</div>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="text-xs text-green-600 font-medium mb-1">สถานะ</div>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                                    booking.status === 'รอดำเนินการ' ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' :
+                                    booking.status === 'สำเร็จ' ? 'bg-green-100 text-green-800 border border-green-300' :
+                                    booking.status === 'ยกเลิก' ? 'bg-red-100 text-red-800 border border-red-300' :
+                                    'bg-gray-100 text-gray-800 border border-gray-300'
+                                }">${booking.status}</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="text-xs text-green-600 font-medium mb-1">วันที่จอง</div>
+                                <div class="text-sm font-semibold text-green-800">${formatDate(booking.booking_date)}</div>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="text-xs text-green-600 font-medium mb-1">วันที่บริการ</div>
+                                <div class="text-sm font-semibold text-green-800">${formatDate(booking.service_date)}</div>
+                            </div>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-3 mt-4">
+                            <div class="text-xs text-green-600 font-medium mb-1">เวลาบริการ</div>
+                            <div class="text-sm font-semibold text-green-800">${booking.service_time || '-'}</div>
+                        </div>
+                    </div>
+
+                    <!-- ข้อมูลลูกค้า -->
+                    <div class="bg-white rounded-lg p-4 border border-green-200 shadow-sm mb-4">
+                        <h4 class="text-lg font-semibold text-green-800 mb-3 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            ข้อมูลลูกค้า
+                        </h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="text-xs text-green-600 font-medium mb-1">ชื่อ-นามสกุล</div>
+                                <div class="text-sm font-semibold text-green-800">${booking.first_name} ${booking.last_name}</div>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="text-xs text-green-600 font-medium mb-1">โทรศัพท์</div>
+                                <div class="text-sm font-semibold text-green-800">${booking.phone || '-'}</div>
+                            </div>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-3 mt-4">
+                            <div class="text-xs text-green-600 font-medium mb-1">อีเมล</div>
+                            <div class="text-sm font-semibold text-green-800">${booking.email || '-'}</div>
+                        </div>
+                    </div>
+
+                    <!-- ข้อมูลรถ -->
+                    <div class="bg-white rounded-lg p-4 border border-green-200 shadow-sm mb-4">
+                        <h4 class="text-lg font-semibold text-green-800 mb-3 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                            ข้อมูลรถ
+                        </h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="text-xs text-green-600 font-medium mb-1">ยี่ห้อ-รุ่น</div>
+                                <div class="text-sm font-semibold text-green-800">${booking.brand_name || ''} ${booking.model_name || ''}</div>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="text-xs text-green-600 font-medium mb-1">ทะเบียน</div>
+                                <div class="text-sm font-semibold text-green-800">${booking.license_plate} ${booking.license_province ? `(${booking.license_province})` : ''}</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="text-xs text-green-600 font-medium mb-1">ปีที่ผลิต</div>
+                                <div class="text-sm font-semibold text-green-800">${booking.production_year || '-'}</div>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="text-xs text-green-600 font-medium mb-1">สี</div>
+                                <div class="text-sm font-semibold text-green-800">${booking.color || '-'}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- รายการบริการ -->
+                    <div class="bg-white rounded-lg p-4 border border-green-200 shadow-sm mb-4">
+                        <h4 class="text-lg font-semibold text-green-800 mb-3 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            รายการบริการ
+                        </h4>
+                        <div class="bg-green-50 rounded-lg p-4">
+                            ${services && services.length > 0 ? 
+                                services.map(service => `
+                                    <div class="flex items-center justify-between py-2 border-b border-green-200 last:border-b-0">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                            <span class="text-sm font-medium text-green-800">${service.service_name}</span>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            ${service.quantity > 1 ? `<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">จำนวน: ${service.quantity}</span>` : ''}
+                                            ${service.options ? `<span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">${service.options}</span>` : ''}
+                                        </div>
+                                    </div>
+                                `).join('') : 
+                                '<div class="text-center text-gray-500 py-4">ไม่มีบริการ</div>'
+                            }
+                        </div>
+                    </div>
+
+                    ${booking.note ? `
+                    <!-- หมายเหตุ -->
+                    <div class="bg-white rounded-lg p-4 border border-green-200 shadow-sm">
+                        <h4 class="text-lg font-semibold text-green-800 mb-3 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            หมายเหตุ
+                        </h4>
+                        <div class="bg-green-50 rounded-lg p-3">
+                            <div class="text-sm text-green-800">${booking.note}</div>
+                        </div>
+                    </div>
+                    ` : ''}
+                `;
+                document.getElementById('bookingDetailsModal').classList.remove('hidden');
+            } else {
+                alert('เกิดข้อผิดพลาดในการดึงข้อมูล: ' + (data.error || 'ไม่ทราบสาเหตุ'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('เกิดข้อผิดพลาดในการดึงข้อมูล');
+        });
+}
+
+function closeBookingDetailsModal() {
+    document.getElementById('bookingDetailsModal').classList.add('hidden');
+}
+
+function cancelBooking(bookingId) {
+    currentBookingId = bookingId;
+    document.getElementById('cancelBookingModal').classList.remove('hidden');
+}
+
+function closeCancelModal() {
+    document.getElementById('cancelBookingModal').classList.add('hidden');
+    currentBookingId = null;
+}
+
+function confirmCancelBooking() {
+    if (!currentBookingId) return;
+    
+    fetch(`/api/cancel-booking/${currentBookingId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('ยกเลิกการจองเรียบร้อยแล้ว');
+            location.reload(); // รีโหลดหน้าเพื่อแสดงสถานะใหม่
+        } else {
+            alert('เกิดข้อผิดพลาด: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('เกิดข้อผิดพลาดในการยกเลิกการจอง');
+    })
+    .finally(() => {
+        closeCancelModal();
+    });
+}
+</script>
+{% endblock %}

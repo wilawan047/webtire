@@ -1,0 +1,354 @@
+<!-- Register Modal -->
+<div id="registerModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
+  <div class="relative top-10 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
+    <div class="mt-3">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-green-900">ลงทะเบียนสมาชิก</h3>
+        <button onclick="closeRegisterModal()" class="text-gray-400 hover:text-gray-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Include register form content -->
+      <div id="registerModalContent">
+        {% if error %}
+        <div class="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded">
+          {{ error }}
+        </div>
+        {% endif %}
+        
+        <form method="POST" action="{{ url_for('auth.register') }}" id="registerForm">
+          <!-- CSRF Protection -->
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          
+          <div class="space-y-4">
+            <div>
+              <label for="register_username" class="block text-sm font-medium text-green-800 mb-1">ชื่อผู้ใช้ <span class="text-red-700">*</span></label> 
+              <input id="register_username" name="username" type="text" required minlength="3" maxlength="20"
+                     class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#0c5e28] focus:border-[#0c5e28] focus:z-10 sm:text-sm"
+                     placeholder="กรอกชื่อผู้ใช้ (3-20 ตัวอักษร)"
+                     pattern="[a-zA-Z0-9_]+"
+                     title="ชื่อผู้ใช้ต้องมี 3-20 ตัวอักษร และใช้ได้เฉพาะตัวอักษร ตัวเลข และ _ เท่านั้น"
+                     value="{{ form_data.username if form_data else '' }}">
+              <p class="text-xs text-gray-500 mt-1">ใช้ได้เฉพาะตัวอักษร ตัวเลข และ _ เท่านั้น</p>
+              <div id="register_username-error" class="text-red-600 text-xs mt-1 hidden"></div>
+            </div>
+            
+            <div>
+              <label for="register_email" class="block text-sm font-medium text-green-800 mb-1">อีเมล <span class="text-red-700">*</span></label>
+              <input id="register_email" name="email" type="email" required 
+                     class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#0c5e28] focus:border-[#0c5e28] focus:z-10 sm:text-sm"
+                     placeholder="กรอกอีเมล"
+                     value="{{ form_data.email if form_data else '' }}">
+              <div id="register_email-error" class="text-red-600 text-xs mt-1 hidden"></div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-green-800 mb-1">เพศ</label>
+              <div class="flex gap-4">
+                <label class="inline-flex items-center">
+                  <input type="radio" name="gender" value="ชาย" class="mr-2" {% if form_data and form_data.gender == 'ชาย' %}checked{% endif %}>
+                  <span class="text-sm">ชาย</span>
+                </label>
+                <label class="inline-flex items-center">
+                  <input type="radio" name="gender" value="หญิง" class="mr-2" {% if form_data and form_data.gender == 'หญิง' %}checked{% endif %}>
+                  <span class="text-sm">หญิง</span>
+                </label>
+                <label class="inline-flex items-center">
+                  <input type="radio" name="gender" value="" class="mr-2" {% if form_data and form_data.gender == '' %}checked{% endif %}>
+                  <span class="text-sm">ไม่ระบุ</span>
+                </label>
+              </div>
+            </div>
+            
+            <div>
+              <label for="register_birthdate" class="block text-sm font-medium text-green-800 mb-1">วันเกิด</label>
+              <input id="register_birthdate" name="birthdate" type="date" 
+                     class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#0c5e28] focus:border-[#0c5e28] focus:z-10 sm:text-sm"
+                     value="{{ form_data.birthdate if form_data else '' }}">
+              <div id="register_birthdate-error" class="text-red-600 text-xs mt-1 hidden"></div>
+            </div>
+            
+            <div>
+              <label for="register_password" class="block text-sm font-medium text-green-800 mb-1">รหัสผ่าน <span class="text-red-700">*</span></label>
+              <input id="register_password" name="password" type="password" required minlength="8"
+                     class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#0c5e28] focus:border-[#0c5e28] focus:z-10 sm:text-sm"
+                     placeholder="กรอกรหัสผ่าน (อย่างน้อย 8 ตัวอักษร)">
+              <p class="text-xs text-gray-500 mt-1">รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร</p>
+              <div id="register_password-error" class="text-red-600 text-xs mt-1 hidden"></div>
+            </div>
+            
+            <div>
+              <label for="confirm_password" class="block text-sm font-medium text-green-800 mb-1">ยืนยันรหัสผ่าน <span class="text-red-700">*</span></label>
+              <input id="confirm_password" name="confirm_password" type="password" required 
+                     class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#0c5e28] focus:border-[#0c5e28] focus:z-10 sm:text-sm"
+                     placeholder="กรอกรหัสผ่านอีกครั้ง">
+              <div id="confirm_password-error" class="text-red-600 text-xs mt-1 hidden"></div>
+            </div>
+            
+            <div>
+              <label for="register_first_name" class="block text-sm font-medium text-green-800 mb-1">ชื่อ <span class="text-red-700">*</span></label>
+              <input id="register_first_name" name="first_name" type="text" required minlength="2" maxlength="50"
+                     class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#0c5e28] focus:border-[#0c5e28] focus:z-10 sm:text-sm"
+                     placeholder="กรอกชื่อ"
+                     value="{{ form_data.first_name if form_data else '' }}">
+              <div id="register_first_name-error" class="text-red-600 text-xs mt-1 hidden"></div>
+            </div>
+            
+            <div>
+              <label for="register_last_name" class="block text-sm font-medium text-green-800 mb-1">นามสกุล <span class="text-red-700">*</span></label>
+              <input id="register_last_name" name="last_name" type="text" required minlength="2" maxlength="50"
+                     class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#0c5e28] focus:border-[#0c5e28] focus:z-10 sm:text-sm"
+                     placeholder="กรอกนามสกุล"
+                     value="{{ form_data.last_name if form_data else '' }}">
+              <div id="register_last_name-error" class="text-red-600 text-xs mt-1 hidden"></div>
+            </div>
+            
+            <div>
+              <label for="register_phone" class="block text-sm font-medium text-green-800 mb-1">เบอร์โทรศัพท์ <span class="text-red-700">*</span></label>
+              <input id="register_phone" name="phone" type="tel" required pattern="[0-9]{10}"
+                     class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#0c5e28] focus:border-[#0c5e28] focus:z-10 sm:text-sm"
+                     placeholder="กรอกเบอร์โทรศัพท์ (10 หลัก)"
+                     title="กรุณากรอกเบอร์โทรศัพท์ 10 หลัก"
+                     value="{{ form_data.phone if form_data else '' }}">
+              <p class="text-xs text-gray-500 mt-1">กรุณากรอกเบอร์โทรศัพท์ 10 หลัก</p>
+              <div id="register_phone-error" class="text-red-600 text-xs mt-1 hidden"></div>
+            </div>
+          </div>
+
+          <div class="mt-6 space-y-4">
+            <!-- Submit Button -->
+            <button type="submit" id="registerBtn"
+                class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-800 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
+              <span id="regBtnText">ลงทะเบียน</span>
+              <span id="regBtnLoading" class="hidden flex items-center">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                กำลังลงทะเบียน...
+              </span>
+            </button>
+          </div>
+        </form>
+        
+        <div class="mt-4 text-center">
+          <p class="text-sm text-gray-600">
+            หรือ
+            <a href="#" onclick="showLoginModal('/'); closeRegisterModal();" class="font-medium text-green-900 hover:text-[#15803d]">
+              เข้าสู่ระบบหากมีบัญชีอยู่แล้ว
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const registerForm = document.getElementById('registerForm');
+    if (!registerForm) return;
+    
+    const registerBtn = document.getElementById('registerBtn');
+    const btnText = document.getElementById('regBtnText');
+    const btnLoading = document.getElementById('regBtnLoading');
+
+    // Map backend field keys -> input IDs
+    const fieldToInputId = {
+        username: 'register_username',
+        email: 'register_email',
+        password: 'register_password',
+        confirm_password: 'confirm_password',
+        first_name: 'register_first_name',
+        last_name: 'register_last_name',
+        phone: 'register_phone',
+        birthdate: 'register_birthdate'
+    };
+    
+    // Function to show error message
+    function showError(fieldId, message) {
+        const errorDiv = document.getElementById(fieldId + '-error');
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            // Add red border to input
+            const input = document.getElementById(fieldToInputId[fieldId] || fieldId);
+            if (input) {
+                input.classList.add('border-red-500');
+                input.classList.remove('border-gray-300');
+            }
+        }
+    }
+    
+    // Function to clear error message
+    function clearError(fieldId) {
+        const errorDiv = document.getElementById(fieldId + '-error');
+        if (errorDiv) {
+            errorDiv.textContent = '';
+            errorDiv.classList.add('hidden');
+            // Remove red border from input
+            const input = document.getElementById(fieldToInputId[fieldId] || fieldId);
+            if (input) {
+                input.classList.remove('border-red-500');
+                input.classList.add('border-gray-300');
+            }
+        }
+    }
+    
+    // Function to clear all errors
+    function clearAllErrors() {
+        const fields = ['username', 'email', 'password', 'confirm_password', 'first_name', 'last_name', 'phone', 'birthdate'];
+        fields.forEach(field => clearError(field));
+    }
+    
+    // Function to show loading state
+    function showLoading() {
+        registerBtn.disabled = true;
+        btnText.classList.add('hidden');
+        btnLoading.classList.remove('hidden');
+    }
+    
+    // Function to hide loading state
+    function hideLoading() {
+        registerBtn.disabled = false;
+        btnText.classList.remove('hidden');
+        btnLoading.classList.add('hidden');
+    }
+    
+    // Clear errors when user starts typing
+    const inputs = registerForm.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            const fieldId = this.name;
+            clearError(fieldId);
+        });
+        
+        input.addEventListener('change', function() {
+            const fieldId = this.name;
+            clearError(fieldId);
+        });
+    });
+    
+    function submitRegister() {
+        // Clear previous errors
+        clearAllErrors();
+
+        showLoading();
+        const formData = new FormData(registerForm);
+
+        fetch('{{ url_for("auth.register") }}', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        })
+            .then(res => {
+                console.log('Response status:', res.status);
+                return res.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                hideLoading();
+                if (data.success) {
+                    // แสดง custom success modal
+                    console.log('Registration successful, showing success modal');
+                    showSuccessModal();
+                    registerForm.reset();
+                } else if (data && data.errors) {
+                    Object.keys(data.errors).forEach(field => {
+                        showError(field, data.errors[field]);
+                    });
+                } else {
+                    alert('เกิดข้อผิดพลาดในการลงทะเบียน');
+                }
+            })
+            .catch(err => {
+                hideLoading();
+                console.error(err);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
+            });
+    }
+
+    // Handle form submission via event listener
+    registerForm.addEventListener('submit', function(e){ e.preventDefault(); submitRegister(); });
+    
+    // Function to show success modal
+    function showSuccessModal() {
+        console.log('showSuccessModal function called');
+        
+        // ตรวจสอบว่า DOM พร้อมหรือไม่
+        if (document.readyState !== 'complete') {
+            console.log('DOM not ready, waiting...');
+            setTimeout(showSuccessModal, 100);
+            return;
+        }
+        
+        // สร้าง success modal
+        const successModal = document.createElement('div');
+        successModal.id = 'successModal';
+        successModal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50';
+        successModal.innerHTML = `
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3 text-center">
+                    <!-- Success Icon -->
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                        <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    
+                    <!-- Success Message -->
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">ลงทะเบียนสำเร็จ</h3>
+                    <p class="text-sm text-gray-500 mb-6">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
+                    
+                    <!-- OK Button -->
+                    <button onclick="closeSuccessModal()" 
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm transition-colors duration-200">
+                        ตกลง
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // เพิ่ม modal ลงใน body
+        document.body.appendChild(successModal);
+        document.body.style.overflow = 'hidden';
+        console.log('Success modal added to DOM');
+        
+        // ตรวจสอบว่า modal ถูกสร้างขึ้นจริงหรือไม่
+        const checkModal = document.getElementById('successModal');
+        if (checkModal) {
+            console.log('Success modal confirmed in DOM');
+        } else {
+            console.log('ERROR: Success modal not found in DOM');
+        }
+    }
+    
+    // Function to close success modal
+    window.closeSuccessModal = function() {
+        const successModal = document.getElementById('successModal');
+        if (successModal) {
+            successModal.remove();
+            document.body.style.overflow = 'auto';
+            
+            // ปิด register modal
+            if (typeof closeRegisterModal === 'function') {
+                closeRegisterModal();
+            } else {
+                document.getElementById('registerModal').classList.add('hidden');
+            }
+            
+            // เปิด login modal
+            if (typeof showLoginModal === 'function') {
+                showLoginModal('/');
+            } else {
+                // Fallback: redirect to home with login hash
+                window.location.href = '/#login';
+            }
+        }
+    };
+});
+</script> 

@@ -1,0 +1,144 @@
+{% extends "owner/layout.html" %}
+
+{% block title %}แดชบอร์ดเจ้าของกิจการ - TireWeb{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="mb-8">
+    <div>
+        <h2 class="text-2xl font-bold text-green-900 mb-2">แดชบอร์ดเจ้าของกิจการ</h2>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <!-- Total Bookings -->
+    <div class="bg-white rounded-xl shadow-sm border p-6">
+        <div class="flex items-center">
+            <div class="p-3 bg-blue-100 rounded-lg">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">การจองทั้งหมด</p>
+                <p class="text-2xl font-bold text-gray-900">{{ total_bookings | comma }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Customers -->
+    <div class="bg-white rounded-xl shadow-sm border p-6">
+        <div class="flex items-center">
+            <div class="p-3 bg-green-100 rounded-lg">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">ลูกค้าทั้งหมด</p>
+                <p class="text-2xl font-bold text-gray-900">{{ total_customers | comma }}</p>
+            </div>
+        </div>
+    </div>
+
+         <!-- Total Page Views -->
+     <div class="bg-white rounded-xl shadow-sm border p-6">
+         <div class="flex items-center">
+             <div class="p-3 bg-yellow-100 rounded-lg">
+                 <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                 </svg>
+             </div>
+             <div class="ml-4">
+                 <p class="text-sm font-medium text-gray-600">การเข้าชมหน้าเว็บ</p>
+                 <p class="text-2xl font-bold text-gray-900">{{ total_page_views | comma }}</p>
+             </div>
+         </div>
+     </div>
+</div>
+
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Booking Status Chart -->
+    <div class="bg-white rounded-xl shadow-sm border p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">สถานะการจอง</h3>
+        <div class="h-80">
+            <canvas id="bookingStatusChart" class="w-full h-full"></canvas>
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="bg-white rounded-xl shadow-sm border p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">รายงานต่างๆ</h3>
+        <div class="space-y-4">
+            <a href="{{ url_for('owner.bookings_report') }}" class="flex items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                <svg class="w-8 h-8 text-blue-600 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+                <div>
+                    <h4 class="font-medium text-gray-900">รายงานการจอง</h4>
+                    <p class="text-sm text-gray-600">ดูสถิติการจองบริการลูกค้า</p>
+                </div>
+            </a>
+                         <a href="{{ url_for('owner.page_views_report') }}" class="flex items-center p-4 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors">
+                 <svg class="w-8 h-8 text-yellow-600 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                 </svg>
+                 <div>
+                     <h4 class="font-medium text-gray-900">สถิติผู้เข้าชม</h4>
+                     <p class="text-sm text-gray-600">ดูข้อมูลการเข้าชมเว็บไซต์</p>
+                 </div>
+             </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Booking Status Chart
+    var bookingStatusCtx = document.getElementById('bookingStatusChart');
+    if (bookingStatusCtx) {
+        var bookingStatus = JSON.parse('{{ booking_status | tojson | safe }}');
+        var ctx = bookingStatusCtx.getContext('2d');
+        
+        var statusLabels = [];
+        var statusData = [];
+        var statusColors = ['#F59E0B', '#10B981', '#EF4444', '#6B7280'];
+        
+        for (var i = 0; i < bookingStatus.length; i++) {
+            statusLabels.push(bookingStatus[i].status);
+            statusData.push(bookingStatus[i].count);
+        }
+
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusData,
+                    backgroundColor: statusColors,
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

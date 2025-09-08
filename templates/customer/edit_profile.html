@@ -1,0 +1,109 @@
+{% extends "customer/layout.html" %}
+
+{% block title %}แก้ไขโปรไฟล์ - TireWeb{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+    <!-- Header -->
+    <div class="bg-green-800 px-6 py-4">
+      <h1 class="text-2xl font-bold text-white">แก้ไขโปรไฟล์</h1>
+    </div>
+    
+    <!-- Form Content -->
+    <div class="p-6">
+      <form method="POST" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Username (Read-only) -->
+          <div>
+            <label for="username" class="block text-sm font-medium text-gray-700 mb-2">ชื่อผู้ใช้</label>
+            <input type="text" 
+                   id="username" 
+                   name="username" 
+                   value="{{ customer.username }}"
+                   readonly
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed">
+            <p class="mt-1 text-sm text-gray-500">ไม่สามารถแก้ไขชื่อผู้ใช้ได้</p>
+          </div>
+          
+          <!-- First Name -->
+          <div>
+            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">ชื่อ *</label>
+            <input type="text" 
+                   id="first_name" 
+                   name="first_name" 
+                   value="{{ customer.first_name or '' }}"
+                   required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-green-800">
+          </div>
+          
+          <!-- Last Name -->
+          <div>
+            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">นามสกุล *</label>
+            <input type="text" 
+                   id="last_name" 
+                   name="last_name" 
+                   value="{{ customer.last_name or '' }}"
+                   required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-green-800">
+          </div>
+          
+          <!-- Phone -->
+          <div>
+            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">เบอร์โทรศัพท์</label>
+            <input type="tel" 
+                   id="phone" 
+                   name="phone" 
+                   value="{{ customer.phone or '' }}"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-green-800">
+          </div>
+          
+          <!-- Email -->
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">อีเมล</label>
+            <input type="email" 
+                   id="email" 
+                   name="email" 
+                   value="{{ customer.email or '' }}"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-green-800">
+          </div>
+          
+          <!-- Gender -->
+          <div>
+            <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">เพศ</label>
+            <select id="gender" 
+                    name="gender"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-green-800">
+              <option value="ไม่ระบุ" {% if customer.gender == 'ไม่ระบุ' or not customer.gender %}selected{% endif %}>ไม่ระบุ</option>
+              <option value="ชาย" {% if customer.gender == 'ชาย' %}selected{% endif %}>ชาย</option>
+              <option value="หญิง" {% if customer.gender == 'หญิง' %}selected{% endif %}>หญิง</option>
+            </select>
+          </div>
+          
+          <!-- Birthdate -->
+          <div>
+            <label for="birthdate" class="block text-sm font-medium text-gray-700 mb-2">วันเกิด</label>
+            <input type="date" 
+                   id="birthdate" 
+                   name="birthdate" 
+                   value="{% if customer.birthdate %}{{ customer.birthdate.strftime('%Y-%m-%d') }}{% endif %}"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-green-800">
+          </div>
+        </div>
+        
+        <!-- Buttons -->
+        <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+          <a href="{{ url_for('customer.profile') }}" 
+             class="px-6 py-2 border border-gray-300 text-gray-700 bg-white rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-800">
+            ยกเลิก
+          </a>
+          <button type="submit" 
+                  class="px-6 py-2 bg-green-800 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-800">
+            บันทึกการเปลี่ยนแปลง
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

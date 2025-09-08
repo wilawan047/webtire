@@ -1,0 +1,333 @@
+{% extends "owner/layout.html" %}
+
+{% block title %}รายงานการจอง - TireWeb{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="mb-8">
+    <div>
+        <h2 class="text-2xl font-bold text-green-900 mb-2">รายงานการจองบริการ</h2>
+        
+        <!-- Date Selection Form -->
+        <div class="flex justify-center mt-4">
+            <form method="GET" action="{{ url_for('owner.bookings_report_pdf') }}" class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <div class="flex items-center space-x-2">
+                    <label for="start_date" class="text-sm font-medium text-gray-700 whitespace-nowrap">ตั้งแต่:</label>
+                    <input type="date" id="start_date" name="start_date" 
+                           class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                </div>
+                <div class="flex items-center space-x-2">
+                    <label for="end_date" class="text-sm font-medium text-gray-700 whitespace-nowrap">ถึง:</label>
+                    <input type="date" id="end_date" name="end_date" 
+                           class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                </div>
+                <button type="submit" 
+                        class="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    ดาวน์โหลดรายงาน PDF
+                </button>
+            </form>
+        </div>
+        <p class="text-xs text-gray-500 mt-2 text-center">เลือกช่วงวันที่ที่ต้องการออกรายงาน (สูงสุด 1 ปี)</p>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <!-- Total Bookings -->
+    <div class="bg-white rounded-xl shadow-sm border p-6">
+        <div class="flex items-center">
+            <div class="p-3 bg-blue-100 rounded-lg">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">การจองทั้งหมด</p>
+                <p class="text-2xl font-bold text-gray-900">{{ total_bookings | comma }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Bookings -->
+    <div class="bg-white rounded-xl shadow-sm border p-6">
+        <div class="flex items-center">
+            <div class="p-3 bg-yellow-100 rounded-lg">
+                <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">รอดำเนินการ</p>
+                <p class="text-2xl font-bold text-gray-900">{{ pending_bookings | comma }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completed Bookings -->
+    <div class="bg-white rounded-xl shadow-sm border p-6">
+        <div class="flex items-center">
+            <div class="p-3 bg-green-100 rounded-lg">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">สำเร็จ</p>
+                <p class="text-2xl font-bold text-gray-900">{{ completed_bookings | comma }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancelled Bookings -->
+    <div class="bg-white rounded-xl shadow-sm border p-6">
+        <div class="flex items-center">
+            <div class="p-3 bg-red-100 rounded-lg">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">ยกเลิก</p>
+                <p class="text-2xl font-bold text-gray-900">{{ cancelled_bookings | comma }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Booking Status Chart -->
+    <div class="bg-white rounded-xl shadow-sm border p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">สถานะการจอง</h3>
+        <div class="h-80">
+            <canvas id="bookingStatusChart" class="w-full h-full"></canvas>
+        </div>
+    </div>
+
+    <!-- Monthly Bookings Chart -->
+    <div class="bg-white rounded-xl shadow-sm border p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">การจองรายเดือน (6 เดือนล่าสุด)</h3>
+        <div class="h-80">
+            <canvas id="monthlyBookingsChart" class="w-full h-full"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Bookings Table -->
+<div class="bg-white rounded-xl shadow-sm border">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">รายละเอียดการจองล่าสุด</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลูกค้า</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รถ</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่จอง</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for booking in bookings %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {{ loop.index }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">
+                                {{ booking.first_name }} {{ booking.last_name }}
+                            </div>
+                            <div class="text-sm text-gray-500">{{ booking.phone }}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">
+                                {{ booking.brand_name }} {{ booking.model_name }}
+                            </div>
+                            <div class="text-sm text-gray-500">{{ booking.license_plate }}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ booking.booking_date | date_thai }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if booking.status == 'รอดำเนินการ' %}
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                รอดำเนินการ
+                            </span>
+                        {% elif booking.status == 'สำเร็จ' %}
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                สำเร็จ
+                            </span>
+                        {% elif booking.status == 'ยกเลิก' %}
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                ยกเลิก
+                            </span>
+                        {% else %}
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                {{ booking.status }}
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Inject Data -->
+<script id="pending-bookings-data" type="application/json">
+    {{ pending_bookings | tojson | safe }}
+  </script>
+  <script id="completed-bookings-data" type="application/json">
+    {{ completed_bookings | tojson | safe }}
+  </script>
+  <script id="cancelled-bookings-data" type="application/json">
+    {{ cancelled_bookings | tojson | safe }}
+  </script>
+  <script id="monthly-bookings-data" type="application/json">
+    {{ monthly_bookings | tojson | safe }}
+  </script>
+  
+  <script>
+      // อ่านค่ากลับมาใน JS
+      const pendingBookings = JSON.parse(document.getElementById('pending-bookings-data').textContent);
+      const completedBookings = JSON.parse(document.getElementById('completed-bookings-data').textContent);
+      const cancelledBookings = JSON.parse(document.getElementById('cancelled-bookings-data').textContent);
+      const monthlyBookings = JSON.parse(document.getElementById('monthly-bookings-data').textContent);
+  
+      // รีเซ็ตช่องวันที่ให้เป็นค่าว่างทุกครั้งที่เข้าหน้า
+      document.addEventListener('DOMContentLoaded', function() {
+          console.log('Bookings Report - DOM Content Loaded');
+          
+          // ตั้งค่าวันที่เริ่มต้น
+          const startDateInput = document.getElementById('start_date');
+          const endDateInput = document.getElementById('end_date');
+          
+          console.log('Start date input:', startDateInput);
+          console.log('End date input:', endDateInput);
+          
+          if (startDateInput && endDateInput) {
+              startDateInput.value = '';
+              endDateInput.value = '';
+              console.log('Date inputs reset to empty');
+          } else {
+              console.error('Date inputs not found!');
+          }
+          
+          // ตรวจสอบการเลือกวันที่
+          const form = document.querySelector('form[action*="bookings_report_pdf"]');
+          
+          if (form) {
+              form.addEventListener('submit', function(e) {
+                  const start = new Date(startDateInput.value);
+                  const end = new Date(endDateInput.value);
+                  
+                  if (start > end) {
+                      e.preventDefault();
+                      alert('วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด');
+                      return false;
+                  }
+                  
+                  // ตรวจสอบว่าช่วงวันที่ไม่เกิน 1 ปี
+                  const diffTime = Math.abs(end - start);
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  
+                  if (diffDays > 365) {
+                      e.preventDefault();
+                      alert('ช่วงวันที่ต้องไม่เกิน 1 ปี');
+                      return false;
+                  }
+              });
+          }
+      });
+  
+      // Booking Status Chart
+      const bookingStatusCtx = document.getElementById('bookingStatusChart').getContext('2d');
+      
+      const statusData = {
+          labels: ['รอดำเนินการ', 'สำเร็จ', 'ยกเลิก'],
+          datasets: [{
+              data: [pendingBookings, completedBookings, cancelledBookings],
+              backgroundColor: ['#F59E0B', '#10B981', '#EF4444'],
+              borderWidth: 2,
+              borderColor: '#ffffff'
+          }]
+      };
+  
+      new Chart(bookingStatusCtx, {
+          type: 'doughnut',
+          data: statusData,
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                  legend: {
+                      position: 'bottom',
+                      labels: {
+                          padding: 20,
+                          usePointStyle: true
+                      }
+                  }
+              }
+          }
+      });
+  
+      // Monthly Bookings Chart
+      const monthlyBookingsCtx = document.getElementById('monthlyBookingsChart').getContext('2d');
+      
+      const labels = monthlyBookings.map(item => {
+          const [year, month] = item.month.split('-');
+          const monthNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+          return `${monthNames[parseInt(month) - 1]} ${year}`;
+      });
+      const data = monthlyBookings.map(item => item.count);
+  
+      new Chart(monthlyBookingsCtx, {
+          type: 'bar',
+          data: {
+              labels: labels,
+              datasets: [{
+                  label: 'จำนวนการจอง',
+                  data: data,
+                  backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                  borderColor: '#3B82F6',
+                  borderWidth: 1,
+                  borderRadius: 8
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                  legend: {
+                      display: false
+                  }
+              },
+              scales: {
+                  y: {
+                      beginAtZero: true,
+                      grid: {
+                          color: 'rgba(0, 0, 0, 0.1)'
+                      }
+                  },
+                  x: {
+                      grid: {
+                          display: false
+                      }
+                  }
+              }
+          }
+      });
+  </script>  
+{% endblock %}

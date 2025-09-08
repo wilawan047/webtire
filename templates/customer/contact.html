@@ -1,0 +1,59 @@
+{% extends 'customer/layout.html' %}
+{% block title %}ติดต่อเรา | TireWeb{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4" style="color: #0c5e28;">ติดต่อเรา</h1>
+<nav class="text-gray-500 text-base mb-2 flex items-center flex-wrap" aria-label="Breadcrumb">
+  <a href="/" class="font-bold text-[#0c5e28] hover:underline">หน้าแรก</a>
+  <span class="mx-2">›</span>
+  <span class="text-black text-sm max-w-xs truncate">ติดต่อเรา</span>
+</nav>
+<div class="flex flex-col md:flex-row gap-10 w-full items-stretch" style="background-color:#fcfcfc;">
+  <!-- Left: Google Maps -->
+  <div class="md:w-1/2 w-full flex items-center justify-center">
+    <div class="w-full aspect-video rounded-2xl overflow-hidden shadow-lg max-w-xl border border-[#ebd84f]">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d481.73869888356353!2d103.11870063971067!3d14.997723113507979!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311995a2319097f5%3A0x67e504b25bfeebe8!2z4Lir4LmJ4Liy4LiH4Lir4Li44LmJ4LiZ4Liq4LmI4Lin4LiZ4LiI4Liz4LiB4Lix4LiUIOC4muC4uOC4o-C4teC4o-C4seC4oeC4ouC5jOC5geC4quC4h-C5gOC4iOC4o-C4tOC4jeC4geC4suC4o-C4ouC4suC4hw!5e0!3m2!1sth!2sth!4v1752228593055!5m2!1sth!2sth" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+  </div>
+  <!-- Right: Contact Info -->
+  <div class="md:w-1/2 w-full flex flex-col justify-center">
+    <div class="bg-white rounded-2xl shadow-lg p-8 max-w-xl mx-auto border border-[#ebd84f]">
+      <div class="mb-6 text-2xl font-extrabold flex items-center gap-3 text-[#0c5e28]">
+        <span style="color:#0c5e28;">ห้างหุ้นส่วนจำกัดบุรีรัมย์แสงเจริญการยาง</span>
+      </div>
+      <div class="flex items-center gap-3 mb-3 text-gray-800">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-6 w-6 text-[#0c5e28]">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+          </svg>       
+        <span>ตั้งอยู่ที่ 365 หมู่ 3 ถนน จิระ ตำบล ในเมือง จังหวัดบุรีรัมย์</span>
+      </div>
+      <div class="flex items-center gap-3 mb-3 text-gray-800">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-6 w-6 text-[#0c5e28]">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
+        </svg>        
+        <span>044611097</span>
+      </div>
+      <div class="flex items-center gap-3 mb-3 text-gray-800">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#0c5e28]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>
+        <a href="mailto:tyreplussangjaroen@gmail.com" class="underline text-[#0c5e28] hover:text-[#ebd84f] transition" target="_blank">tyreplussangjaroen@gmail.com</a>
+      </div>
+      <div class="flex items-center gap-3 mb-6 text-gray-800">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-6 w-6 text-[#0c5e28]" fill="none">
+          <path fill="currentColor" d="M 12 2.0078125 C 6.477 2.0078125 2 6.4848125 2 12.007812 C 2 17.530812 6.477 22.007812 12 22.007812 C 17.523 22.007812 22 17.530812 22 12.007812 C 22 6.4858125 17.523 2.0078125 12 2.0078125 z M 12 3.5078125 C 16.687 3.5078125 20.5 7.3208125 20.5 12.007812 C 20.5 16.521952 16.959919 20.215392 12.511719 20.482422 L 12.511719 19.890625 L 12.511719 13.501953 L 15.251953 13.501953 L 16.001953 13.501953 L 16.001953 12.001953 L 15.251953 12.001953 L 12.511719 12.001953 L 12.511719 10.755859 C 12.511719 10.055837 13.061696 9.5058594 13.761719 9.5058594 L 15.251953 9.5058594 L 16.001953 9.5058594 L 16.001953 8.0058594 L 15.251953 8.0058594 L 13.761719 8.0058594 C 12.251741 8.0058594 11.011719 9.2458824 11.011719 10.755859 L 11.011719 12.001953 L 9.7519531 12.001953 L 9.0019531 12.001953 L 9.0019531 13.501953 L 9.7519531 13.501953 L 11.011719 13.501953 L 11.011719 19.890625 L 11.011719 20.447266 C 6.7895713 19.955191 3.5 16.359881 3.5 12.007812 C 3.5 7.3208125 7.313 3.5078125 12 3.5078125 z"></path>
+        </svg>
+        <a href="https://www.facebook.com/buriramsaenggaroen" class="underline text-[#0c5e28] hover:text-[#ebd84f] transition" target="_blank">ไทร์พลัสบุรีรัมย์แสงเจริญการยาง</a>
+      </div>
+      <div class="flex items-center gap-3 mb-6 text-gray-800">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-6 w-6 text-[#0c5e28]" fill="none">
+          <path fill="currentColor" d="M 11.5 1.9960938 C 5.7421134 1.9960938 1.0078125 5.7574407 1.0078125 10.494141 C 1.0078125 15.085735 5.4861028 18.690448 11.003906 18.910156 L 11.003906 21.199219 A 0.750075 0.750075 0 0 0 11.933594 21.927734 L 12.039062 21.902344 A 0.750075 0.750075 0 0 0 12.068359 21.894531 C 12.765578 21.690729 13.629241 21.220248 14.646484 20.541016 C 15.663728 19.861783 16.79863 18.974168 17.873047 17.945312 C 20.02188 15.887604 21.992186 13.276705 21.992188 10.494141 C 21.992188 5.7572041 17.256006 1.9960938 11.5 1.9960938 z M 11.5 3.4960938 C 16.607994 3.4960938 20.492188 6.7770763 20.492188 10.494141 C 20.492188 12.524576 18.843355 14.939037 16.835938 16.861328 C 15.832228 17.822473 14.756038 18.662951 13.8125 19.292969 C 13.241876 19.673985 12.920768 19.790719 12.503906 19.996094 L 12.503906 18.494141 C 12.503906 17.92881 12.076406 17.490234 11.5 17.490234 C 6.3909463 17.490234 2.5078125 14.210202 2.5078125 10.494141 C 2.5078125 6.7768398 6.3898866 3.4960937 11.5 3.4960938 z M 5.4902344 7.9863281 A 0.50005 0.50005 0 0 0 4.9980469 8.4921875 L 4.9980469 12.492188 A 0.50005 0.50005 0 0 0 5.4980469 12.992188 L 7.4863281 12.992188 A 0.50005 0.50005 0 1 0 7.4863281 11.992188 L 5.9980469 11.992188 L 5.9980469 8.4921875 A 0.50005 0.50005 0 0 0 5.4902344 7.9863281 z M 9.4902344 7.9863281 A 0.50005 0.50005 0 0 0 8.9980469 8.4921875 L 8.9980469 12.492188 A 0.50005 0.50005 0 1 0 9.9980469 12.492188 L 9.9980469 8.4921875 A 0.50005 0.50005 0 0 0 9.4902344 7.9863281 z M 13.484375 7.9863281 A 0.50005 0.50005 0 0 0 12.990234 8.4921875 L 12.990234 10.363281 L 11.947266 8.2695312 A 0.50005 0.50005 0 0 0 10.998047 8.4921875 L 10.998047 12.492188 A 0.50005 0.50005 0 1 0 11.998047 12.492188 L 11.998047 10.619141 L 13.042969 12.716797 A 0.50005 0.50005 0 0 0 13.990234 12.492188 L 13.990234 8.4921875 A 0.50005 0.50005 0 0 0 13.484375 7.9863281 z M 15.501953 7.9921875 A 0.50005 0.50005 0 0 0 15.001953 8.4921875 L 15.001953 10.4375 A 0.50005 0.50005 0 0 0 15.001953 10.550781 L 15.001953 12.492188 A 0.50005 0.50005 0 0 0 15.501953 12.992188 L 17.486328 12.992188 A 0.50005 0.50005 0 1 0 17.486328 11.992188 L 16.001953 11.992188 L 16.001953 10.992188 L 17.486328 10.992188 A 0.50005 0.50005 0 1 0 17.486328 9.9921875 L 16.001953 9.9921875 L 16.001953 8.9921875 L 17.486328 8.9921875 A 0.50005 0.50005 0 1 0 17.486328 7.9921875 L 15.501953 7.9921875 z"/>
+        </svg>
+        <a href="https://line.me/R/ti/p/@sanccharoenkarnyang" class="underline text-[#0c5e28] hover:text-[#ebd84f] transition" target="_blank">@sanccharoenkarnyang</a>
+      </div>
+      <button class="mt-2 w-full py-3 rounded-xl font-bold shadow-md transition hover:scale-105" style="background-color:#0c5e28; color:#ffe731; box-shadow:0 2px 8px rgba(12,94,40,0.10);">
+        <svg xmlns="http://www.w3.org/2000/svg" class="inline h-6 w-6 mr-2 align-text-bottom text-[#ebd84f]" style="overflow:visible;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        วันและเวลาทำการ: จ.-ส. 08.00-17.30
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,98 @@
+{% extends 'layout.html' %}
+{% block title %}{{ 'แก้ไขโปรโมชัน' if promotion else 'เพิ่มโปรโมชัน' }}{% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 py-4">
+    <h1 class="text-2xl font-bold mb-4" style="color: #0c5e28;">
+        {{ 'แก้ไขโปรโมชัน' if promotion else 'เพิ่มโปรโมชัน' }}
+    </h1>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        {% if error %}
+            <div class="mb-4 px-4 py-2 bg-red-100 text-red-700 rounded">{{ error }}</div>
+        {% endif %}
+        
+        <form method="post" enctype="multipart/form-data" autocomplete="off" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div>
+                <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">ชื่อโปรโมชัน</h3>
+                <input type="text" name="title" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required value="{{ promotion.title if promotion else '' }}">
+            </div>
+            
+            <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">ระยะเวลา</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-green-800 mb-1">วันที่เริ่ม <span class="text-red-600">*</span></label>
+                    <input type="date" name="start_date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required value="{{ promotion.start_date if promotion else '' }}">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-green-800 mb-1">วันที่สิ้นสุด <span class="text-red-600">*</span></label>
+                    <input type="date" name="end_date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required value="{{ promotion.end_date if promotion else '' }}">
+                </div>
+            </div>
+            
+            <div>
+              <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">รายละเอียด</h3>
+                <textarea name="description" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>{{ promotion.description if promotion else '' }}</textarea>
+            </div>
+            
+            <!-- รูปภาพ Section -->
+            <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">รูปภาพ</h3>
+            <div>
+                <h4 class="text-sm font-medium text-green-800 mb-2">อัปโหลดรูปภาพโปรโมชัน</h4>
+                <div class="border-2 border-dashed border-green-300 rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer" onclick="document.getElementById('promotion_image').click()">
+                    <input type="file" id="promotion_image" name="promotion_image" accept="image/*" class="hidden" onchange="previewImage(this)">
+                    
+                    {% if promotion and promotion.image_url %}
+                        <div class="flex flex-col items-center">
+                            <div class="bg-white rounded-lg p-4 shadow-sm border">
+                                <img src="{{ url_for('static', filename='uploads/promotions/' ~ promotion.image_url) }}" alt="รูปโปรโมชัน" class="max-h-40 rounded">
+                            </div>
+                            <p class="mt-2 text-sm text-gray-600">รูปภาพปัจจุบัน - คลิกเพื่อเปลี่ยน</p>
+                        </div>
+                    {% else %}
+                        <div class="flex flex-col items-center">
+                            <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <p class="text-gray-600">คลิกเพื่ออัปโหลดรูปภาพ</p>
+                        </div>
+                    {% endif %}
+                    
+                    <p class="mt-2 text-xs text-gray-500">PNG, JPG, GIF ขนาดไม่เกิน 10MB</p>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-2 pt-4">
+                <a href="{{ url_for('admin.promotion_list') }}" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">ยกเลิก</a>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">บันทึก</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const uploadArea = input.closest('.border-dashed');
+            uploadArea.innerHTML = `
+                <div class="flex flex-col items-center">
+                    <div class="bg-white rounded-lg p-4 shadow-sm border">
+                        <img src="${e.target.result}" alt="รูปโปรโมชัน" class="max-h-40 rounded">
+                    </div>
+                    <p class="mt-2 text-sm text-gray-600">รูปภาพใหม่ - คลิกเพื่อเปลี่ยน</p>
+                </div>
+                <p class="mt-2 text-xs text-gray-500">PNG, JPG, GIF ขนาดไม่เกิน 10MB</p>
+            `;
+            uploadArea.onclick = function() {
+                input.click();
+            };
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+{% endblock %} 

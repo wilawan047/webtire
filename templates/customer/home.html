@@ -1,0 +1,854 @@
+{% extends 'customer/layout.html' %}
+
+{% block title %}หน้าแรก - TireWeb{% endblock %}
+
+{% block head %}
+<style>
+    /* Custom styles for image fit options */
+    .promo-slide img.fit-cover {
+        object-fit: cover;
+    }
+    
+    .promo-slide img.fit-contain {
+        object-fit: contain;
+    }
+    
+    .promo-slide img.fit-fill {
+        object-fit: fill;
+    }
+    
+    /* Custom slider width calculation - will be set dynamically */
+    #promo-slider {
+        transition: transform 0.5s ease-in-out;
+        will-change: transform;
+    }
+    
+    /* .promo-slide width will be set dynamically via JavaScript */
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-6">
+
+    <!-- ฝั่งโปรโมชัน (ซ้าย) -->
+    <div class="w-full lg:w-2/3">
+
+        <!-- Promotional Banner -->
+        <div class="relative overflow-hidden h-[400px] mb-6">
+            {% if promotions %}
+                <div id="promo-slider" class="flex h-full">
+                    {% for promotion in promotions %}
+                    <div class="promo-slide flex-shrink-0 h-full relative">
+                        <a href="{{ url_for('customer.promotion_detail', promotion_id=promotion.promotion_id) }}" class="block w-full h-full">
+                            {% if promotion.image_url %}
+                                <img src="{{ url_for('static', filename='uploads/promotions/' ~ promotion.image_url) }}" 
+                                     alt="{{ promotion.title }}" 
+                                     class="w-full h-full object-contain block select-none cursor-pointer hover:opacity-90 transition-opacity">
+                            {% else %}
+                                <div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+                                    <div class="text-center">
+                                        <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                        <p class="text-lg">{{ promotion.title or 'ไม่มีรูปภาพ' }}</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Navigation arrows -->
+                <button id="prev-promo" class="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white bg-opacity-90 border-none rounded-full w-10 h-10 flex items-center justify-center cursor-pointer shadow-lg transition-all duration-300 ease-in-out z-20 text-gray-700 hover:bg-white hover:scale-110 hover:shadow-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <button id="next-promo" class="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white bg-opacity-90 border-none rounded-full w-10 h-10 flex items-center justify-center cursor-pointer shadow-lg transition-all duration-300 ease-in-out z-20 text-gray-700 hover:bg-white hover:scale-110 hover:shadow-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+                
+                <!-- Dots indicator -->
+                <div id="promo-dots" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
+                    {% for promotion in promotions %}
+                    <div class="w-3 h-3 bg-white bg-opacity-80 rounded-full cursor-pointer transition-all duration-300 ease-in-out hover:bg-white hover:scale-120 {% if loop.first %}opacity-100{% else %}opacity-50{% endif %}"></div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- แสดงข้อความเมื่อไม่มีโปรโมชัน -->
+                <div class="flex items-center justify-center h-full bg-gray-100">
+                    <div class="text-center">
+                        <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <p class="text-gray-500 text-lg">ยังไม่มีโปรโมชัน</p>
+                        <p class="text-gray-400 text-sm">โปรโมชันจะแสดงที่นี่เมื่อมีโปรโมชันที่กำลังดำเนินการ</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ฝั่งค้นหายาง (ขวา) -->
+    <div class="w-full lg:w-1/3">
+        <!-- Search Tabs -->
+        <div class="bg-white shadow-lg rounded-lg mb-4">
+            <div class="flex border-b">
+                <button id="tab-size" class="flex-1 py-3 px-4 text-sm font-bold text-gray-700 bg-gray-50 border-b-2 border-yellow-500 hover:bg-gray-100 transition-colors whitespace-nowrap">
+                    ค้นหายางตามขนาด
+                </button>
+                <button id="tab-model" class="flex-1 py-3 px-4 text-sm font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap">
+                    ค้นหายางตามรุ่นรถ
+                </button>
+                <button id="tab-advanced" class="flex-1 py-3 px-4 text-sm font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap">
+                    ค้นหายางเพิ่มเติม
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="bg-white p-6 shadow-lg rounded-lg">
+            <!-- Tab 1: ค้นหายางตามขนาด -->
+            <div id="content-size" class="tab-content">
+                <!-- Search Header -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-green-900 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <h2 class="text-lg font-semibold text-green-900">ค้นหายางตามขนาด</h2>
+                    </div>
+                </div>
+
+                <!-- Tire Diagram -->
+                <div class="flex justify-center mb-6">
+                    <div class="relative">
+                        <img src="{{ url_for('static', filename='uploads/tire_size/size.png') }}" alt="Tire Size Diagram" class="w-48 h-48 object-contain">
+                    </div>
+                </div>
+
+                <!-- Tire Size Selection -->
+                <form action="{{ url_for('customer.tires') }}" method="GET" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-green-800 mb-1">ความกว้างหน้ายาง <span class="text-red-700">*</span></label>
+                        <select id="widthSelect" name="width" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+                            <option value="">เลือกความกว้างหน้ายาง</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-green-800 mb-1">ความสูงแก้มยาง <span class="text-red-700">*</span></label>
+                        <select id="aspectSelect" name="aspect_ratio" class="w-full p-2 border border-gray-300 rounded-lg text-sm" disabled>
+                            <option value="">เลือกสูงแก้มยาง</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-green-800 mb-1">เส้นผ่าศูนย์กลางล้อ <span class="text-red-700">*</span></label>
+                        <select id="rimSelect" name="rim_diameter" class="w-full p-2 border border-gray-300 rounded-lg text-sm" disabled>
+                            <option value="">เลือกขนาดเส้นผ่าศูนย์กลางล้อ</option>
+                        </select>
+                    </div>
+
+                    <!-- Search Button -->
+                    <div class="flex justify-center">
+                        <button type="submit" id="searchButton" class="w-auto px-8 bg-yellow-400 text-black font-medium py-3 rounded-lg transition-colors cursor-not-allowed hover:bg-yellow-300" disabled>
+                            ค้นหาเลย
+                        </button>
+                    </div>      
+                </form>
+            </div>
+            <!-- Tab 2: ค้นหายางตามรุ่นรถ -->
+            <div id="content-model" class="tab-content hidden">
+                <!-- Search Header -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-green-900 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <h2 class="text-lg font-semibold text-green-900">ค้นหายางตามรุ่นรถ</h2>
+                    </div>
+                </div>
+
+                <!-- Car Model Selection -->
+                <form action="{{ url_for('customer.tires') }}" method="GET" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-green-800 mb-1">ยี่ห้อรถ <span class="text-red-700">*</span></label>
+                        <select id="carBrandSelect" name="car_brand_id" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+                            <option value="">เลือกยี่ห้อรถ</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-green-800 mb-1">รุ่นรถ <span class="text-red-700">*</span></label>
+                        <select id="carModelSelect" name="car_model_id" class="w-full p-2 border border-gray-300 rounded-lg text-sm" disabled>
+                            <option value="">เลือกรุ่นรถ</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-green-800 mb-1">ปีที่ผลิต <span class="text-red-700">*</span></label>
+                        <select id="carYearSelect" name="car_year_id" class="w-full p-2 border border-gray-300 rounded-lg text-sm" disabled>
+                            <option value="">เลือกปีที่ผลิต</option>
+                        </select>
+                    </div>
+                
+
+                    <!-- Search Button -->
+                    <div class="flex justify-center">
+                        <button type="submit" id="carSearchButton" class="w-auto px-8 bg-yellow-400 text-black font-medium py-3 rounded-lg transition-colors hover:bg-yellow-300">
+                            ค้นหาเลย
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tab 3: ค้นหายางเพิ่มเติม -->
+            <div id="content-advanced" class="tab-content hidden">
+                <!-- Search Header -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-green-900 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <h2 class="text-lg font-semibold text-green-900">ค้นหายางเพิ่มเติม</h2>
+                    </div>
+                </div>
+
+                <!-- General Search Form -->
+                <form action="{{ url_for('customer.tires') }}" method="GET" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-green-800 mb-1">ค้นหายาง <span class="text-red-700">*</span></label>
+                        <input type="text" 
+                               name="search_query" 
+                               placeholder="ระบุคำที่ต้องการค้นหา" 
+                               class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    </div>
+
+                    <!-- Search Button -->
+                    <div class="flex justify-center">
+                        <button type="submit" class="w-auto px-8 bg-yellow-400 text-black font-medium py-3 rounded-lg hover:bg-yellow-300 transition-colors">
+                            ค้นหาเลย
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Promotional Banner Carousel
+    let currentPromoSlide = 0;
+    const promoSlides = document.querySelectorAll('.promo-slide');
+    const promoDots = document.querySelectorAll('#promo-dots div');
+    const totalPromoSlides = promoSlides.length;
+    const promoSlider = document.getElementById('promo-slider');
+    const prevPromoBtn = document.getElementById('prev-promo');
+    const nextPromoBtn = document.getElementById('next-promo');
+    let autoSlideInterval;
+
+    // ตรวจสอบว่ามีโปรโมชันหรือไม่
+    if (totalPromoSlides === 0) {
+        console.log('No promotions found');
+        return;
+    }
+
+    // ตรวจสอบว่ามี elements ครบหรือไม่
+    if (!promoSlider || !prevPromoBtn || !nextPromoBtn) {
+        console.error('Promotional slider elements not found');
+        return;
+    }
+
+    console.log('Promotional slider initialized with', totalPromoSlides, 'promotions');
+    console.log('Slider element:', promoSlider);
+    console.log('Promotions found:', promoSlides.length);
+
+    // Update slider width and slide width based on number of slides
+    function updateSliderDimensions() {
+        const sliderWidth = totalPromoSlides * 100;
+        const slideWidth = 100 / totalPromoSlides;
+        
+        promoSlider.style.width = `${sliderWidth}%`;
+        promoSlides.forEach(slide => {
+            slide.style.width = `${slideWidth}%`;
+        });
+        
+        console.log('Updated slider dimensions:', sliderWidth, slideWidth);
+    }
+
+    // Initialize slider dimensions
+    updateSliderDimensions();
+
+    // Show initial slide
+    showPromoSlide(0);
+
+    // Force a reflow to ensure the slider is properly initialized
+    promoSlider.offsetHeight;
+
+    function showPromoSlide(n) {
+        if (n >= totalPromoSlides) currentPromoSlide = 0;
+        if (n < 0) currentPromoSlide = totalPromoSlides - 1;
+        
+        const slideWidth = 100 / totalPromoSlides;
+        const translateX = -currentPromoSlide * slideWidth;
+        
+        // Apply transform
+        promoSlider.style.transform = `translateX(${translateX}%)`;
+        
+        console.log('Showing slide', currentPromoSlide, 'translateX:', translateX, 'slideWidth:', slideWidth);
+        console.log('Slider transform applied:', promoSlider.style.transform);
+        
+        // Update dots
+        promoDots.forEach((dot, index) => {
+            if (index === currentPromoSlide) {
+                dot.style.opacity = '1';
+                dot.style.background = 'white';
+            } else {
+                dot.style.opacity = '0.5';
+                dot.style.background = 'rgba(255, 255, 255, 0.8)';
+            }
+        });
+        
+        // Force a reflow
+        promoSlider.offsetHeight;
+    }
+
+    function startAutoSlide() {
+        stopAutoSlide(); // Clear any existing interval
+        autoSlideInterval = setInterval(() => {
+            currentPromoSlide++;
+            showPromoSlide(currentPromoSlide);
+        }, 5000); // 5 วินาที
+        console.log('Auto slide started with', totalPromoSlides, 'promotions');
+    }
+
+    function stopAutoSlide() {
+        if (autoSlideInterval) {
+            clearInterval(autoSlideInterval);
+            autoSlideInterval = null;
+            console.log('Auto slide stopped');
+        }
+    }
+
+    // Start auto slide
+    startAutoSlide();
+
+    // Test slide functionality after a short delay
+    setTimeout(() => {
+        console.log('=== SLIDER TEST ===');
+        console.log('Current slide:', currentPromoSlide);
+        console.log('Slider transform:', promoSlider.style.transform);
+        console.log('Slider width:', promoSlider.style.width);
+        console.log('Slider height:', promoSlider.style.height);
+        console.log('Slide widths:', Array.from(promoSlides).map(slide => slide.style.width));
+        console.log('Container overflow:', document.querySelector('.promo-slider-container').style.overflow);
+        console.log('Slider display:', promoSlider.style.display);
+        console.log('Slider position:', promoSlider.style.position);
+        console.log('=== END TEST ===');
+        
+        // Test manual slide change
+        console.log('Testing manual slide change...');
+        currentPromoSlide = 1;
+        showPromoSlide(currentPromoSlide);
+    }, 2000);
+
+    // Navigation buttons for promotional banner
+    prevPromoBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Previous button clicked');
+        stopAutoSlide();
+        currentPromoSlide--;
+        showPromoSlide(currentPromoSlide);
+        startAutoSlide(); // Restart auto slide
+    });
+
+    nextPromoBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Next button clicked');
+        stopAutoSlide();
+        currentPromoSlide++;
+        showPromoSlide(currentPromoSlide);
+        startAutoSlide(); // Restart auto slide
+    });
+
+    // Add touch/swipe support
+    let startX = 0;
+    let endX = 0;
+
+    promoSlider.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+    });
+
+    promoSlider.addEventListener('touchend', (e) => {
+        endX = e.changedTouches[0].clientX;
+        handleSwipe();
+    });
+
+    function handleSwipe() {
+        const swipeThreshold = 50;
+        const diff = startX - endX;
+        
+        if (Math.abs(diff) > swipeThreshold) {
+            if (diff > 0) {
+                // Swipe left - next slide
+                console.log('Swipe left detected');
+                stopAutoSlide();
+                currentPromoSlide++;
+                showPromoSlide(currentPromoSlide);
+                startAutoSlide();
+            } else {
+                // Swipe right - previous slide
+                console.log('Swipe right detected');
+                stopAutoSlide();
+                currentPromoSlide--;
+                showPromoSlide(currentPromoSlide);
+                startAutoSlide();
+            }
+        }
+    }
+
+    // Click on dots to navigate
+    promoDots.forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+            console.log('Dot clicked:', index);
+            stopAutoSlide();
+            currentPromoSlide = index;
+            showPromoSlide(currentPromoSlide);
+            startAutoSlide(); // Restart auto slide
+        });
+    });
+
+    // Pause auto slide on hover
+    promoSlider.addEventListener('mouseenter', () => {
+        console.log('Mouse enter - pausing auto slide');
+        stopAutoSlide();
+    });
+    
+    promoSlider.addEventListener('mouseleave', () => {
+        console.log('Mouse leave - resuming auto slide');
+        startAutoSlide();
+    });
+
+    // ฟังก์ชันเปลี่ยนการแสดงภาพ
+    function changeImageFit(fitType) {
+        const images = document.querySelectorAll('.promo-slide img');
+        images.forEach(img => {
+            img.className = `w-full h-full object-${fitType} block select-none cursor-pointer hover:opacity-90 transition-opacity`;
+        });
+    }
+
+    // ===== SEARCH TABS FUNCTIONALITY =====
+    
+    // Tab elements
+    const tabSize = document.getElementById('tab-size');
+    const tabModel = document.getElementById('tab-model');
+    const tabAdvanced = document.getElementById('tab-advanced');
+    const contentSize = document.getElementById('content-size');
+    const contentModel = document.getElementById('content-model');
+    const contentAdvanced = document.getElementById('content-advanced');
+
+    // Tab switching functionality
+    function switchTab(activeTab, activeContent) {
+        // Reset all tabs
+        [tabSize, tabModel, tabAdvanced].forEach(tab => {
+            tab.classList.remove('text-gray-700', 'bg-white', 'border-b-2', 'border-yellow-500');
+            tab.classList.add('text-gray-500', 'bg-gray-50');
+        });
+
+        // Reset all contents
+        [contentSize, contentModel, contentAdvanced].forEach(content => {
+            content.classList.add('hidden');
+        });
+
+        // Activate selected tab
+        activeTab.classList.remove('text-gray-500', 'bg-gray-50');
+        activeTab.classList.add('text-gray-700', 'bg-white', 'border-b-2', 'border-yellow-500');
+
+        // Show selected content
+        activeContent.classList.remove('hidden');
+    }
+
+    // Tab click events
+    tabSize.addEventListener('click', () => switchTab(tabSize, contentSize));
+    tabModel.addEventListener('click', () => switchTab(tabModel, contentModel));
+    tabAdvanced.addEventListener('click', () => switchTab(tabAdvanced, contentAdvanced));
+
+    // Initialize first tab as active
+    switchTab(tabSize, contentSize);
+
+    // ===== TIRE SIZE SEARCH FUNCTIONALITY =====
+    
+    // Tire size dropdowns
+    const widthSelect = document.getElementById('widthSelect');
+    const aspectSelect = document.getElementById('aspectSelect');
+    const rimSelect = document.getElementById('rimSelect');
+    const searchButton = document.getElementById('searchButton');
+
+    // Tire size data - จะถูกโหลดจากฐานข้อมูล
+    let tireSizes = {
+        combinations: []
+    };
+
+    // Get unique widths from combinations
+    function getUniqueWidths() {
+        const widths = [...new Set(tireSizes.combinations.map(combo => combo.width))];
+        return widths.sort((a, b) => a - b);
+    }
+
+    // Get available aspects for a specific width
+    function getAspectsForWidth(width) {
+        const aspects = [...new Set(tireSizes.combinations
+            .filter(combo => combo.width === parseInt(width))
+            .map(combo => combo.aspect))];
+        return aspects.sort((a, b) => a - b);
+    }
+
+    // Get available rims for a specific width and aspect
+    function getRimsForWidthAndAspect(width, aspect) {
+        const rims = [...new Set(tireSizes.combinations
+            .filter(combo => combo.width === parseInt(width) && combo.aspect === parseInt(aspect))
+            .map(combo => combo.rim))];
+        return rims.sort((a, b) => a - b);
+    }
+
+    // Populate width dropdown
+    function populateWidthDropdown() {
+        widthSelect.innerHTML = '<option value="">เลือกความกว้าง</option>';
+        const widths = getUniqueWidths();
+        widths.forEach(width => {
+            const option = document.createElement('option');
+            option.value = width;
+            option.textContent = width;
+            widthSelect.appendChild(option);
+        });
+    }
+
+    // Populate aspect ratio dropdown based on selected width
+    function populateAspectDropdown(selectedWidth) {
+        aspectSelect.innerHTML = '<option value="">เลือกแก้มยาง</option>';
+        if (selectedWidth) {
+            const aspects = getAspectsForWidth(selectedWidth);
+            aspects.forEach(aspect => {
+                const option = document.createElement('option');
+                option.value = aspect;
+                option.textContent = aspect;
+                aspectSelect.appendChild(option);
+            });
+        }
+    }
+
+    // Populate rim diameter dropdown based on selected width and aspect
+    function populateRimDropdown(selectedWidth, selectedAspect) {
+        rimSelect.innerHTML = '<option value="">เลือกขนาดกระทะล้อ</option>';
+        if (selectedWidth && selectedAspect) {
+            const rims = getRimsForWidthAndAspect(selectedWidth, selectedAspect);
+            rims.forEach(rim => {
+                const option = document.createElement('option');
+                option.value = rim;
+                option.textContent = rim;
+                rimSelect.appendChild(option);
+            });
+        }
+    }
+
+    // โหลดข้อมูล tire sizes จากฐานข้อมูล
+    async function loadTireSizes() {
+        try {
+            const response = await fetch('/api/tire-sizes');
+            const data = await response.json();
+            tireSizes = data;
+            console.log('Loaded tire sizes from database:', tireSizes);
+            
+            // Initialize width dropdown หลังจากโหลดข้อมูล
+            populateWidthDropdown();
+        } catch (error) {
+            console.error('Error loading tire sizes:', error);
+            // ใช้ข้อมูล fallback ถ้าโหลดไม่สำเร็จ
+            tireSizes = {
+                combinations: [
+                    { width: 165, aspect: 55, rim: 15 },
+                    { width: 175, aspect: 65, rim: 14 },
+                    { width: 185, aspect: 65, rim: 14 },
+                    { width: 195, aspect: 65, rim: 15 },
+                    { width: 205, aspect: 55, rim: 16 },
+                    { width: 215, aspect: 55, rim: 16 },
+                    { width: 225, aspect: 55, rim: 16 },
+                    { width: 235, aspect: 55, rim: 17 },
+                    { width: 245, aspect: 55, rim: 17 },
+                    { width: 255, aspect: 50, rim: 18 },
+                    { width: 265, aspect: 50, rim: 18 },
+                    { width: 275, aspect: 45, rim: 19 },
+                    { width: 285, aspect: 45, rim: 19 },
+                    { width: 295, aspect: 40, rim: 20 },
+                    { width: 305, aspect: 40, rim: 20 },
+                    { width: 315, aspect: 35, rim: 21 },
+                    { width: 325, aspect: 35, rim: 21 },
+                    { width: 335, aspect: 30, rim: 22 },
+                    { width: 345, aspect: 30, rim: 22 },
+                    { width: 355, aspect: 25, rim: 22 }
+                ]
+            };
+            populateWidthDropdown();
+        }
+    }
+
+    // โหลดข้อมูลและ initialize dropdowns
+    loadTireSizes();
+
+    // Enable/disable dropdowns based on selection
+    widthSelect.addEventListener('change', function() {
+        if (this.value) {
+            // Populate aspect dropdown with available options for selected width
+            populateAspectDropdown(this.value);
+            aspectSelect.disabled = false;
+            aspectSelect.classList.remove('bg-gray-100');
+        } else {
+            aspectSelect.disabled = true;
+            aspectSelect.classList.add('bg-gray-100');
+            aspectSelect.innerHTML = '<option value="">เลือกแก้มยาง</option>';
+            aspectSelect.value = '';
+            rimSelect.disabled = true;
+            rimSelect.classList.add('bg-gray-100');
+            rimSelect.innerHTML = '<option value="">เลือกขนาดกระทะล้อ</option>';
+            rimSelect.value = '';
+            updateSearchButton();
+        }
+    });
+
+    aspectSelect.addEventListener('change', function() {
+        if (this.value) {
+            // Populate rim dropdown with available options for selected width and aspect
+            populateRimDropdown(widthSelect.value, this.value);
+            rimSelect.disabled = false;
+            rimSelect.classList.remove('bg-gray-100');
+        } else {
+            rimSelect.disabled = true;
+            rimSelect.classList.add('bg-gray-100');
+            rimSelect.innerHTML = '<option value="">เลือกขนาดกระทะล้อ</option>';
+            rimSelect.value = '';
+            updateSearchButton();
+        }
+    });
+
+    rimSelect.addEventListener('change', function() {
+        updateSearchButton();
+    });
+
+    // Update search button state
+    function updateSearchButton() {
+        if (widthSelect.value && aspectSelect.value && rimSelect.value) {
+            searchButton.disabled = false;
+            searchButton.classList.remove('bg-gray-400', 'text-gray-600', 'cursor-not-allowed');
+            searchButton.classList.add('bg-yellow-400', 'text-black', 'hover:bg-yellow-300', 'cursor-pointer');
+        } else {
+            searchButton.disabled = true;
+            searchButton.classList.remove('bg-yellow-400', 'text-black', 'hover:bg-yellow-300', 'cursor-pointer');
+            searchButton.classList.add('bg-gray-400', 'text-gray-600', 'cursor-not-allowed');
+        }
+    }
+
+    // ===== CAR MODEL SEARCH FUNCTIONALITY =====
+
+    // Car model dropdowns
+    const carBrandSelect = document.getElementById('carBrandSelect');
+    const carModelSelect = document.getElementById('carModelSelect');
+    const carYearSelect = document.getElementById('carYearSelect');
+    const carSearchButton = document.getElementById('carSearchButton');
+
+    // Car data - จะถูกโหลดจากฐานข้อมูล
+    let carData = {
+        brands: [],
+        models: {},
+        years: []
+    };
+
+        // โหลดข้อมูลยี่ห้อรถจากฐานข้อมูล
+    async function loadCarBrands() {
+        try {
+            const response = await fetch('/api/car-brands');
+            const data = await response.json();
+            carData.brands = data.brands;
+            console.log('Loaded car brands from database:', carData.brands);
+            
+            // Initialize car brand dropdown หลังจากโหลดข้อมูล
+            populateCarBrandDropdown();
+        } catch (error) {
+            console.error('Error loading car brands:', error);
+            // ใช้ข้อมูล fallback ถ้าโหลดไม่สำเร็จ
+            carData.brands = [
+                { id: 1, name: 'Toyota' },
+                { id: 2, name: 'Honda' },
+                { id: 3, name: 'Nissan' },
+                { id: 4, name: 'Mazda' },
+                { id: 5, name: 'Mitsubishi' }
+            ];
+            populateCarBrandDropdown();
+        }
+    }
+
+    // โหลดข้อมูลรุ่นรถตามยี่ห้อ
+    async function loadCarModels(brandId) {
+        try {
+            const response = await fetch(`/api/car-models/${brandId}`);
+            const data = await response.json();
+            carData.models[brandId] = data.models;
+            console.log(`Loaded car models for brand ${brandId}:`, data.models);
+            
+            // Populate car model dropdown
+            populateCarModelDropdown(brandId);
+        } catch (error) {
+            console.error('Error loading car models:', error);
+            carData.models[brandId] = [];
+            populateCarModelDropdown(brandId);
+        }
+    }
+
+    // โหลดข้อมูลปีที่ผลิตตามรุ่นรถ
+    async function loadCarYears(modelId) {
+        try {
+            const response = await fetch(`/api/car-years/${modelId}`);
+            const data = await response.json();
+            console.log('Raw car years data:', data);
+            
+            // ข้อมูลปีที่ได้จาก API เป็น array ของปีโดยตรง
+            if (data.years && Array.isArray(data.years)) {
+                carData.years = data.years;
+            } else {
+                carData.years = [];
+            }
+            
+            console.log(`Loaded car years for model ${modelId}:`, carData.years);
+            
+            // Populate car year dropdown
+            populateCarYearDropdown();
+        } catch (error) {
+            console.error('Error loading car years:', error);
+            carData.years = [];
+            populateCarYearDropdown();
+        }
+    }
+
+    // Populate car brand dropdown
+    function populateCarBrandDropdown() {
+        carBrandSelect.innerHTML = '<option value="">เลือกยี่ห้อรถ</option>';
+        carData.brands.forEach(brand => {
+            const option = document.createElement('option');
+            option.value = brand.id;
+            option.textContent = brand.name;
+            carBrandSelect.appendChild(option);
+        });
+    }
+
+    // Populate car model dropdown
+    function populateCarModelDropdown(brandId) {
+        carModelSelect.innerHTML = '<option value="">เลือกรุ่นรถ</option>';
+        if (brandId && carData.models[brandId]) {
+            carData.models[brandId].forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.id;
+                option.textContent = model.name;
+                carModelSelect.appendChild(option);
+            });
+        }
+    }
+
+    // Populate car year dropdown
+    function populateCarYearDropdown() {
+        carYearSelect.innerHTML = '<option value="">เลือกปีที่ผลิต</option>';
+        if (carData.years && Array.isArray(carData.years)) {
+            carData.years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                carYearSelect.appendChild(option);
+            });
+        }
+        console.log('Populated car year dropdown with:', carData.years);
+    }
+
+    // โหลดข้อมูลยี่ห้อรถและ initialize dropdowns
+    loadCarBrands();
+
+    // Car brand change event
+    carBrandSelect.addEventListener('change', function() {
+        if (this.value) {
+            // โหลดข้อมูลรุ่นรถตามยี่ห้อที่เลือก
+            loadCarModels(this.value);
+            carModelSelect.disabled = false;
+            carModelSelect.classList.remove('bg-gray-100');
+        } else {
+            carModelSelect.innerHTML = '<option value="">เลือกรุ่นรถ</option>';
+            carModelSelect.disabled = true;
+            carModelSelect.classList.add('bg-gray-100');
+            carModelSelect.value = '';
+            carYearSelect.disabled = true;
+            carYearSelect.classList.add('bg-gray-100');
+            carYearSelect.value = '';
+        }
+    });
+
+    // Car model change event
+    carModelSelect.addEventListener('change', function() {
+        if (this.value) {
+            // โหลดข้อมูลปีที่ผลิตตามรุ่นรถที่เลือก
+            loadCarYears(this.value);
+            carYearSelect.disabled = false;
+            carYearSelect.classList.remove('bg-gray-100');
+        } else {
+            carYearSelect.disabled = true;
+            carYearSelect.classList.add('bg-gray-100');
+            carYearSelect.value = '';
+        }
+    });
+
+    // ===== FORM VALIDATION =====
+    
+    // Validate tire size form
+    function validateTireSizeForm() {
+        return widthSelect.value && aspectSelect.value && rimSelect.value;
+    }
+
+    // Validate car model form
+    function validateCarModelForm() {
+        return carBrandSelect.value && carModelSelect.value && carYearSelect.value;
+    }
+
+    // Add form validation
+    const tireSizeForm = contentSize.querySelector('form');
+    const carModelForm = contentModel.querySelector('form');
+    const advancedForm = contentAdvanced.querySelector('form');
+
+    tireSizeForm.addEventListener('submit', function(e) {
+        if (!validateTireSizeForm()) {
+            e.preventDefault();
+            alert('กรุณาเลือกขนาดยางให้ครบถ้วน');
+        }
+    });
+
+    carModelForm.addEventListener('submit', function(e) {
+        if (!validateCarModelForm()) {
+            e.preventDefault();
+            alert('กรุณาเลือกข้อมูลรถให้ครบถ้วน');
+        }
+    });
+
+    advancedForm.addEventListener('submit', function(e) {
+        const searchQuery = advancedForm.querySelector('input[name="search_query"]').value.trim();
+        if (!searchQuery) {
+            e.preventDefault();
+            alert('กรุณาระบุคำที่ต้องการค้นหา');
+        }
+    });
+});
+</script>
+{% endblock %}

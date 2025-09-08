@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+      body, .font-sans, .font-sans * {
+        font-family: 'Noto Sans Thai', sans-serif !important;
+      }
+    </style>
+</head>
+<body class="bg-white min-h-screen font-sans">
+    <main class="flex items-center justify-center min-h-screen bg-white">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+                    {% for message in messages %}
+                        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-2">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <div class="max-w-md mx-auto bg-white p-10 rounded-xl shadow-lg">
+          <div class="text-center mb-8">
+            <img src="{{ url_for('static', filename='uploads/logos/saengjaroen.jpg') }}" alt="Saengjaroen Logo" class="mx-auto h-24 w-auto object-contain">
+          </div>
+          <h1 class="text-2xl font-bold text-green-900 mb-6 text-center">เข้าสู่ระบบ</h1>
+          {% if error %}
+            <div class="mb-4 px-4 py-2 bg-red-100 text-red-700 rounded">{{ error }}</div>
+          {% endif %}
+          <form method="post" autocomplete="off" id="loginForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+            <div class="mb-4">
+              <label class="block font-semibold text-gray-700 mb-1">ชื่อผู้ใช้</label>
+              <input type="text" name="username" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-400" required autofocus>
+            </div>
+            <div class="mb-6">
+              <label class="block font-semibold text-gray-700 mb-1">รหัสผ่าน</label>
+              <input type="password" name="password" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-400" required>
+            </div>
+            <button type="submit" id="submitBtn" class="w-full bg-green-600 text-white py-2 rounded-xl font-bold hover:bg-green-700 transition disabled:opacity-70 disabled:cursor-not-allowed">เข้าสู่ระบบ</button>
+          </form>
+        </div>
+    </main>
+    <script>
+      (function(){
+        const form = document.getElementById('loginForm');
+        const btn = document.getElementById('submitBtn');
+        if(!form || !btn) return;
+        let submitting = false;
+        form.addEventListener('submit', function(){
+          if (submitting) return false;
+          submitting = true;
+          btn.disabled = true;
+          btn.dataset.originalText = btn.textContent;
+          btn.textContent = 'กำลังเข้าสู่ระบบ...';
+        });
+        // เมื่อมี error จาก server จะ render หน้าเดิมใหม่ ทำให้ state ถูก reset โดยอัตโนมัติ
+      })();
+    </script>
+</body>
+</html> 

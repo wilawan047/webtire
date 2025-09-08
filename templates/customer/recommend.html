@@ -1,0 +1,132 @@
+{% extends 'customer/layout.html' %}
+{% block title %}แนะนำยาง | TireWeb{% endblock %}
+{% block content %}
+
+<!-- แสดงข้อความแจ้งเตือน -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-100 border border-red-400 text-red-700{% else %}bg-green-100 border border-green-400 text-green-700{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+<h1 class="text-2xl font-bold mb-4" style="color: #0c5e28;">แนะนำยาง</h1>
+<nav class="text-gray-500 text-base mb-2 flex items-center" aria-label="Breadcrumb">
+    <a href="/" class="font-bold text-[#0c5e28] hover:underline">หน้าแรก</a>
+    <span class="mx-2">›</span>
+    <span class="text-black">แนะนำยาง</span>
+</nav>
+
+<form method="post" class="bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto space-y-6">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div>
+    <label class="block font-semibold mb-2">ลักษณะการใช้งาน<span class="text-red-500">*</span></label>
+    <select name="usage_type_id" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-400 focus:border-transparent" required>
+      <option value="">ลักษณะการใช้งาน</option>
+      {% for usage in usage_types %}
+        <option value="{{ usage.usage_type_id }}" {% if request.form.usage_type_id == usage.usage_type_id|string %}selected{% endif %}>{{ usage.usage_type_name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="block font-semibold mb-2">ยี่ห้อรถ<span class="text-red-500">*</span></label>
+    <select name="car_brand_id" id="brandSelect" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-400 focus:border-transparent" required>
+      <option value="">เลือกยี่ห้อ</option>
+    </select>
+  </div>
+  <div>
+    <label class="block font-semibold mb-2">รุ่นรถ<span class="text-red-500">*</span></label>
+    <select name="car_model_id" id="modelSelect" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-400 focus:border-transparent" required>
+      <option value="">เลือกรุ่นรถ</option>
+    </select>
+  </div>
+   
+   <div class="flex justify-center mt-6">
+     <button type="submit" 
+       class="flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-700 
+              text-white px-6 py-3 rounded-2xl font-medium text-lg 
+              shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300">
+       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+       </svg>
+       ค้นหายาง
+     </button>
+   </div>    
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const brandSelect = document.getElementById('brandSelect');
+  const modelSelect = document.getElementById('modelSelect');
+
+  // โหลดข้อมูลยี่ห้อรถ
+  fetch('/api/car-brands')
+    .then(res => res.json())
+    .then(data => {
+      if (data.brands && data.brands.length > 0) {
+        data.brands.forEach(brand => {
+          const opt = document.createElement('option');
+          opt.value = brand.id;
+          opt.text = brand.name;
+          // ตรวจสอบว่าค่านี้ถูกเลือกไว้หรือไม่
+          if (brand.id == "{{ request.form.car_brand_id|default('') }}") {
+            opt.selected = true;
+          }
+          brandSelect.appendChild(opt);
+        });
+        
+        // ถ้ามีการเลือกยี่ห้อไว้แล้ว ให้โหลดรุ่นรถ
+        const selectedBrandId = "{{ request.form.car_brand_id|default('') }}";
+        if (selectedBrandId) {
+          loadCarModels(selectedBrandId);
+        }
+      }
+    })
+    .catch(error => {
+      console.error('Error loading car brands:', error);
+    });
+
+  // ฟังก์ชันสำหรับโหลดรุ่นรถ
+  function loadCarModels(brandId) {
+    modelSelect.innerHTML = '<option value="">เลือกรุ่นรถ</option>';
+    
+    if (brandId) {
+      fetch(`/api/car-models/${brandId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.models && data.models.length > 0) {
+            data.models.forEach(model => {
+              const opt = document.createElement('option');
+              opt.value = model.id;
+              opt.text = model.name;
+              // ตรวจสอบว่าค่านี้ถูกเลือกไว้หรือไม่
+              if (model.id == "{{ request.form.car_model_id|default('') }}") {
+                opt.selected = true;
+              }
+              modelSelect.appendChild(opt);
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Error loading car models:', error);
+        });
+    }
+  }
+
+  // เมื่อเลือกยี่ห้อ ให้โหลดรุ่นรถ
+  brandSelect.addEventListener('change', function() {
+    const brandId = this.value;
+    loadCarModels(brandId);
+  });
+});
+</script>
+
+
+{% endblock %} 
+
+
+
+

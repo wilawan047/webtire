@@ -1,0 +1,68 @@
+{% extends "staff/layout.html" %}
+{% block title %}รายการจอง{% endblock %}
+{% block content %}
+
+  <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
+    <h1 class="text-2xl font-bold text-green-900 w-full sm:w-auto text-center">{{ page_title }}</h1>
+  </div>
+  <!-- Search and Filter Form -->
+  <form method="get" class="mb-6 flex flex-row items-center gap-2 flex-wrap justify-center">
+    <!-- ฟิลด์วันที่เริ่มต้น -->
+    <input type="date" name="start_date" value="{{ start_date or '' }}" class="border border-green-500 p-2 rounded-md focus:ring-2 focus:ring-green-400 focus:border-green-400" title="วันที่เริ่มต้น">
+    <!-- ฟิลด์วันที่สิ้นสุด -->
+    <input type="date" name="end_date" value="{{ end_date or '' }}" class="border border-green-500 p-2 rounded-md focus:ring-2 focus:ring-green-400 focus:border-green-400" title="วันที่สิ้นสุด">
+    <!-- แก้ไข: ใช้ตัวแปร statuses ที่ส่งมาจาก app.py -->
+    <select name="status" class="border border-green-500 p-2 rounded-md">
+      <option value="">ทุกสถานะ</option>
+      {% for status in statuses %}
+        <option value="{{ status }}" {% if status_filter == status %}selected{% endif %}>{{ status }}</option>
+      {% endfor %}
+    </select>
+    <input type="text" name="search" value="{{ search or '' }}" placeholder="ค้นหาลูกค้าหรือทะเบียนรถ..." class="border border-green-500 p-2 rounded-md w-64 focus:ring-2 focus:ring-green-400 focus:border-green-400">
+    <button class="bg-green-500 text-white px-6 py-2 rounded-xl hover:bg-green-600 active:bg-green-700 transition font-semibold shadow-md flex items-center gap-2" type="submit">
+      <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      ค้นหา
+    </button>
+  </form>
+  <div class="overflow-x-auto mb-8">
+    <table class="min-w-full table-auto rounded-xl shadow-md overflow-hidden text-sm">
+      <thead class="bg-[#e6f4ea]">
+        <tr>
+          <th class="px-4 py-2 text-center align-top">วันที่จอง</th>
+          <th class="px-4 py-2 text-left align-top">ลูกค้า</th>
+          <th class="px-4 py-2 text-left align-top">ทะเบียนรถ</th>
+          <th class="px-4 py-2 text-center align-top">สถานะ</th>
+          <th class="px-4 py-2"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bookings %}
+        <tr class="{% if loop.index0 % 2 == 0 %}bg-white{% else %}bg-[#f0fdf4]{% endif %} hover:bg-green-50 transition border-b border-gray-300">
+          <td class="px-4 py-2 text-center align-top">{{ b.booking_date|date_thai }}</td>
+          <td class="px-4 py-2 text-left align-top">{{ '' if b.first_name in [None, '-', 'None'] else b.first_name }} {{ '' if b.last_name in [None, '-', 'None'] else b.last_name }}</td>
+          <td class="px-4 py-2 text-left align-top">{{ '' if b.license_plate in [None, '-', 'None'] else b.license_plate }}{% if b.license_province %} <span class="text-gray-500">({{ b.license_province }})</span>{% endif %}</td>
+          <!-- ส่วนที่แก้ไข: แสดงสถานะเป็นข้อความธรรมดา -->
+          <td class="px-4 py-2 text-center align-top">
+            <span class="whitespace-nowrap">{{ b.status }}</span>
+          </td>
+          <td class="px-4 py-2 text-center align-top whitespace-nowrap flex flex-row gap-2 justify-center">
+            <a href="{{ url_for('staff.edit_booking', booking_id=b.booking_id) }}" class="inline-flex items-center px-3 py-1 bg-green-500 text-white rounded-xl shadow-md hover:bg-green-600 active:bg-green-700 font-semibold transition" title="แก้ไข">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M16.862 3.487a2.5 2.5 0 113.535 3.535L7.5 19.92l-4.243.707.707-4.243L16.862 3.487z"/><path d="M15 6l3 3" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+            </a>
+            <form action="{{ url_for('staff.delete_booking', booking_id=b.booking_id) }}" method="post" class="inline" onsubmit="return confirm('ยืนยันการลบ?');">
+              <button type="submit" class="inline-flex items-center px-3 py-1 bg-red-500 text-white rounded-xl shadow-md hover:bg-red-600 active:bg-red-700 font-semibold transition" title="ลบ">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 6h18" stroke-width="2" stroke-linecap="round"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m2 0v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6h16z" stroke-width="2"/><path d="M10 11v6M14 11v6" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if bookings|length == 0 %}
+        <tr><td colspan="5" class="text-center text-gray-500 py-4">ไม่พบการจอง</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

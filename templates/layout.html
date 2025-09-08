@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Tire Shop Admin{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="{{ url_for('static', filename='js/page-view-tracker.js') }}"></script>
+    <style>
+      body, .font-sans, .font-sans * {
+        font-family: 'Noto Sans Thai', sans-serif !important;
+      }
+      
+      /* ซ่อน scrollbar แต่ยังคงสามารถเลื่อนได้ */
+      .scrollbar-hide {
+        -ms-overflow-style: none;  /* Internet Explorer 10+ */
+        scrollbar-width: none;  /* Firefox */
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;  /* Safari and Chrome */
+      }
+    </style>
+</head>
+<body class="bg-[#f4f7fa] min-h-screen font-sans">
+    <div class="flex min-h-screen">
+      <!-- Sidebar Navigation -->
+      <nav class="fixed top-0 left-0 h-screen w-20 md:w-56 bg-white shadow-lg border-r flex flex-col justify-between py-6 px-2 z-30">
+        <div class="flex flex-col h-full">
+          <div class="flex-shrink-0">
+            <a href="/admin/dashboard" class="flex items-center gap-2 px-2 mb-8 group" title="ไปหน้าแดชบอร์ด" @click="$parent.open = false">
+              <img src="{{ url_for('static', filename='uploads/logos/saengjaroen.jpg') }}"
+              alt="TIREWEB Logo"
+              class="h-8 w-auto md:h-10 object-contain">
+              <span class="text-sm md:text-base font-bold text-green-900 whitespace-nowrap">TYREPLUS BSG</span>
+            </a>
+          </div>
+          <div class="flex-1 overflow-y-auto scrollbar-hide">
+            <ul class="flex flex-col gap-2 pb-4">
+            <li x-data="{ open: false }" x-init="open = {% if '/admin/dashboard' in request.path or '/admin/website-stats' in request.path or '/admin/booking-report' in request.path %}true{% else %}false{% endif %}">
+              <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-lg font-semibold text-green-900 hover:bg-green-50 transition cursor-pointer {% if '/admin/dashboard' in request.path or '/admin/website-stats' in request.path %}bg-green-100{% endif %}" @click="open = !open">
+                <div class="flex items-center gap-3">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8v-8h-8zm0-18v6h8V3z"/></svg>
+                  <span class="hidden md:inline">สรุปผลข้อมูล</span>
+                </div>
+                <svg class="w-4 h-4 hidden md:block transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
+              <div x-show="open" 
+                   x-transition:enter="transition ease-out duration-200"
+                   x-transition:enter-start="opacity-0 max-h-0"
+                   x-transition:enter-end="opacity-100 max-h-32"
+                   x-transition:leave="transition ease-in duration-150"
+                   x-transition:leave-start="opacity-100 max-h-32"
+                   x-transition:leave-end="opacity-0 max-h-0"
+                   class="overflow-hidden">
+                <a href="/admin/dashboard" class="flex items-center gap-3 px-4 py-3 ml-4 md:ml-8 text-sm text-green-900 hover:bg-green-50 transition {% if request.path=='/admin/dashboard' %}bg-green-100{% endif %}">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                  </svg>
+                  <span class="hidden md:inline">สรุปผลข้อมูล</span>
+                </a>
+                <a href="/admin/website-stats" class="flex items-center gap-3 px-4 py-3 ml-4 md:ml-8 text-sm text-green-900 hover:bg-green-50 transition {% if '/admin/website-stats' in request.path %}bg-green-100{% endif %}">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                  </svg>
+                  <span>สถิติผู้เข้าชม</span>
+                </a>
+                <a href="/admin/booking-report" class="flex items-center gap-3 px-4 py-3 ml-4 md:ml-8 text-sm text-green-900 hover:bg-green-50 transition {% if '/admin/booking-report' in request.path %}bg-green-100{% endif %}">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <span>รายงานการจอง</span>
+                </a>
+              </div>
+            </li>
+            <li><a href="/admin/bookings" class="flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-green-900 hover:bg-green-50 transition {% if '/admin/bookings' in request.path %}bg-green-100{% endif %}" @click="$parent.open = false"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="hidden md:inline">การจอง</span></a></li>
+            <li><a href="/admin/promotions" class="flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-green-900 hover:bg-green-50 transition {% if '/admin/promotions' in request.path %}bg-green-100{% endif %}" @click="$parent.open = false"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span class="hidden md:inline">โปรโมชัน</span></a></li>
+            <li><a href="/admin/customers" class="flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-green-900 hover:bg-green-50 transition {% if '/admin/customers' in request.path %}bg-green-100{% endif %}" @click="$parent.open = false"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a4 4 0 0 0-3-3.87M9 20H4v-2a4 4 0 0 1 3-3.87m6-2.13a4 4 0 1 0-8 0 4 4 0 0 0 8 0zm6 2.13A4 4 0 0 0 17 20M9 20a4 4 0 0 0 8 0"/></svg><span class="hidden md:inline">ลูกค้า</span></a></li>
+            <li><a href="/admin/tires" class="flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-green-900 hover:bg-green-50 transition {% if '/admin/tires' in request.path %}bg-green-100{% endif %}" @click="$parent.open = false"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span class="hidden md:inline">รายการยาง</span></a></li>
+            <li><a href="/admin/users" class="flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-green-900 hover:bg-green-50 transition {% if '/admin/users' in request.path %}bg-green-100{% endif %}" @click="$parent.open = false"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a7.5 7.5 0 0 1 13 0"/></svg><span class="hidden md:inline">จัดการผู้ใช้</span></a></li>
+            </ul>
+          </div>  
+        </div>
+      </nav>
+
+      <!-- Main Content Area -->
+      <div class="flex-1 flex flex-col min-h-screen ml-20 md:ml-56">
+        <!-- Top Bar -->
+        <div class="flex justify-end items-center h-20 px-8 bg-[#f4f7fa] border-b border-gray-200">
+          <div class="text-gray-500 text-sm font-medium flex-1">{{ now.strftime('%A, %d %B %Y') if now else '' }}</div>
+          {% if session.get('username') %}
+            <div x-data="{ open: false }" class="relative flex items-center gap-3">
+              
+              <!-- ✅ Avatar / Fallback -->
+              {% if session.get('avatar') %}
+                <img src="{{ url_for('static', filename='uploads/profile/' + session['avatar']) }}"
+                     class="w-12 h-12 rounded-full object-cover border-2 border-green-700">
+              {% else %}
+                <div class="w-12 h-12 rounded-full bg-green-200 flex items-center justify-center text-green-900 text-xl font-bold">
+                  {{ session.get('user', '')[:1]|upper }}
+                </div>
+              {% endif %}
+
+              <button @click="open = !open" class="inline-flex items-center text-base text-gray-700 font-semibold focus:outline-none gap-1">
+                {{ session.get('username', 'Guest') }}
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              <div x-show="open" @click.away="open = false" class="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border z-50 py-2 text-sm" x-transition>
+                <!-- Actions -->
+                <a href="/admin/profile" class="block px-4 py-2 text-gray-700 hover:bg-green-50 transition">แก้ไขข้อมูลผู้ใช้</a>
+                <a href="{{ url_for('admin.admin_logout') }}" class="block px-4 py-2 text-red-600 hover:bg-red-50 transition"> ออกจากระบบ</a>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+        <main class="flex-1 py-6 pl-6 md:pl-8 lg:pl-12 pr-4 md:pr-8 lg:pr-12">
+          {% block content %}{% endblock %}
+        </main>
+      </div>
+    </div>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

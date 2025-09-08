@@ -1,0 +1,186 @@
+{% extends 'layout.html' %}
+{% block title %}รายการยาง{% endblock %}
+{% block content %}
+  <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
+    <h1 class="text-2xl font-bold text-green-900 w-full sm:w-auto text-center">รายการยาง</h1>
+    <a href="{{ url_for('admin.add_tire') }}" class="bg-green-500 text-white px-4 py-2 rounded-xl shadow-md hover:bg-green-600 active:bg-green-700 font-semibold transition whitespace-nowrap">+ เพิ่มยาง</a>
+  </div>
+  <form method="get" class="mb-4 flex flex-row items-center gap-2 flex-wrap justify-center">
+    <select name="filter" class="border border-green-500 p-2 rounded-md">
+      <option value="brand" {% if filter_by == 'brand' %}selected{% endif %}>ยี่ห้อ</option>
+      <option value="model" {% if filter_by == 'model' %}selected{% endif %}>รุ่น</option>
+      <option value="width" {% if filter_by == 'width' %}selected{% endif %}>ความกว้าง</option>
+      <option value="aspect_ratio" {% if filter_by == 'aspect_ratio' %}selected{% endif %}>ซีรี่ส์</option>
+      <option value="rim_diameter" {% if filter_by == 'rim_diameter' %}selected{% endif %}>ขอบล้อ</option>
+      <option value="full_size" {% if filter_by == 'full_size' %}selected{% endif %}>ขนาดเต็ม</option>
+      <option value="price_each" {% if filter_by == 'price_each' %}selected{% endif %}>ราคาต่อเส้น</option>
+    </select>
+    <input type="text" name="search" value="{{ search or '' }}" placeholder="ค้นหายาง..." class="border border-green-500 p-2 rounded-md w-64 focus:ring-2 focus:ring-green-400 focus:border-green-400">
+    <button class="bg-green-500 text-white px-6 py-2 rounded-xl hover:bg-green-600 active:bg-green-700 transition font-semibold shadow-md flex items-center gap-2" type="submit">
+      <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      ค้นหา
+    </button>
+  </form>
+  <div class="overflow-x-auto">
+    <table class="min-w-full table-auto rounded-xl shadow-md overflow-hidden text-xs sm:text-base">
+      <thead class="bg-[#e6f4ea] text-[#1b5e20]">
+        <tr>
+          <th class="px-2 py-3 whitespace-nowrap w-12 text-center">ลำดับ</th>
+          <th class="px-2 py-3 whitespace-nowrap w-20 text-center">รูปภาพ</th>
+          {% set sort_icon = {'asc': '\u25b2', 'desc': '\u25bc'} %}
+          {% set base_params = 'filter=' ~ filter_by|urlencode ~ '&search=' ~ search|urlencode ~ '&page=' ~ page if search and filter_by else 'page=' ~ page %}
+          <th class="px-2 py-3 whitespace-nowrap min-w-max text-center">
+            <a href="?{{ base_params }}&sort=brand_name&direction={{ 'desc' if sort == 'brand_name' and direction == 'asc' else 'asc' }}" class="hover:underline flex items-center justify-center">
+              ยี่ห้อ {% if sort == 'brand_name' %}<span class="ml-1 text-xs">{{ sort_icon[direction] }}</span>{% endif %}
+            </a>
+          </th>
+          <th class="px-2 py-3 whitespace-nowrap min-w-max text-center">
+            <a href="?{{ base_params }}&sort=model_name&direction={{ 'desc' if sort == 'model_name' and direction == 'asc' else 'asc' }}" class="hover:underline flex items-center justify-center">
+              รุ่น {% if sort == 'model_name' %}<span class="ml-1 text-xs">{{ sort_icon[direction] }}</span>{% endif %}
+            </a>
+          </th>
+          <th class="px-2 py-3 whitespace-nowrap min-w-max text-center">
+            <a href="?{{ base_params }}&sort=full_size&direction={{ 'desc' if sort == 'full_size' and direction == 'asc' else 'asc' }}" class="hover:underline flex items-center justify-center">
+              ขนาด {% if sort == 'full_size' %}<span class="ml-1 text-xs">{{ sort_icon[direction] }}</span>{% endif %}
+            </a>
+          </th>
+          <th class="px-2 py-3 whitespace-nowrap min-w-max text-center">
+            <a href="?{{ base_params }}&sort=price_each&direction={{ 'desc' if sort == 'price_each' and direction == 'asc' else 'asc' }}" class="hover:underline flex items-center justify-center">
+              ราคาต่อเส้น {% if sort == 'price_each' %}<span class="ml-1 text-xs">{{ sort_icon[direction] }}</span>{% endif %}
+            </a>
+          </th>
+          <th class="px-2 py-3 whitespace-nowrap min-w-max text-center">ราคาต่อชุด</th>
+          <th class="px-2 py-3 whitespace-nowrap min-w-max text-center">
+            <a href="?{{ base_params }}&sort=product_date&direction={{ 'desc' if sort == 'product_date' and direction == 'asc' else 'asc' }}" class="hover:underline flex items-center justify-center">
+              วันที่ผลิต {% if sort == 'product_date' %}<span class="ml-1 text-xs">{{ sort_icon[direction] }}</span>{% endif %}
+            </a>
+          </th>
+          <th class="px-2 py-3 text-center w-24"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tires %}
+        <tr class="{% if loop.index0 % 2 == 0 %}bg-white{% else %}bg-[#f0fdf4]{% endif %} hover:bg-green-50 transition">
+          <td class="px-2 py-2 text-center font-semibold text-green-700 whitespace-nowrap">{{ (page - 1) * 10 + loop.index }}</td>
+          <td class="px-2 py-2 text-center whitespace-nowrap">
+            {% if t.tire_image_url %}
+              <img src="{{ url_for('static', filename='uploads/tires/' ~ t.tire_image_url) }}" alt="รูปยาง" class="h-12 w-12 object-contain mx-auto rounded shadow border">
+            {% else %}
+              <img src="{{ url_for('static', filename='uploads/tires/no-image.png') }}" alt="รูปยางเริ่มต้น" class="h-12 w-12 object-contain mx-auto rounded shadow border opacity-50">
+            {% endif %}
+          </td>
+          <td class="px-2 py-2 whitespace-nowrap">{{ t.brand_name if t.brand_name is not none else '' }}</td>
+          <td class="px-2 py-2 whitespace-nowrap">{{ t.model_name if t.model_name is not none else '' }}</td>
+          <td class="px-2 py-2 whitespace-nowrap">{{ t.full_size if t.full_size is not none else '' }}</td>
+          <td class="px-2 py-2 whitespace-nowrap">{{ t.price_each if t.price_each is not none else '' }}</td>
+          <td class="px-2 py-2 whitespace-nowrap">{{ t.price_set if t.price_set is not none else '' }}</td>
+          <td class="px-2 py-2 whitespace-nowrap">{{ t.product_date if t.product_date else '' }}</td>
+          <td class="px-2 py-2 text-center whitespace-nowrap flex flex-row gap-2 justify-center w-24">
+            <a href="{{ url_for('admin.edit_tire', tire_id=t.tire_id, page=page) }}" class="inline-flex items-center px-3 py-1 bg-green-500 text-white rounded-xl shadow-md hover:bg-green-600 active:bg-green-700 font-semibold transition" title="แก้ไข">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M16.862 3.487a2.5 2.5 0 113.535 3.535L7.5 19.92l-4.243.707.707-4.243L16.862 3.487z"/><path d="M15 6l3 3" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+            </a>
+            <button type="button" onclick="showDeleteModal('{{ t.tire_id }}', '{{ t.brand_name }} {{ t.model_name }} {{ t.full_size }}')" class="inline-flex items-center px-3 py-1 bg-red-500 text-white rounded-xl shadow-md hover:bg-red-600 active:bg-red-700 font-semibold transition" title="ลบ">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 6h18" stroke-width="2" stroke-linecap="round"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m2 0v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6h16z" stroke-width="2"/><path d="M10 11v6M14 11v6" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if total_pages > 1 %}
+  <div class="flex flex-wrap justify-center mt-8 gap-2">
+    {% set search_param = '&filter=' ~ filter_by|urlencode ~ '&search=' ~ search|urlencode if search and filter_by %}
+    <a href="?page=1{{ search_param|default('') }}" class="px-3 py-1 rounded-l border bg-[#e6f4ea] hover:bg-green-200 transition {% if page == 1 %}text-gray-400 pointer-events-none{% endif %}">หน้าแรก</a>
+    <a href="?page={{ page-1 }}{{ search_param|default('') }}" class="px-3 py-1 border bg-[#e6f4ea] hover:bg-green-200 transition {% if page == 1 %}text-gray-400 pointer-events-none{% endif %}">ก่อนหน้า</a>
+    {% for p in range(1, total_pages+1) %}
+      {% if p == page %}
+        <span class="px-3 py-1 border bg-[#4caf50] text-white">{{ p }}</span>
+      {% elif p <= 2 or p > total_pages-2 or (p >= page-1 and p <= page+1) %}
+        <a href="?page={{ p }}{{ search_param|default('') }}" class="px-3 py-1 border bg-[#e6f4ea] hover:bg-green-200 transition">{{ p }}</a>
+      {% elif p == 3 and page > 4 %}
+        <span class="px-2">...</span>
+      {% elif p == total_pages-2 and page < total_pages-3 %}
+        <span class="px-2">...</span>
+      {% endif %}
+    {% endfor %}
+    <a href="?page={{ page+1 }}{{ search_param|default('') }}" class="px-3 py-1 border bg-[#e6f4ea] hover:bg-green-200 transition {% if page == total_pages %}text-gray-400 pointer-events-none{% endif %}">ถัดไป</a>
+    <a href="?page={{ total_pages }}{{ search_param|default('') }}" class="px-3 py-1 rounded-r border bg-[#e6f4ea] hover:bg-green-200 transition {% if page == total_pages %}text-gray-400 pointer-events-none{% endif %}">หน้าสุดท้าย</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center backdrop-blur-sm">
+  <div class="bg-white rounded-2xl p-8 max-w-sm w-auto mx-4 shadow-2xl border-0 transform transition-all duration-300 scale-100">
+    <div class="text-center">
+      <!-- Icon -->
+      <div class="mx-auto mb-4 w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+        </svg>
+      </div>
+      
+      <!-- Title -->
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">ยืนยันการลบ</h3>
+      
+      <!-- Message -->
+      <p class="text-gray-600 mb-8 text-base leading-relaxed">คุณต้องการลบข้อมูลยางนี้หรือไม่?</p>
+      
+      <!-- Buttons -->
+      <div class="flex justify-center space-x-4">
+        <button onclick="hideDeleteModal()" class="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 hover:scale-105 transition-all duration-200 font-medium min-w-[80px] border border-gray-200">
+          ยกเลิก
+        </button>
+        <form id="deleteForm" method="post" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 hover:scale-105 transition-all duration-200 font-medium min-w-[80px] shadow-lg">
+            ตกลง
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentTireId = null;
+
+function showDeleteModal(tireId, tireInfo) {
+  currentTireId = tireId;
+  const modal = document.getElementById('deleteModal');
+  const form = document.getElementById('deleteForm');
+  
+  // Set the form action
+  form.action = "{{ url_for('admin.delete_tire', tire_id=0) }}".replace('0', tireId);
+  
+  // Show modal
+  modal.classList.remove('hidden');
+}
+
+function hideDeleteModal() {
+  const modal = document.getElementById('deleteModal');
+  modal.classList.add('hidden');
+  currentTireId = null;
+}
+
+// Close modal when clicking outside
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    hideDeleteModal();
+  }
+});
+
+// แสดงข้อความยืนยันถ้าเพิ่งเพิ่มข้อมูลยาง
+if (sessionStorage.getItem('tire_added') === '1') {
+    const msg = document.createElement('div');
+    msg.textContent = 'เพิ่มข้อมูลยางสำเร็จ!';
+    msg.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 text-lg font-bold';
+    document.body.appendChild(msg);
+    setTimeout(() => {
+        msg.remove();
+    }, 2500);
+    sessionStorage.removeItem('tire_added');
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,95 @@
+{% extends 'layout.html' %}
+{% block title %}จัดการโปรโมชัน{% endblock %}
+{% block content %}
+<div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
+  <h1 class="text-2xl font-bold text-green-900 w-full sm:w-auto text-center">จัดการโปรโมชัน</h1>
+    <a href="{{ url_for('admin.add_promotion') }}" class="bg-green-500 text-white px-4 py-2 rounded-xl shadow-md hover:bg-green-600 active:bg-green-700 font-semibold transition whitespace-nowrap">+ เพิ่มโปรโมชัน</a>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    {% for p in promotions %}
+      <div class="flex flex-col items-center bg-white rounded-xl shadow p-4 border border-gray-200">
+        {% if p.image_url %}
+          <img src="{{ url_for('static', filename='uploads/promotions/' ~ p.image_url) }}" alt="รูปโปรโมชัน" class="w-full h-48 object-contain rounded-lg mb-2 bg-gray-50" />
+        {% else %}
+          <div class="w-full h-48 flex items-center justify-center bg-gray-100 rounded-lg mb-2 text-gray-400">ไม่มีรูป</div>
+        {% endif %}
+        <div class="font-bold text-lg mt-2 mb-1 text-green-900">{{ p.title or '' }}</div>
+        <div class="mb-2 text-gray-700">{{ p.description or '' }}</div>
+        <div class="text-xs text-gray-500 mb-2">
+          {{ p.start_date|date_thai }} - {{ p.end_date|date_thai }}
+        </div>
+        <div class="flex flex-row gap-2 mt-2">
+          <a href="{{ url_for('admin.edit_promotion', promotion_id=p.promotion_id) }}" class="inline-flex items-center px-3 py-1 bg-green-500 text-white rounded-xl shadow-md hover:bg-green-600 active:bg-green-700 font-semibold transition" title="แก้ไข">
+            แก้ไข
+          </a>
+          <button type="button" onclick="showDeleteModal('{{ p.promotion_id }}', '{{ p.title }}')" class="inline-flex items-center px-3 py-1 bg-red-500 text-white rounded-xl shadow-md hover:bg-red-600 active:bg-red-700 font-semibold transition" title="ลบ">
+            ลบ
+          </button>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center backdrop-blur-sm">
+  <div class="bg-white rounded-2xl p-8 max-w-sm w-auto mx-4 shadow-2xl border-0 transform transition-all duration-300 scale-100">
+    <div class="text-center">
+      <!-- Icon -->
+      <div class="mx-auto mb-4 w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+        </svg>
+      </div>
+      
+      <!-- Title -->
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">ยืนยันการลบ</h3>
+      
+      <!-- Message -->
+      <p class="text-gray-600 mb-8 text-base leading-relaxed">คุณต้องการลบโปรโมชันนี้หรือไม่?</p>
+      
+      <!-- Buttons -->
+      <div class="flex justify-center space-x-4">
+        <button onclick="hideDeleteModal()" class="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 hover:scale-105 transition-all duration-200 font-medium min-w-[80px] border border-gray-200">
+          ยกเลิก
+        </button>
+        <form id="deleteForm" method="post" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 hover:scale-105 transition-all duration-200 font-medium min-w-[80px] shadow-lg">
+            ตกลง
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentPromotionId = null;
+
+function showDeleteModal(promotionId, promotionTitle) {
+  currentPromotionId = promotionId;
+  const modal = document.getElementById('deleteModal');
+  const form = document.getElementById('deleteForm');
+  
+  // Set the form action
+  form.action = "{{ url_for('admin.delete_promotion', promotion_id=0) }}".replace('0', promotionId);
+  
+  // Show modal
+  modal.classList.remove('hidden');
+}
+
+function hideDeleteModal() {
+  const modal = document.getElementById('deleteModal');
+  modal.classList.add('hidden');
+  currentPromotionId = null;
+}
+
+// Close modal when clicking outside
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    hideDeleteModal();
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,242 @@
+{% extends 'layout.html' %}
+{% block title %}แดชบอร์ด{% endblock %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+{% block content %}
+
+  <h1 class="text-2xl font-bold text-green-900 mb-2 tracking-tight">แดชบอร์ด</h1>
+  <div class="text-lg text-gray-600 mb-8">ยินดีต้อนรับเข้าสู่ระบบจัดการร้านบุรีรัมย์แสงเจริญการยาง</div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <!-- Card: ลูกค้าทั้งหมด -->
+    <div class="bg-white/80 backdrop-blur rounded-2xl p-4 shadow-xl border border-green-100 flex flex-col items-center hover:shadow-2xl transition">
+      <div class="bg-green-100 rounded-full p-3 mb-3">
+        <svg class="w-8 h-8 text-green-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a4 4 0 0 0-3-3.87M9 20H4v-2a4 4 0 0 1 3-3.87m6-2.13a4 4 0 1 0-8 0 4 4 0 0 0 8 0zm6 2.13A4 4 0 0 0 17 20M9 20a4 4 0 0 0 8 0"/></svg>
+      </div>
+      <span class="text-lg font-semibold text-green-800 mb-1">ลูกค้าทั้งหมด</span>
+      <span class="text-3xl md:text-4xl font-extrabold text-green-900">{{ total_customers }}</span>
+    </div>
+    <!-- Card: การจองทั้งหมด -->
+    <div class="bg-white/80 backdrop-blur rounded-2xl p-4 shadow-xl border border-green-100 flex flex-col items-center hover:shadow-2xl transition">
+      <div class="bg-green-100 rounded-full p-3 mb-3">
+        <svg class="w-8 h-8 text-green-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      </div>
+      <span class="text-lg font-semibold text-green-800 mb-1">การจองทั้งหมด</span>
+      <span class="text-3xl md:text-4xl font-extrabold text-green-900">{{ total_bookings }}</span>
+    </div>
+  </div>
+  <!-- กราฟสถิติ -->
+  <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="bg-white/80 backdrop-blur rounded-2xl p-4 shadow-xl border border-green-100">
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-6 h-6 text-green-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/><path d="M9 17v-6M15 17v-2"/></svg>
+        <span class="font-bold text-green-900 text-lg">สถิติรายเดือน (เส้น)</span>
+      </div>
+      <div class="h-64">
+        <canvas id="dashboardChart"></canvas>
+      </div>      
+    </div>
+    <div class="bg-white/80 backdrop-blur rounded-2xl p-4 shadow-xl border border-green-100">
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-6 h-6 text-green-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M7 7h10v10H7z"/></svg>
+        <span class="font-bold text-green-900 text-lg">จำนวนการจองแต่ละเดือน (แท่ง)</span>
+      </div>
+      <div class="h-64">
+        <canvas id="bookingBarChart"></canvas>
+      </div>      
+    </div>
+  </div>
+  
+  <!-- Quick Actions -->
+  <div class="mt-8 bg-white/80 backdrop-blur rounded-2xl p-6 shadow-xl border border-green-100">
+    <h2 class="text-lg font-bold text-green-900 mb-4">การจัดการระบบ</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <a href="{{ url_for('admin.customer_list') }}" class="flex items-center p-3 bg-green-50 rounded-lg hover:bg-green-100 transition">
+        <svg class="w-6 h-6 text-green-700 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 0 0-3-3.87M9 20H4v-2a4 4 0 0 1 3-3.87m6-2.13a4 4 0 1 0-8 0 4 4 0 0 0 8 0zm6 2.13A4 4 0 0 0 17 20M9 20a4 4 0 0 0 8 0"></path>
+        </svg>
+        <span class="text-green-800 font-medium">จัดการลูกค้า</span>
+      </a>
+      <a href="{{ url_for('admin.tire_list') }}" class="flex items-center p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+        <svg class="w-6 h-6 text-blue-700 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+        </svg>
+        <span class="text-blue-800 font-medium">จัดการยาง</span>
+      </a>
+      <a href="{{ url_for('admin.promotion_list') }}" class="flex items-center p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition">
+        <svg class="w-6 h-6 text-yellow-700 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path>
+        </svg>
+        <span class="text-yellow-800 font-medium">จัดการโปรโมชัน</span>
+      </a>
+    </div>
+  </div>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('Dashboard script loaded');
+    
+    fetch('/admin/dashboard/chart-data')
+      .then(res => {
+        console.log('Response status:', res.status);
+        return res.json();
+      })
+      .then(data => {
+        console.log('Chart data:', data);
+        
+        // Line Chart
+        const ctx = document.getElementById('dashboardChart');
+        if (ctx) {
+          const lineChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: data.labels || [],
+              datasets: [
+                {
+                  label: 'การจอง',
+                  data: data.bookings || [],
+                  borderColor: '#22c55e',
+                  backgroundColor: 'rgba(34,197,94,0.1)',
+                  tension: 0.4,
+                  fill: true,
+                  pointRadius: 4,
+                  pointBackgroundColor: '#22c55e',
+                  pointBorderColor: '#fff',
+                  pointHoverRadius: 6
+                },
+                {
+                  label: 'ลูกค้าใหม่',
+                  data: data.customers || [],
+                  borderColor: '#0ea5e9',
+                  backgroundColor: 'rgba(14,165,233,0.1)',
+                  tension: 0.4,
+                  fill: true,
+                  pointRadius: 4,
+                  pointBackgroundColor: '#0ea5e9',
+                  pointBorderColor: '#fff',
+                  pointHoverRadius: 6
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { 
+                  display: true, 
+                  position: 'top',
+                  labels: {
+                    font: {
+                      family: "'Noto Sans Thai', sans-serif",
+                      size: 12
+                    }
+                  }
+                },
+                tooltip: { 
+                  enabled: true,
+                  titleFont: {
+                    family: "'Noto Sans Thai', sans-serif",
+                    size: 14
+                  },
+                  bodyFont: {
+                    family: "'Noto Sans Thai', sans-serif",
+                    size: 12
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  ticks: {
+                    font: {
+                      family: "'Noto Sans Thai', sans-serif",
+                      size: 11
+                    }
+                  }
+                },
+                y: { 
+                  beginAtZero: true, 
+                  ticks: { 
+                    stepSize: 1,
+                    font: {
+                      family: "'Noto Sans Thai', sans-serif",
+                      size: 11
+                    }
+                  } 
+                }
+              }
+            }
+          });
+          console.log('Line chart created');
+        } else {
+          console.error('dashboardChart canvas not found');
+        }
+        
+        // Bar Chart (Booking)
+        const barCtx = document.getElementById('bookingBarChart');
+        if (barCtx) {
+          const barChart = new Chart(barCtx, {
+            type: 'bar',
+            data: {
+              labels: data.labels || [],
+              datasets: [
+                {
+                  label: 'จำนวนการจอง',
+                  data: data.bookings || [],
+                  backgroundColor: 'rgba(34,197,94,0.7)',
+                  borderColor: '#22c55e',
+                  borderWidth: 1,
+                  borderRadius: 8,
+                  maxBarThickness: 32
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: { 
+                  enabled: true,
+                  titleFont: {
+                    family: "'Noto Sans Thai', sans-serif",
+                    size: 14
+                  },
+                  bodyFont: {
+                    family: "'Noto Sans Thai', sans-serif",
+                    size: 12
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  ticks: {
+                    font: {
+                      family: "'Noto Sans Thai', sans-serif",
+                      size: 11
+                    }
+                  }
+                },
+                y: { 
+                  beginAtZero: true, 
+                  ticks: { 
+                    stepSize: 1,
+                    font: {
+                      family: "'Noto Sans Thai', sans-serif",
+                      size: 11
+                    }
+                  } 
+                }
+              }
+            }
+          });
+          console.log('Bar chart created');
+        } else {
+          console.error('bookingBarChart canvas not found');
+        }
+      })
+      .catch(error => {
+        console.error('Error loading chart data:', error);
+      });
+  });
+</script>
+{% endblock %} 

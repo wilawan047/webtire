@@ -1,0 +1,125 @@
+import os
+import re
+import json
+from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
+import scrypt
+from urllib.parse import urlparse, urljoin
+from flask import request, current_app
+
+def allowed_file(filename):
+    """ตรวจสอบนามสกุลไฟล์ที่อนุญาต"""
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
+
+def verify_scrypt_password(password, hash_string):
+    """ตรวจสอบรหัสผ่าน scrypt"""
+    try:
+        if hash_string.startswith('scrypt:'):
+            # แยกส่วนของ hash string
+            parts = hash_string.split('$')
+            if len(parts) >= 3:
+                # scrypt:N:r:p$salt$hash
+                params = parts[0].split(':')
+                if len(params) >= 4:
+                    N = int(params[1])
+                    r = int(params[2])
+                    p = int(params[3])
+                    salt = parts[1]
+                    stored_hash = parts[2]
+                    
+                    # สร้าง hash ใหม่จาก password และ salt
+                    new_hash = scrypt.hash(password, salt, N=N, r=r, p=p)
+                    
+                    # เปรียบเทียบ hash
+                    return new_hash == stored_hash
+    except Exception as e:
+        print(f"Error verifying scrypt password: {e}")
+    return False
+
+def verify_password(password, hash_string):
+    """ตรวจสอบรหัสผ่าน"""
+    if not hash_string:
+        return False
+    
+    # ใช้ werkzeug.security สำหรับการตรวจสอบรหัสผ่าน
+    return check_password_hash(hash_string, password)
+
+def validate_booking_status(status):
+    """ตรวจสอบสถานะการจอง"""
+    valid_statuses = ['รอดำเนินการ', 'สำเร็จ', 'ยกเลิก']
+    return status in valid_statuses
+
+def validate_gender(gender):
+    """ตรวจสอบเพศ"""
+    valid_genders = ['ชาย', 'หญิง', 'ไม่ระบุ']
+    return gender in valid_genders
+
+def validate_tire_load_type(load_type):
+    """ตรวจสอบประเภทโหลดยาง"""
+    valid_types = ['Standard Load', 'Extra Load', 'Light Load']
+    return load_type in valid_types
+
+def validate_service_tire_position(position):
+    """ตรวจสอบตำแหน่งยาง"""
+    valid_positions = ['หน้า', 'หลัง', 'หน้าซ้าย', 'หน้าขวา', 'หลังซ้าย', 'หลังขวา']
+    return position in valid_positions
+
+def validate_pagination_params(page, per_page):
+    """ตรวจสอบพารามิเตอร์ pagination"""
+    try:
+        page = int(page) if page else 1
+        per_page = int(per_page) if per_page else current_app.config['DEFAULT_PER_PAGE']
+        
+        page = max(1, page)
+        per_page = min(current_app.config['MAX_PER_PAGE'], max(1, per_page))
+        
+        return page, per_page
+    except (ValueError, TypeError):
+        return 1, current_app.config['DEFAULT_PER_PAGE']
+
+def validate_sort_params(sort, direction, allowed_fields):
+    """ตรวจสอบพารามิเตอร์ sorting"""
+    if sort not in allowed_fields:
+        sort = allowed_fields[0]
+    
+    direction = direction.upper() if direction else 'ASC'
+    if direction not in ['ASC', 'DESC']:
+        direction = 'ASC'
+    
+    return sort, direction
+
+def is_safe_url(target):
+    """ตรวจสอบ URL ว่าปลอดภัยหรือไม่"""
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and \
+           ref_url.netloc == test_url.netloc
+
+def get_device_type(user_agent):
+    """ตรวจสอบประเภทอุปกรณ์"""
+    user_agent = user_agent.lower()
+    
+    if 'mobile' in user_agent or 'android' in user_agent or 'iphone' in user_agent:
+        return 'mobile'
+    elif 'tablet' in user_agent or 'ipad' in user_agent:
+        return 'tablet'
+    else:
+        return 'desktop'
+
+def get_brand_name(brand_id):
+    """ฟังก์ชันช่วยในการแปลง brand_id เป็น brand_name"""
+    if not brand_id:
+        return ''
+    
+    try:
+        with open('static/data/vehicle_brands_models.json', encoding='utf-8') as f:
+            brands_data = json.load(f)
+        for brand in brands_data['brands']:
+            if str(brand['brand_id']) == str(brand_id):
+                return brand['brand_name']
+    except Exception as e:
+        print(f"Error getting brand name: {e}")
+    
+    return ''
+

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}TireWeb{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="{{ url_for('static', filename='js/page-view-tracker.js') }}"></script>
+  <style>
+    body, .font-sans, .font-sans * {
+      font-family: 'Noto Sans Thai', sans-serif !important;
+    }
+  </style>
+  {% block head %}{% endblock %}
+
+  <style>
+    #profileDropdown {
+      z-index: 9999 !important;
+    }
+  </style>
+  
+</head>
+<body class="min-h-screen flex flex-col font-sans" style="background-color: #fcfcfc;">
+
+  <!-- Header -->
+  <header class="w-full" style="background-color: #0c5e28;">
+    <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+      <!-- Logo -->
+      <img src="{{ url_for('static', filename='uploads/logos/logotyreplus2.png') }}"
+           alt="Logo"
+           class="h-16 w-auto block"
+           style="max-height:64px;">
+
+      <!-- Right Side -->
+      <div class="flex items-center space-x-4">
+        {% if session.get('customer_id') %}
+        <!-- โปรไฟล์ + Dropdown -->
+        <div class="relative inline-block text-left">
+          <!-- ปุ่มรูปโปรไฟล์ -->
+          <button id="profileMenuButton" type="button" 
+                  class="block focus:outline-none"
+                  onclick="toggleProfileMenu(event)">
+            {% if session.get('customer_avatar') %}
+              <img src="{{ url_for('static', filename='uploads/profile/' ~ session.get('customer_avatar')) }}"
+                  alt="โปรไฟล์"
+                  class="w-10 h-10 rounded-full border-2 border-white object-cover">
+            {% else %}
+              <div class="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold border-2 border-white">
+                {{ session.get('customer_username','U')[0]|upper }}
+              </div>
+            {% endif %}
+          </button>
+
+          <!-- Dropdown เมนู -->
+          <div id="profileDropdown" 
+               class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden z-[100]">
+            <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="profileMenuButton">
+              <!-- แก้ไขข้อมูลผู้ใช้ -->
+              <a href="{{ url_for('customer.profile') }}" 
+                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" 
+                 role="menuitem">
+                แก้ไขข้อมูลผู้ใช้
+              </a>
+              <!-- เส้นคั่น -->
+              <div class="border-t border-gray-200"></div>
+              <!-- ประวัติการจอง -->
+              <a href="{{ url_for('customer.booking_history') }}" 
+                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" 
+                 role="menuitem">
+                ประวัติการจอง
+              </a>
+              <!-- เส้นคั่น -->
+              <div class="border-t border-gray-200"></div>
+              <!-- ออกจากระบบ -->
+              <form action="{{ url_for('customer.logout') }}" method="post" class="block">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" 
+                        class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 hover:text-gray-900" 
+                        role="menuitem">
+                  ออกจากระบบ
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% else %}
+          <a href="javascript:void(0)" onclick="showRegisterModal()" class="text-white font-medium hover:underline">ลงทะเบียน</a>
+          <span class="text-white">/</span>
+          <a href="javascript:void(0)" onclick="showLoginModal('/')" class="text-white font-medium hover:underline">เข้าสู่ระบบ</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Bar -->
+  <nav class="w-full shadow h-12" style="background-color: #ffe731;">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center h-12 relative">
+        <!-- Desktop Menu -->
+        <div class="flex-1 flex justify-center">
+          <!-- แก้ไขเฉพาะเมนู "ยาง" ใน #nav-menu (desktop) -->
+          <div id="nav-menu" class="md:flex md:flex-row md:space-x-8 hidden flex-col space-y-2 md:space-y-0 p-0 md:p-0">
+            <a href="/" class="nav-link px-6 py-2 rounded transition font-semibold text-base text-[#0c5e28]
+              hover:bg-[#fcfcfc] hover:text-[#0c5e28] block md:inline {% if request.path == '/' %}bg-[#fcfcfc] text-[#0c5e28]{% endif %}">หน้าแรก</a>
+            
+            <!-- เมนู "ยาง" พร้อม dropdown -->
+            <div class="relative group">
+              <button
+                type="button"
+                class="nav-link px-6 py-2 rounded transition font-semibold text-base text-[#0c5e28] hover:bg-[#fcfcfc] hover:text-[#0c5e28] inline-flex items-center justify-center focus:outline-none {% if request.path.startswith('/tires') %}bg-[#fcfcfc] text-[#0c5e28]{% endif %}"
+                aria-haspopup="true"
+                aria-expanded="false"
+                onclick="document.getElementById('tire-dropdown').classList.toggle('hidden')"
+                onmouseenter="showTireDropdown()"
+                onmouseleave="hideTireDropdownDelay()"
+              >
+                <span>ยาง</span>
+                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              <div
+                id="tire-dropdown"
+                class="absolute left-0 mt-2 w-48 bg-white border rounded shadow-lg z-30 hidden group-hover:block"
+                onmouseenter="clearHideTireDropdownTimeout()"
+                onmouseleave="hideTireDropdownDelay()"
+                style="transition: opacity 0.2s;"
+              >
+                <a href="/tires/michelin" class="block px-6 py-2 text-[#0c5e28] hover:bg-[#ffe731]">Michelin</a>
+                <a href="/tires/bfgoodrich" class="block px-6 py-2 text-[#0c5e28] hover:bg-[#ffe731]">BFGoodrich</a>
+                <a href="/tires/maxxis" class="block px-6 py-2 text-[#0c5e28] hover:bg-[#ffe731]">Maxxis</a>
+              </div>
+            </div>
+            <a href="/recommend" class="nav-link px-8 py-3 rounded transition font-semibold text-sm text-[#0c5e28]
+              hover:bg-[#fcfcfc] hover:text-[#0c5e28] block md:inline {% if request.path == '/recommend' %}bg-[#fcfcfc] text-[#0c5e28]{% endif %}">แนะนำยาง</a>
+            <a href="{{ url_for('customer.booking') }}"
+               {% if not session.get('customer_id') %}onclick="event.preventDefault(); showLoginModal('/booking');"{% endif %}
+               class="nav-link px-8 py-3 rounded transition font-semibold text-sm text-[#0c5e28]
+              hover:bg-[#fcfcfc] hover:text-[#0c5e28] block md:inline {% if request.path == '/booking' %}bg-[#fcfcfc] text-[#0c5e28]{% endif %}">การจอง</a>
+            <a href="/promotions" class="nav-link px-8 py-3 rounded transition font-semibold text-sm text-[#0c5e28]
+              hover:bg-[#fcfcfc] hover:text-[#0c5e28] block md:inline {% if request.path == '/promotions' %}bg-[#fcfcfc] text-[#0c5e28]{% endif %}">โปรโมชัน</a>
+            <a href="/guide" class="nav-link px-8 py-3 rounded transition font-semibold text-sm text-[#0c5e28]
+              hover:bg-[#fcfcfc] hover:text-[#0c5e28] block md:inline {% if request.path == '/guide' %}bg-[#fcfcfc] text-[#0c5e28]{% endif %}">คู่มือการดูแลรักษายาง</a>
+            <a href="/contact" class="nav-link px-8 py-3 rounded transition font-semibold text-sm text-[#0c5e28]
+              hover:bg-[#fcfcfc] hover:text-[#0c5e28] block md:inline {% if request.path == '/contact' %}bg-[#fcfcfc] text-[#0c5e28]{% endif %}">ติดต่อเรา</a>
+          </div>
+        </div>
+
+        <!-- Hamburger (Mobile) -->
+        <button id="nav-toggle"
+                class="z-50 md:hidden flex items-center px-2 py-1 rounded text-[#0c5e28] focus:outline-none absolute right-0 top-1"
+                onclick="toggleNavMenu()">
+          <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+
+        <!-- Mobile Slide-down Menu -->
+        <div id="nav-menu-mobile"
+             class="absolute left-0 right-0 top-full bg-white border-t-2 border-[#ffe731] z-50 shadow-2xl transform -translate-y-full transition-transform duration-300 md:hidden flex-col space-y-2 p-6 hidden">
+          <a href="/" class="nav-link px-8 py-3 rounded transition font-bold text-lg text-[#0c5e28]
+            hover:bg-[#fcfcfc] hover:text-[#0c5e28] block {% if request.path == '/' %}bg-[#fcfcfc] text-[#0c5e28]{% endif %}">หน้าแรก</a>
+          <!-- Mobile dropdown for ยาง -->
+          <button type="button" id="mobile-tires-toggle"
+            class="w-full text-left px-8 py-3 rounded transition font-bold text-lg text-[#0c5e28] hover:bg-[#fcfcfc] hover:text-[#0c5e28] flex items-center justify-between focus:outline-none"
+            onclick="toggleMobileTiresDropdown()">
+            ยาง
+            <svg class="ml-2 w-4 h-4 transform transition-transform duration-200" id="mobile-tires-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div id="mobile-tires-dropdown" class="pl-12 space-y-1 hidden">
+            <a href="/tires/michelin" class="block px-4 py-2 text-[#0c5e28] hover:bg-[#ffe731]">Michelin</a>
+            <a href="/tires/bfgoodrich" class="block px-4 py-2 text-[#0c5e28] hover:bg-[#ffe731]">BFGoodrich</a>
+            <a href="/tires/maxxis" class="block px-4 py-2 text-[#0c5e28] hover:bg-[#ffe731]">Maxxis</a>
+          </div>
+          <a href="/recommend" class="nav-link px-8 py-3 rounded transition font-bold text-lg text-[#0c5e28]
+            hover:bg-[#fcfcfc] hover:text-[#0c5e28] block {% if request.path == '/recommend' %}bg-[#fcfcfc] text-[#0c5e28]{% endif %}">แนะนำยาง</a>
+                      <a href="{{ url_for('customer.booking') }}"
+             {% if not session.get('customer_id') %}onclick="event.preventDefault(); showLoginModal('/booking');"{% endif %}
+             class="nav-link px-8 py-3 rounded transition font-bold text-lg text-[#0c5e28]
+            hover:bg-[#fcfcfc] hover:text-[#0c5e28] block {% if request.path == '/booking' %}bg-[#fcfcfc] text-[#0c5e28]{% endif %}">การจอง</a>
+          <a href="/promotions" class="nav-link px-8 py-3 rounded transition font-bold text-lg text-[#0c5e28]
+            hover:bg-[#fcfcfc] hover:text-[#0c5e28] block {% if request.path == '/promotions' %}bg-[#fcfcfc] text-[#0c5e28]{% endif %}">โปรโมชัน</a>
+          <a href="/guide" class="nav-link px-8 py-3 rounded transition font-bold text-lg text-[#0c5e28]
+            hover:bg-[#fcfcfc] hover:text-[#0c5e28] block {% if request.path == '/guide' %}bg-[#fcfcfc] text-[#0c5e28]{% endif %}">คู่มือการดูแลรักษายาง</a>
+          <a href="/contact" class="nav-link px-8 py-3 rounded transition font-bold text-lg text-[#0c5e28]
+            hover:bg-[#fcfcfc] hover:text-[#0c5e28] block {% if request.path == '/contact' %}bg-[#fcfcfc] text-[#0c5e28]{% endif %}">ติดต่อเรา</a>
+          
+          <!-- Mobile Login/Register Section -->
+          {% if not session.get('customer_id') %}
+          <div class="border-t border-[#0c5e28] pt-4 mt-4">
+            <a href="javascript:void(0)" onclick="showLoginModal('/')" class="nav-link px-8 py-3 rounded transition font-bold text-lg text-[#0c5e28] hover:bg-[#fcfcfc] hover:text-[#0c5e28] block">เข้าสู่ระบบ</a>
+            <a href="javascript:void(0)" onclick="showRegisterModal()" class="nav-link px-8 py-3 rounded transition font-bold text-lg text-[#0c5e28] hover:bg-[#fcfcfc] hover:text-[#0c5e28] block">ลงทะเบียน</a>
+          </div>
+          {% endif %}
+        </div>
+
+        <script>
+          function toggleNavMenu() {
+            var nav = document.getElementById('nav-menu-mobile');
+            if (nav.classList.contains('hidden')) {
+              nav.classList.remove('hidden');
+              setTimeout(function() {
+                nav.classList.remove('-translate-y-full');
+              }, 10);
+            } else {
+              nav.classList.add('-translate-y-full');
+              setTimeout(function() {
+                nav.classList.add('hidden');
+              }, 300);
+            }
+          }
+
+          // Close mobile nav on outside click
+          document.addEventListener('click', function(e) {
+            var nav = document.getElementById('nav-menu-mobile');
+            var btn = document.getElementById('nav-toggle');
+            if (!nav || !btn) return;
+            if (window.innerWidth >= 768) return;
+            if (!nav.classList.contains('hidden') && !nav.contains(e.target) && !btn.contains(e.target)) {
+              nav.classList.add('-translate-y-full');
+              setTimeout(function() {
+                nav.classList.add('hidden');
+              }, 300);
+            }
+          });
+
+          // Mobile dropdown for ยาง
+          function toggleMobileTiresDropdown() {
+            var dropdown = document.getElementById('mobile-tires-dropdown');
+            var arrow = document.getElementById('mobile-tires-arrow');
+            if (dropdown.classList.contains('hidden')) {
+              dropdown.classList.remove('hidden');
+              arrow.classList.add('rotate-180');
+            } else {
+              dropdown.classList.add('hidden');
+              arrow.classList.remove('rotate-180');
+            }
+          }
+
+          // Profile dropdown functions
+          function toggleProfileMenu(event) {
+            event.stopPropagation(); // ✅ กันไม่ให้เด้งไปปิดเอง
+
+            var dropdown = document.getElementById('profileDropdown');
+            var mobileNav = document.getElementById('nav-menu-mobile');
+            
+            /// ✅ ปิด mobile menu แบบ force (ไม่รอ transition)
+            if (mobileNav) {
+              mobileNav.classList.add('-translate-y-full');
+              mobileNav.classList.add('hidden');
+            }
+            
+            // ✅ toggle dropdown ของโปรไฟล์
+            dropdown.classList.toggle('hidden');
+          }
+
+
+          // Close dropdowns when clicking outside
+          document.addEventListener('click', function(e) {
+            // Desktop profile dropdown
+            var profileButton = document.getElementById('profileMenuButton');
+            var profileDropdown = document.getElementById('profileDropdown');
+            if (profileButton && profileDropdown && !profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
+              profileDropdown.classList.add('hidden');
+            }
+            
+            // ปิด mobile nav เมื่อคลิกนอก
+            var mobileNav = document.getElementById('nav-menu-mobile');
+            var navToggle = document.getElementById('nav-toggle');
+            if (mobileNav && navToggle && !mobileNav.classList.contains('hidden') && 
+                !mobileNav.contains(e.target) && !navToggle.contains(e.target)) {
+              mobileNav.classList.add('-translate-y-full');
+              setTimeout(function() {
+                mobileNav.classList.add('hidden');
+              }, 100);
+            }
+
+          });
+
+          let tireDropdownTimeout;
+          function showTireDropdown() {
+            clearTimeout(tireDropdownTimeout);
+            document.getElementById('tire-dropdown').classList.remove('hidden');
+          }
+          function hideTireDropdownDelay() {
+            tireDropdownTimeout = setTimeout(() => {
+              document.getElementById('tire-dropdown').classList.add('hidden');
+            }, 180); // delay เล็กน้อยเพื่อให้คลิกเมนูย่อยทัน
+          }
+          function clearHideTireDropdownTimeout() {
+            clearTimeout(tireDropdownTimeout);
+          }
+        </script>
+      </div>
+    </div>
+  </nav>
+
+  <main class="flex-1 container mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="bg-white shadow py-4 text-center text-[#0c5e28] mt-8">
+    &copy; 2024 ไทร์พลัส บุรีรัมย์แสงเจริญการยาง. All rights reserved.
+  </footer>
+
+  <!-- Include Modal Components -->
+  {% include 'customer/login_modal.html' %}
+  {% include 'customer/register_modal.html' %}
+  {% include 'customer/forgot_password_modal.html' %}
+
+  {% block scripts %}{% endblock %}
+
+  <script>
+    // Modal functions
+    function showLoginModal(redirectPath = '/') {
+      // เก็บ path ที่จะ redirect หลังจาก login สำเร็จ
+      window.loginRedirectPath = redirectPath;
+      
+      // อัปเดต next field ใน form
+      const nextField = document.getElementById('loginNextField');
+      if (nextField) {
+        nextField.value = redirectPath;
+      }
+      
+      document.getElementById('loginModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      // Auto-focus on username field
+      setTimeout(() => {
+        const usernameField = document.getElementById('login_username');
+        if (usernameField) {
+          usernameField.focus();
+        }
+      }, 100);
+    }
+    
+    function closeLoginModal() {
+      document.getElementById('loginModal').classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+    
+    function showRegisterModal() {
+      document.getElementById('registerModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      // Auto-focus on username field
+      setTimeout(() => {
+        const usernameField = document.getElementById('register_username');
+        if (usernameField) {
+          usernameField.focus();
+        }
+      }, 100);
+    }
+    
+    function closeRegisterModal() {
+      document.getElementById('registerModal').classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('loginModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeLoginModal();
+      }
+    });
+    
+    document.getElementById('registerModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeRegisterModal();
+      }
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeLoginModal();
+        closeRegisterModal();
+      }
+    });
+
+
+
+    // ตรวจสอบ hash และเปิด modal ถ้าจำเป็น
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.location.hash === '#login') {
+        showLoginModal('/');
+        history.replaceState(null, null, ' '); // ลบ hash
+      } else if (window.location.hash.startsWith('#reset-password-')) {
+        const token = window.location.hash.replace('#reset-password-', '');
+        showResetPasswordModal(token);
+        history.replaceState(null, null, ' '); // ลบ hash
+      }
+    });
+
+
+
+
+  </script>
+</body>
+</html>

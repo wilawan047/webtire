@@ -1,0 +1,20 @@
+{% extends 'customer/layout.html' %}
+{% block title %}{{ promotion.title }} | โปรโมชัน | TireWeb{% endblock %}
+{% block content %}
+<nav class="text-gray-500 text-base mb-2 flex items-center flex-wrap" aria-label="Breadcrumb">
+  <a href="/" class="font-bold text-[#0c5e28] hover:underline">หน้าแรก</a>
+  <span class="mx-2">›</span>
+  <a href="{{ url_for('customer.promotions') }}" class="font-bold text-[#0c5e28] hover:underline">โปรโมชัน</a>
+  <span class="mx-2">›</span>
+  <span class="text-black text-sm max-w-xs truncate" title="{{ promotion.title }}">{{ promotion.title }}</span>
+</nav>
+<h1 class="text-2xl font-bold mb-4" style="color: #0c5e28;">{{ promotion.title }}</h1>
+<div class="flex flex-col items-center bg-white rounded-xl shadow p-4 max-w-xl mx-auto">
+  {% if promotion.image_url %}
+    <img src="{{ url_for('static', filename='uploads/promotions/' ~ promotion.image_url) }}" alt="{{ promotion.title }}" class="w-full h-auto rounded-lg mb-2" />
+  {% endif %}
+  <div class="text-xs text-gray-500 mb-2">{{ promotion.start_date|date_thai }} - {{ promotion.end_date|date_thai }}</div>
+  <div class="text-gray-700 mb-4">{{ promotion.description }}</div>
+  <a href="{{ url_for('customer.promotions') }}" class="mt-2 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">ย้อนกลับ</a>
+</div>
+{% endblock %} 

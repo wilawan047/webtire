@@ -1,0 +1,162 @@
+{% extends 'layout.html' %}
+{% block title %}{{ 'แก้ไขข้อมูลลูกค้า' if customer else 'เพิ่มลูกค้า' }}{% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 py-4">
+    <h1 class="text-2xl font-bold mb-4" style="color: #0c5e28;">
+        {{ 'แก้ไขข้อมูลลูกค้า' if customer else 'เพิ่มลูกค้าใหม่' }}
+    </h1>
+
+        {% if error %}
+        <div class="mb-6 p-4 bg-red-100 text-red-700 border-l-4 border-red-500 rounded-r-lg shadow-sm">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                </svg>
+                {{ error }}
+            </div>
+        </div>
+        {% endif %}
+
+    <form method="post" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">ข้อมูลพื้นฐาน</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-green-800 mb-1">ชื่อ</label>
+                <input type="text" name="first_name" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                       value="{{ customer.first_name if customer else (form_data.first_name if form_data else '') }}">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-green-800 mb-1">นามสกุล</label>
+                <input type="text" name="last_name" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                       value="{{ customer.last_name if customer else (form_data.last_name if form_data else '') }}">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-green-800 mb-1">เพศ</label>
+                <select name="gender" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <option value="">เลือกเพศ</option>
+                    <option value="ชาย" {% if (customer and customer.gender == 'ชาย') or (form_data and form_data.gender == 'ชาย') %}selected{% endif %}>ชาย</option>
+                    <option value="หญิง" {% if (customer and customer.gender == 'หญิง') or (form_data and form_data.gender == 'หญิง') %}selected{% endif %}>หญิง</option>
+                    <option value="ไม่ระบุ" {% if (customer and customer.gender == 'ไม่ระบุ') or (form_data and form_data.gender == 'ไม่ระบุ') %}selected{% endif %}>ไม่ระบุ</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-green-800 mb-1">วันเกิด</label>
+                <input type="date" name="birthdate" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                       value="{{ customer.birthdate if customer else (form_data.birthdate if form_data else '') }}">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-green-800 mb-1">เบอร์โทรศัพท์</label>
+                <input type="text" name="phone" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                       value="{{ customer.phone if customer else (form_data.phone if form_data else '') }}">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-green-800 mb-1">อีเมล</label>
+                <input type="email" name="email" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                       value="{{ customer.email if customer else (form_data.email if form_data else '') }}">
+            </div>
+        </div>
+
+        <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">ที่อยู่</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-green-800 mb-1">บ้านเลขที่</label>
+                <input type="text" name="address_no"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                       value="{{ address.address_no if address else '' }}">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-green-800 mb-1">หมู่บ้าน/อาคาร</label>
+                <input type="text" name="village"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                       value="{{ address.village if address else '' }}">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-green-800 mb-1">ถนน</label>
+                <input type="text" name="road"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                       value="{{ address.road if address else '' }}">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-green-800 mb-1">จังหวัด</label>
+                <select name="province" id="provinceSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <option value="">-- เลือกจังหวัด --</option>
+                    {% for p in provinces %}
+                      <option value="{{ p }}" {% if address and address.province == p %}selected{% elif form_data and form_data.province == p %}selected{% elif customer and customer.province == p %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-green-800 mb-1">อำเภอ/เขต</label>
+                <select name="district" id="districtSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <option value="">-- เลือกอำเภอ/เขต --</option>
+                    {% if address and address.district %}
+                      <option value="{{ address.district }}" selected>{{ address.district }}</option>
+                    {% elif form_data and form_data.district %}
+                      <option value="{{ form_data.district }}" selected>{{ form_data.district }}</option>
+                    {% elif customer and customer.district %}
+                      <option value="{{ customer.district }}" selected>{{ customer.district }}</option>
+                    {% endif %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-green-800 mb-1">ตำบล/แขวง</label>
+                <select name="subdistrict" id="subdistrictSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <option value="">-- เลือกตำบล/แขวง --</option>
+                    {% if address and address.subdistrict %}
+                      <option value="{{ address.subdistrict }}" selected>{{ address.subdistrict }}</option>
+                    {% elif form_data and form_data.subdistrict %}
+                      <option value="{{ form_data.subdistrict }}" selected>{{ form_data.subdistrict }}</option>
+                    {% elif customer and customer.subdistrict %}
+                      <option value="{{ customer.subdistrict }}" selected>{{ customer.subdistrict }}</option>
+                    {% endif %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-green-800 mb-1">รหัสไปรษณีย์</label>
+                <select name="zipcode" id="zipcodeSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <option value="">-- เลือกรหัสไปรษณีย์ --</option>
+                    {% if address and address.zipcode %}
+                      <option value="{{ address.zipcode }}" selected>{{ address.zipcode }}</option>
+                    {% elif form_data and form_data.zipcode %}
+                      <option value="{{ form_data.zipcode }}" selected>{{ form_data.zipcode }}</option>
+                    {% elif customer and customer.zipcode %}
+                      <option value="{{ customer.zipcode }}" selected>{{ customer.zipcode }}</option>
+                    {% endif %}
+                </select>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-4">
+            <a href="{{ url_for('admin.customer_list') }}"
+               class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-md hover:bg-gray-50">
+                ยกเลิก
+            </a>
+            <button type="submit"
+                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                {{ 'บันทึกข้อมูล' if customer else 'เพิ่มลูกค้า' }}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
