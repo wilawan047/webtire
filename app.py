@@ -23,11 +23,11 @@ app.config.from_object(Config)
 # NOTE: ใช้ port 3307 ห้ามแก้กลับเป็น 3306
 import database
 database.DB_CONFIG.update({
-    'host': app.config['DB_HOST'],
-    'port': app.config['DB_PORT'],  # NOTE: ใช้ port 3307 ห้ามแก้กลับเป็น 3306
-    'user': app.config['DB_USER'],
-    'password': app.config['DB_PASSWORD'],
-    'database': app.config['DB_NAME']
+    'host': os.environ.get('DB_HOST', 'switchyard.proxy.rlwy.net'),
+    'port': int(os.environ.get('DB_PORT', 21922)),
+    'user': os.environ.get('DB_USER', 'root'),
+    'password': os.environ.get('DB_PASSWORD', 'mxAiijYOvjVtdUrdtVCVyMygyvxOFOhO'),
+    'database': os.environ.get('DB_NAME', 'railway')
 })
 
 # ตั้งค่า CSRF protection
@@ -270,4 +270,5 @@ def percent_format(value):
     return f"{value:.1f}%"
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+   app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+

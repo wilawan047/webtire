@@ -7,17 +7,23 @@ from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 import time
 from flask import render_template
+from flask import Blueprint, render_template
+from database import get_db
 
 customer = Blueprint('customer', __name__, template_folder='templates')
 
+@customer.route("/home")
+def home_page():
+    return render_template("customer/home.html") 
 
 @customer.route('/')
 def home():
     """หน้าแรกสำหรับลูกค้า"""
     try:
-        cursor = get_cursor()
-        
-        # ดึงข้อมูลโปรโมชันที่ใช้งานได้ (มีวันที่ปัจจุบันอยู่ในช่วงโปรโมชัน)
+        db = get_db()
+        cursor = db.cursor(dictionary=True)  # คืนค่าเป็น dict
+       
+        # ดึงข้อมูลโปรโมชันที่ใช้งานได้
         cursor.execute("""
             SELECT promotion_id, title, description, image_url,
                    start_date, end_date
@@ -26,19 +32,21 @@ def home():
             ORDER BY start_date DESC
         """)
         promotions = cursor.fetchall()
-        print(f"Found {len(promotions)} active promotions: {promotions}")
         
         # Debug: ดูโปรโมชันทั้งหมด
-        cursor.execute("SELECT promotion_id, title, image_url, start_date, end_date FROM promotions ORDER BY start_date DESC")
+        cursor.execute("""
+            SELECT promotion_id, title, image_url, start_date, end_date
+            FROM promotions
+            ORDER BY start_date DESC
+        """)
         all_promotions = cursor.fetchall()
         print(f"All promotions in database: {all_promotions}")
         
         return render_template('customer/home.html', promotions=promotions)
 
-        
     except Exception as e:
         print(f"Error loading promotions: {e}")
-        return render_customer_template('customer/home.html', promotions=[])
+        return render_template('customer/home.html', promotions=[])
 
 @customer.route('/api/tire-sizes')
 def get_tire_sizes():
