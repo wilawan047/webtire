@@ -6,8 +6,10 @@ import os
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 import time
+from flask import render_template
 
-customer = Blueprint('customer', __name__)
+customer = Blueprint('customer', __name__, template_folder='templates')
+
 
 @customer.route('/')
 def home():
@@ -31,7 +33,8 @@ def home():
         all_promotions = cursor.fetchall()
         print(f"All promotions in database: {all_promotions}")
         
-        return render_customer_template('customer/home.html', promotions=promotions)
+        return render_template('customer/home.html', promotions=promotions)
+
         
     except Exception as e:
         print(f"Error loading promotions: {e}")

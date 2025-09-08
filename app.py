@@ -126,6 +126,14 @@ def log_page_view(page_id: str):
 
 # ===== STAFF ROUTES =====
 # ย้ายไปยัง routes/staff.py แล้ว
+# app.py
+from flask import redirect, url_for
+
+@app.route("/")
+def index():
+    return redirect(url_for('customer.home'))
+
+
 
 @app.route('/staff/profile', methods=['GET', 'POST'])
 @login_required
@@ -261,6 +269,5 @@ def percent_format(value):
         return '0%'
     return f"{value:.1f}%"
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
