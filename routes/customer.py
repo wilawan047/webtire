@@ -1566,12 +1566,17 @@ def update_avatar():
                 
                 # อัปเดต session
                 session['customer_avatar'] = filename
+                session.permanent = True  # ทำให้ session อยู่ถาวร
                 
                 print(f"Updated session with avatar: {filename}")
                 
                 # ส่ง JSON response สำหรับ AJAX
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return jsonify({'success': True, 'message': 'อัปเดตรูปโปรไฟล์สำเร็จ'})
+                    return jsonify({
+                        'success': True, 
+                        'message': 'อัปเดตรูปโปรไฟล์สำเร็จ',
+                        'filename': filename
+                    })
                 else:
                     flash('อัปเดตรูปโปรไฟล์สำเร็จ', 'success')
             else:

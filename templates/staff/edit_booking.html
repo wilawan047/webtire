@@ -744,43 +744,8 @@ document.addEventListener('DOMContentLoaded', function() {
         loadExistingModel();
     }
     
-    console.log('=== SETTING TIMEOUT FOR LOAD MODEL WITH RETRY ===');
-    console.log('About to call setTimeout(loadModelWithRetry, 1000)');
-    console.log('Current window.vehicleModels:', window.vehicleModels);
-    console.log('Current window.vehicleModels type:', typeof window.vehicleModels);
-    console.log('Current window.vehicleModels is array:', Array.isArray(window.vehicleModels));
-    console.log('Current window.vehicleModels length:', window.vehicleModels ? window.vehicleModels.length : 'N/A');
-    console.log('Isuzu models in current data:', window.vehicleModels ? window.vehicleModels.filter(function(m) { return m.brand_name === 'Isuzu'; }) : 'No data');
-    console.log('All brand names in current data:', window.vehicleModels ? window.vehicleModels.map(function(m) { return m.brand_name; }).filter(function(v, i, a) { return a.indexOf(v) === i; }) : 'No data');
-    console.log('About to set timeout for loadModelWithRetry...');
-    console.log('Setting timeout for 1000ms...');
-    console.log('Timeout set successfully');
-    console.log('About to execute setTimeout...');
+    // Load existing model on page load
     setTimeout(loadModelWithRetry, 1000);
-    console.log('setTimeout executed');
-    console.log('End of DOMContentLoaded function');
-    console.log('=== DOMContentLoaded COMPLETED ===');
-    console.log('Final check - window.vehicleModels:', window.vehicleModels);
-    console.log('Final check - window.vehicleModels length:', window.vehicleModels ? window.vehicleModels.length : 'N/A');
-    console.log('Final check - Isuzu models:', window.vehicleModels ? window.vehicleModels.filter(function(m) { return m.brand_name === 'Isuzu'; }) : 'No data');
-    console.log('Final check - All brand names:', window.vehicleModels ? window.vehicleModels.map(function(m) { return m.brand_name; }).filter(function(v, i, a) { return a.indexOf(v) === i; }) : 'No data');
-    console.log('=== END OF DEBUG LOGGING ===');
-    console.log('=== READY FOR USER INTERACTION ===');
-    console.log('=== DEBUGGING COMPLETE ===');
-    console.log('=== FINAL STATUS ===');
-    console.log('window.vehicleModels:', window.vehicleModels);
-    console.log('window.vehicleModels length:', window.vehicleModels ? window.vehicleModels.length : 'N/A');
-    console.log('Isuzu models:', window.vehicleModels ? window.vehicleModels.filter(function(m) { return m.brand_name === 'Isuzu'; }) : 'No data');
-    console.log('=== END OF FINAL STATUS ===');
-    console.log('=== READY FOR USER ===');
-    console.log('=== END OF SCRIPT ===');
-    console.log('=== FINAL CHECK ===');
-    console.log('window.vehicleModels:', window.vehicleModels);
-    console.log('window.vehicleModels length:', window.vehicleModels ? window.vehicleModels.length : 'N/A');
-    console.log('Isuzu models:', window.vehicleModels ? window.vehicleModels.filter(function(m) { return m.brand_name === 'Isuzu'; }) : 'No data');
-    console.log('=== END OF FINAL CHECK ===');
-    console.log('=== READY FOR TESTING ===');
-    console.log('=== END OF ALL DEBUGGING ===');
     console.log('=== READY FOR USER ===');
     console.log('=== END OF SCRIPT ===');
     console.log('=== FINAL CHECK ===');
