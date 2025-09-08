@@ -8,3 +8,4 @@ Flask
 Flask-WTF
 mysql-connector-python
 Werkzeug
+scrypt
