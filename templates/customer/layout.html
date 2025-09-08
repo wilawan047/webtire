@@ -42,9 +42,13 @@
                   class="block focus:outline-none"
                   onclick="toggleProfileMenu(event)">
             {% if session.get('customer_avatar') %}
-              <img src="{{ url_for('static', filename='uploads/profile/' ~ session.get('customer_avatar')) }}"
+              <img src="{{ url_for('static', filename='uploads/profile/' ~ session.get('customer_avatar')) }}?v={{ range(1, 10000) | random }}"
                   alt="โปรไฟล์"
-                  class="w-10 h-10 rounded-full border-2 border-white object-cover">
+                  class="w-10 h-10 rounded-full border-2 border-white object-cover"
+                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+              <div class="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold border-2 border-white" style="display: none;">
+                {{ session.get('customer_username','U')[0]|upper }}
+              </div>
             {% else %}
               <div class="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold border-2 border-white">
                 {{ session.get('customer_username','U')[0]|upper }}
@@ -322,6 +326,9 @@
       if (nextField) {
         nextField.value = redirectPath;
       }
+      
+      // ส่ง event เพื่ออัปเดต CSRF token
+      window.dispatchEvent(new CustomEvent('showLoginModal'));
       
       document.getElementById('loginModal').classList.remove('hidden');
       document.body.style.overflow = 'hidden';

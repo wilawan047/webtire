@@ -593,63 +593,28 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Load global data when DOM is ready
     try {
-        console.log('Starting to load global data...');
         var vehicleModelsElement = document.getElementById('vehicle-models-data');
         var tireDataElement = document.getElementById('tire-data');
         
-        console.log('vehicleModelsElement found:', vehicleModelsElement ? 'Yes' : 'No');
-        console.log('tireDataElement found:', tireDataElement ? 'Yes' : 'No');
-        
         if (vehicleModelsElement && vehicleModelsElement.textContent) {
-            console.log('vehicleModelsElement has content, length:', vehicleModelsElement.textContent.length);
-            console.log('Raw vehicleModels content preview:', vehicleModelsElement.textContent.substring(0, 200) + '...');
-            console.log('Full raw content:', vehicleModelsElement.textContent);
             try {
                 window.vehicleModels = JSON.parse(vehicleModelsElement.textContent);
-                console.log('vehicleModels loaded successfully:', window.vehicleModels);
-                console.log('vehicleModels length:', window.vehicleModels.length);
-                console.log('First few models:', window.vehicleModels.slice(0, 5));
-                console.log('Isuzu models:', window.vehicleModels.filter(function(m) { return m.brand_name === 'Isuzu'; }));
-                console.log('All brand names:', window.vehicleModels.map(function(m) { return m.brand_name; }).filter(function(v, i, a) { return a.indexOf(v) === i; }));
-                console.log('Total models in array:', window.vehicleModels.length);
             } catch (parseError) {
                 console.error('Error parsing vehicleModels JSON:', parseError);
-                console.log('Raw vehicleModels content:', vehicleModelsElement.textContent);
                 window.vehicleModels = [];
             }
         } else {
-            console.log('vehicle-models-data element not found or empty');
-            console.log('vehicleModelsElement:', vehicleModelsElement);
-            if (vehicleModelsElement) {
-                console.log('Element exists but textContent is:', vehicleModelsElement.textContent);
-                console.log('Element innerHTML is:', vehicleModelsElement.innerHTML);
-            }
             window.vehicleModels = [];
         }
         
         if (tireDataElement && tireDataElement.textContent) {
             window.tireData = JSON.parse(tireDataElement.textContent);
-            console.log('tireData loaded successfully:', window.tireData);
         } else {
-            console.log('tire-data element not found or empty');
             window.tireData = {};
         }
         
-        console.log('=== GLOBAL DATA LOADING COMPLETED ===');
-        console.log('Final window.vehicleModels:', window.vehicleModels);
-        console.log('Final window.tireData:', window.tireData);
-        console.log('vehicleModels type:', typeof window.vehicleModels);
-        console.log('vehicleModels is array:', Array.isArray(window.vehicleModels));
-        console.log('vehicleModels length:', window.vehicleModels ? window.vehicleModels.length : 'N/A');
-        console.log('Isuzu models in final data:', window.vehicleModels ? window.vehicleModels.filter(function(m) { return m.brand_name === 'Isuzu'; }) : 'No data');
-        console.log('All brand names in final data:', window.vehicleModels ? window.vehicleModels.map(function(m) { return m.brand_name; }).filter(function(v, i, a) { return a.indexOf(v) === i; }) : 'No data');
-        
         // Force trigger loadExistingModel after data is loaded
         setTimeout(function() {
-            console.log('=== FORCE TRIGGERING LOAD EXISTING MODEL ===');
-            console.log('Force triggering loadExistingModel after data load...');
-            console.log('Current window.vehicleModels at trigger time:', window.vehicleModels);
-            console.log('Current window.vehicleModels length at trigger time:', window.vehicleModels ? window.vehicleModels.length : 'N/A');
             loadModelWithRetry();
         }, 100);
     } catch (error) {
@@ -740,92 +705,42 @@ document.addEventListener('DOMContentLoaded', function() {
         var selectedBrand = brandSelect.value;
         var selectedModel = '{{ booking.model_name if booking and booking.model_name and booking.model_name != "None" else "" }}';
         
-        console.log('=== LOADING EXISTING MODEL ===');
-        console.log('Loading existing model - Brand:', selectedBrand, 'Model:', selectedModel);
-        console.log('vehicleModels available:', window.vehicleModels);
-        console.log('vehicleModels type:', typeof window.vehicleModels);
-        console.log('vehicleModels length:', window.vehicleModels ? window.vehicleModels.length : 'N/A');
-        console.log('brandSelect element:', brandSelect);
-        console.log('modelSelect element:', modelSelect);
-        
         // Check if vehicleModels is loaded
         if (!window.vehicleModels || !Array.isArray(window.vehicleModels)) {
-            console.log('vehicleModels not loaded yet, retrying in 500ms...');
-            console.log('Current vehicleModels value:', window.vehicleModels);
-            console.log('vehicleModels type:', typeof window.vehicleModels);
-            console.log('vehicleModels is array:', Array.isArray(window.vehicleModels));
             setTimeout(loadExistingModel, 500);
             return;
         }
         
-        console.log('vehicleModels is loaded, proceeding with model loading...');
-        
         if (selectedBrand) {
             // Load all models for the selected brand first
-            console.log('Loading all models for brand:', selectedBrand);
             modelSelect.innerHTML = '<option value="">-- เลือกรุ่น --</option>';
             
             var filteredModels = window.vehicleModels.filter(function(model) {
                 return model.brand_name === selectedBrand;
             });
             
-            console.log('Filtered models for brand', selectedBrand, ':', filteredModels);
-            console.log('Total filtered models:', filteredModels.length);
-            
             if (filteredModels.length > 0) {
-                console.log('Adding models to dropdown...');
                 filteredModels.forEach(function(model) {
                     var optionHtml = '<option value="' + model.model_name + '">' + model.model_name + '</option>';
                     modelSelect.innerHTML += optionHtml;
-                    console.log('Added option:', optionHtml);
                 });
-                
-                console.log('Model select updated with', filteredModels.length, 'options');
-                console.log('Final model select HTML:', modelSelect.innerHTML);
-                console.log('Model select options count:', modelSelect.options.length);
                 
                 // Set the selected model after all models are loaded
                 setTimeout(function() {
-                    console.log('Setting selected model after delay...');
-                    console.log('Model select options:', modelSelect.innerHTML);
-                    console.log('Selected model to set:', selectedModel);
-                    
                     if (selectedModel) {
                         modelSelect.value = selectedModel;
-                        console.log('Model set to:', selectedModel);
-                        console.log('Final model select value:', modelSelect.value);
-                        console.log('Model select value after setting:', modelSelect.value);
-                    } else {
-                        console.log('No selected model to set');
                     }
                 }, 300);
-            } else {
-                console.log('No models found for brand:', selectedBrand);
-                console.log('Available brands in vehicleModels:', window.vehicleModels.map(function(m) { return m.brand_name; }).filter(function(v, i, a) { return a.indexOf(v) === i; }));
-                console.log('All vehicle models:', window.vehicleModels);
             }
-        } else {
-            console.log('No selected brand found');
-            console.log('selectedBrand value:', selectedBrand);
-            console.log('brandSelect value:', brandSelect ? brandSelect.value : 'brandSelect not found');
         }
     }
     
     // Load existing model on page load with retry mechanism
     function loadModelWithRetry() {
-        console.log('=== LOAD MODEL WITH RETRY ===');
-        console.log('window.vehicleModels:', window.vehicleModels);
-        console.log('Array.isArray(window.vehicleModels):', Array.isArray(window.vehicleModels));
-        console.log('window.vehicleModels.length:', window.vehicleModels ? window.vehicleModels.length : 'N/A');
-        
         if (!window.vehicleModels || !Array.isArray(window.vehicleModels) || window.vehicleModels.length === 0) {
-            console.log('Vehicle models not ready, retrying in 1 second...');
             setTimeout(loadModelWithRetry, 1000);
             return;
         }
-        console.log('Vehicle models is ready, loading existing model...');
-        console.log('Total vehicle models available:', window.vehicleModels.length);
-        console.log('Isuzu models available:', window.vehicleModels.filter(function(m) { return m.brand_name === 'Isuzu'; }));
         loadExistingModel();
     }
     
@@ -1700,7 +1615,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-
-
-
-

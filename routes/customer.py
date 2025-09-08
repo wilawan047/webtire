@@ -6,24 +6,16 @@ import os
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 import time
-from flask import render_template
-from flask import Blueprint, render_template
-from database import get_db
 
-customer = Blueprint('customer', __name__, template_folder='templates')
-
-@customer.route("/home")
-def home_page():
-    return render_template("customer/home.html") 
+customer = Blueprint('customer', __name__)
 
 @customer.route('/')
 def home():
     """หน้าแรกสำหรับลูกค้า"""
     try:
-        db = get_db()
-        cursor = db.cursor(dictionary=True)  # คืนค่าเป็น dict
-       
-        # ดึงข้อมูลโปรโมชันที่ใช้งานได้
+        cursor = get_cursor()
+        
+        # ดึงข้อมูลโปรโมชันที่ใช้งานได้ (มีวันที่ปัจจุบันอยู่ในช่วงโปรโมชัน)
         cursor.execute("""
             SELECT promotion_id, title, description, image_url,
                    start_date, end_date
@@ -32,21 +24,18 @@ def home():
             ORDER BY start_date DESC
         """)
         promotions = cursor.fetchall()
+        print(f"Found {len(promotions)} active promotions: {promotions}")
         
         # Debug: ดูโปรโมชันทั้งหมด
-        cursor.execute("""
-            SELECT promotion_id, title, image_url, start_date, end_date
-            FROM promotions
-            ORDER BY start_date DESC
-        """)
+        cursor.execute("SELECT promotion_id, title, image_url, start_date, end_date FROM promotions ORDER BY start_date DESC")
         all_promotions = cursor.fetchall()
         print(f"All promotions in database: {all_promotions}")
         
-        return render_template('customer/home.html', promotions=promotions)
-
+        return render_customer_template('customer/home.html', promotions=promotions)
+        
     except Exception as e:
         print(f"Error loading promotions: {e}")
-        return render_template('customer/home.html', promotions=[])
+        return render_customer_template('customer/home.html', promotions=[])
 
 @customer.route('/api/tire-sizes')
 def get_tire_sizes():
@@ -1526,8 +1515,6 @@ def update_avatar():
         return redirect(url_for('customer.home'))
     
     try:
-
-        
         file = request.files.get('avatar')
         if file and file.filename != '':
             # ตรวจสอบนามสกุลไฟล์
@@ -1537,9 +1524,25 @@ def update_avatar():
                 timestamp = int(time.time() * 1000)
                 filename = f"{customer_id}_{timestamp}_{secure_filename(file.filename)}"
                 
+                # สร้างโฟลเดอร์ถ้ายังไม่มี
+                upload_folder = current_app.config['PROFILE_UPLOAD_FOLDER']
+                os.makedirs(upload_folder, exist_ok=True)
+                
                 # บันทึกไฟล์
-                file_path = os.path.join(current_app.config['PROFILE_UPLOAD_FOLDER'], filename)
+                file_path = os.path.join(upload_folder, filename)
+                print(f"Attempting to save file to: {file_path}")
+                print(f"Upload folder exists: {os.path.exists(upload_folder)}")
+                print(f"Upload folder: {upload_folder}")
+                
                 file.save(file_path)
+                
+                # ตรวจสอบว่าไฟล์ถูกบันทึกจริง
+                if not os.path.exists(file_path):
+                    print(f"Error: File not saved to {file_path}")
+                    flash('เกิดข้อผิดพลาดในการบันทึกไฟล์', 'error')
+                    return redirect(url_for('customer.profile'))
+                else:
+                    print(f"File successfully saved to: {file_path}")
                 
                 # ลบไฟล์เก่าถ้ามี
                 cursor = get_cursor()
@@ -1558,9 +1561,13 @@ def update_avatar():
                 ''', (filename, customer_id))
                 get_db().commit()
                 
+                print(f"Updated database with filename: {filename}")
+                print(f"Customer ID: {customer_id}")
+                
                 # อัปเดต session
                 session['customer_avatar'] = filename
                 
+                print(f"Updated session with avatar: {filename}")
                 flash('อัปเดตรูปโปรไฟล์สำเร็จ', 'success')
             else:
                 flash('นามสกุลไฟล์ไม่ถูกต้อง กรุณาใช้ไฟล์ JPG, PNG เท่านั้น', 'error')
@@ -1651,4 +1658,3 @@ def ensure_page_views_table():
         get_db().commit()
     except Exception as e:
         print(f"Error ensuring page_views table: {e}")
-

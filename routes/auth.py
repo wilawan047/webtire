@@ -7,6 +7,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from werkzeug.security import generate_password_hash
+from flask_wtf.csrf import generate_csrf
 
 auth = Blueprint('auth', __name__)
 
@@ -497,3 +498,13 @@ def send_reset_email(email, first_name, token):
     except Exception as e:
         print(f"Error sending reset email: {e}")
         raise e
+
+@auth.route('/get-csrf-token')
+def get_csrf_token():
+    """API สำหรับดึง CSRF token ใหม่"""
+    try:
+        csrf_token = generate_csrf()
+        return jsonify({'csrf_token': csrf_token})
+    except Exception as e:
+        print(f"Error generating CSRF token: {e}")
+        return jsonify({'error': 'Failed to generate CSRF token'}), 500

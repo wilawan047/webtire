@@ -100,6 +100,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnText = document.getElementById('btnText');
     const btnLoading = document.getElementById('btnLoading');
 
+    // ฟังก์ชันสำหรับอัปเดต CSRF token
+    function updateCSRFToken() {
+        fetch('/get-csrf-token')
+            .then(response => response.json())
+            .then(data => {
+                if (data.csrf_token) {
+                    const csrfInput = document.querySelector('input[name="csrf_token"]');
+                    if (csrfInput) {
+                        csrfInput.value = data.csrf_token;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error updating CSRF token:', error);
+            });
+    }
+
+    // อัปเดต CSRF token เมื่อเปิด modal
+    window.addEventListener('showLoginModal', function() {
+        updateCSRFToken();
+    });
+
     loginForm.addEventListener('submit', function(e) {
         // ตั้งค่า next field ตาม redirect path ที่เก็บไว้
         const nextField = document.getElementById('loginNextField');
