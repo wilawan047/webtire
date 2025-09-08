@@ -225,18 +225,18 @@ def register():
             cursor.execute('SELECT user_id FROM users WHERE username = %s', (username,))
             if cursor.fetchone():
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return jsonify({'success': False, 'errors': {'username': 'ชื่อผู้ใช้นี้มีอยู่ในระบบแล้ว'}}), 400
+                    return jsonify({'success': False, 'errors': {'username': 'ชื่อผู้ใช้นี้มีอยู่ในระบบแล้ว กรุณาเลือกชื่อผู้ใช้อื่น'}}), 400
                 else:
-                    flash('ชื่อผู้ใช้นี้มีอยู่ในระบบแล้ว', 'error')
+                    flash('ชื่อผู้ใช้นี้มีอยู่ในระบบแล้ว กรุณาเลือกชื่อผู้ใช้อื่น', 'error')
                     return redirect(url_for('customer.home') + "#register")
             
             # ตรวจสอบ phone ซ้ำ
             cursor.execute('SELECT customer_id FROM customers WHERE phone = %s', (phone,))
             if cursor.fetchone():
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return jsonify({'success': False, 'errors': {'phone': 'เบอร์โทรศัพท์นี้มีอยู่ในระบบแล้ว'}}), 400
+                    return jsonify({'success': False, 'errors': {'phone': 'เบอร์โทรศัพท์นี้มีอยู่ในระบบแล้ว กรุณาใช้เบอร์โทรศัพท์อื่น'}}), 400
                 else:
-                    flash('เบอร์โทรศัพท์นี้มีอยู่ในระบบแล้ว', 'error')
+                    flash('เบอร์โทรศัพท์นี้มีอยู่ในระบบแล้ว กรุณาใช้เบอร์โทรศัพท์อื่น', 'error')
                     return redirect(url_for('customer.home') + "#register")
             
             # ตรวจสอบ email ซ้ำ (ถ้ามี)
@@ -244,9 +244,9 @@ def register():
                 cursor.execute('SELECT customer_id FROM customers WHERE email = %s', (email,))
                 if cursor.fetchone():
                     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        return jsonify({'success': False, 'errors': {'email': 'อีเมลนี้มีอยู่ในระบบแล้ว'}}), 400
+                        return jsonify({'success': False, 'errors': {'email': 'อีเมลนี้มีอยู่ในระบบแล้ว กรุณาใช้อีเมลอื่น'}}), 400
                     else:
-                        flash('อีเมลนี้มีอยู่ในระบบแล้ว', 'error')
+                        flash('อีเมลนี้มีอยู่ในระบบแล้ว กรุณาใช้อีเมลอื่น', 'error')
                         return redirect(url_for('customer.home') + "#register")
             
             # สร้าง user ใหม่

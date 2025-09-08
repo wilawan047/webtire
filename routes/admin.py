@@ -1643,10 +1643,48 @@ def admin_edit_profile():
 @admin.route('/users')
 @admin_required
 def user_list():
+    # รับพารามิเตอร์การค้นหา
+    search = request.args.get('search', '').strip()
+    filter_by = request.args.get('filter_by', 'all')
+    
     cursor = get_cursor()
-    cursor.execute('SELECT * FROM users ORDER BY created_at DESC')
+    
+    # สร้าง query พื้นฐาน
+    base_query = """
+        SELECT u.user_id, u.username, u.name, u.role_name, u.created_at
+        FROM users u
+        WHERE 1=1
+    """
+    params = []
+    
+    # เพิ่มเงื่อนไขการค้นหา
+    if search and filter_by != 'all':
+        if filter_by == 'username':
+            base_query += " AND u.username LIKE %s"
+            params.append(f"%{search}%")
+        elif filter_by == 'name':
+            base_query += " AND u.name LIKE %s"
+            params.append(f"%{search}%")
+        elif filter_by == 'role':
+            base_query += " AND u.role_name LIKE %s"
+            params.append(f"%{search}%")
+    elif search and filter_by == 'all':
+        # ค้นหาทั้งหมด
+        base_query += " AND (u.username LIKE %s OR u.name LIKE %s OR u.role_name LIKE %s)"
+        search_pattern = f"%{search}%"
+        params.extend([search_pattern, search_pattern, search_pattern])
+    
+    # เพิ่ม ORDER BY
+    base_query += " ORDER BY u.created_at DESC"
+    
+    # Execute query
+    cursor.execute(base_query, params)
     users = cursor.fetchall()
-    return render_template('admin/user_list.html', users=users)
+    
+    return render_template('admin/user_list.html', 
+                         users=users, 
+                         search=search, 
+                         filter_by=filter_by)
 
 @admin.route('/users/add', methods=['GET', 'POST'])
 @admin_required
