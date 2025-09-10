@@ -101,6 +101,22 @@ def avatar_url(filename):
 1. **RAILWAY_ENVIRONMENT=true** - เพื่อให้แอปรู้ว่าใช้งานใน Railway
 2. **SECRET_KEY** - Flask secret key
 3. **Database variables** - ตามที่ Railway ให้มา
+4. **Email Configuration**:
+   - `MAIL_SERVER=smtp.gmail.com`
+   - `MAIL_PORT=587`
+   - `MAIL_USERNAME=your-email@gmail.com`
+   - `MAIL_PASSWORD=your-app-password`
+   - `MAIL_USE_TLS=true`
+   - `APP_URL=https://your-railway-domain.railway.app`
+
+### การตั้งค่า Gmail App Password
+
+1. **เปิด 2-Factor Authentication** ใน Gmail
+2. **สร้าง App Password**:
+   - ไปที่ Google Account Settings
+   - Security → 2-Step Verification → App passwords
+   - สร้าง password สำหรับ "Mail"
+3. **ใช้ App Password** แทนรหัสผ่านปกติใน `MAIL_PASSWORD`
 
 ### การ Deploy
 

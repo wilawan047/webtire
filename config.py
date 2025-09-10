@@ -40,3 +40,13 @@ class Config:
     
     # Railway specific settings
     RAILWAY_ENVIRONMENT = os.environ.get('RAILWAY_ENVIRONMENT', False)
+    
+    # Email settings
+    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+    MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME', '')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() == 'true'
+    
+    # App URL for reset links
+    APP_URL = os.environ.get('APP_URL', 'http://localhost:5000')

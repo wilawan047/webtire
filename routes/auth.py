@@ -426,14 +426,22 @@ def reset_password(token):
 def send_reset_email(email, first_name, token):
     """ส่งอีเมลรีเซ็ตรหัสผ่าน"""
     try:
-        # ตั้งค่าอีเมล (ใช้ Gmail SMTP)
-        smtp_server = "smtp.gmail.com"
-        smtp_port = 587
-        sender_email = "computersci65@gmail.com"  # อีเมลจาก .env
-        sender_password = "xmkw jdpk aaof fsrs"  # App Password จาก .env
+        from flask import current_app
+        
+        # ตั้งค่าอีเมลจาก config
+        smtp_server = current_app.config['MAIL_SERVER']
+        smtp_port = current_app.config['MAIL_PORT']
+        sender_email = current_app.config['MAIL_USERNAME']
+        sender_password = current_app.config['MAIL_PASSWORD']
+        
+        # ตรวจสอบว่ามีการตั้งค่าอีเมลหรือไม่
+        if not sender_email or not sender_password:
+            print("Email configuration missing - skipping email send")
+            return
         
         # สร้างลิงก์รีเซ็ต
-        reset_link = f"http://localhost:5000/reset-password/{token}"
+        app_url = current_app.config['APP_URL']
+        reset_link = f"{app_url}/reset-password/{token}"
         
         # สร้างเนื้อหาอีเมล
         subject = "รีเซ็ตรหัสผ่าน - ไทร์พลัส บุรีรัมย์แสงเจริญการยาง"
@@ -488,15 +496,19 @@ def send_reset_email(email, first_name, token):
         
         # ส่งอีเมล
         server = smtplib.SMTP(smtp_server, smtp_port)
-        server.starttls()
+        
+        # ใช้ TLS ถ้าตั้งค่าไว้
+        if current_app.config['MAIL_USE_TLS']:
+            server.starttls()
+        
         server.login(sender_email, sender_password)
         server.send_message(msg)
         server.quit()
         
-        print(f"Reset email sent to {email}")
+        print(f"✅ Reset email sent to {email}")
         
     except Exception as e:
-        print(f"Error sending reset email: {e}")
+        print(f"❌ Error sending reset email: {e}")
         raise e
 
 @auth.route('/get-csrf-token')
