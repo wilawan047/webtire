@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import json
 import io
 from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
+from reportlab.lib.colors import black, white, HexColor
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.units import inch
 from reportlab.pdfbase import pdfmetrics
@@ -1162,6 +1162,41 @@ def edit_booking(booking_id):
             WHERE booking_id = %s
         ''', (service_date, service_time, status, note, booking_id))
         
+        # อัปเดตข้อมูลรถในตาราง vehicles
+        vehicle_id = booking['vehicle_id']
+        license_plate = request.form.get('license_plate', '').strip()
+        license_province = request.form.get('license_province', '').strip()
+        brand_name = request.form.get('brand_name', '').strip()
+        model_name = request.form.get('model_name', '').strip()
+        color = request.form.get('color', '').strip()
+        production_year = request.form.get('production_year', '').strip()
+        vehicle_type_id = request.form.get('vehicle_type_id', '').strip()
+        
+        print(f"Debug: Updating vehicle {vehicle_id} with:")
+        print(f"  license_plate: {license_plate}")
+        print(f"  license_province: {license_province}")
+        print(f"  brand_name: '{brand_name}' (type: {type(brand_name)})")
+        print(f"  model_name: '{model_name}' (type: {type(model_name)})")
+        print(f"  color: {color}")
+        print(f"  production_year: {production_year}")
+        print(f"  vehicle_type_id: {vehicle_type_id}")
+        
+        # ตรวจสอบว่าข้อมูลยี่ห้อและรุ่นไม่เป็นค่าว่าง
+        if not brand_name or brand_name.strip() == '':
+            print("WARNING: brand_name is empty!")
+        if not model_name or model_name.strip() == '':
+            print("WARNING: model_name is empty!")
+        
+        cursor.execute('''
+            UPDATE vehicles 
+            SET license_plate = %s, license_province = %s, brand_name = %s, 
+                model_name = %s, color = %s, production_year = %s, vehicle_type_id = %s
+            WHERE vehicle_id = %s
+        ''', (license_plate, license_province, brand_name, model_name, 
+              color, production_year, vehicle_type_id, vehicle_id))
+        
+        print(f"Debug: Vehicle {vehicle_id} updated successfully")
+        
         # --- เพิ่มการบันทึกข้อมูลยางลง service_tires ---
         # อัปเดต position ของข้อมูลยางที่มีอยู่แล้ว (ก่อนลบข้อมูล)
         cursor.execute('SELECT * FROM service_tires WHERE booking_id = %s AND (position IS NULL OR position = \'\' OR position REGEXP \'^[0-9]+$\') ORDER BY id', (booking_id,))
@@ -1320,6 +1355,41 @@ def edit_booking(booking_id):
     cursor.execute('SELECT * FROM car_brands ORDER BY car_brand_name')
     vehicle_brands = cursor.fetchall()
     
+    # ดึงข้อมูลรุ่นรถตามยี่ห้อรถที่เลือกไว้
+    car_models = []
+    if booking and booking.get('brand_name'):
+        # หา brand_id จาก brand_name
+        brand_id = None
+        for brand in vehicle_brands:
+            if brand['car_brand_name'] == booking['brand_name']:
+                brand_id = brand['car_brand_id']
+                break
+        
+        if brand_id:
+            cursor.execute('SELECT * FROM car_models WHERE car_brand_id = %s ORDER BY car_model_name', (brand_id,))
+            car_models = cursor.fetchall()
+            print(f"Debug: Found {len(car_models)} car models for brand {booking['brand_name']} (ID: {brand_id})")
+            print(f"Debug: Car models: {[(m['car_model_id'], m['car_model_name']) for m in car_models]}")
+            print(f"Debug: Booking model_name: '{booking.get('model_name')}'")
+            print(f"Debug: Booking model_name type: {type(booking.get('model_name'))}")
+            
+            # ตรวจสอบว่ารุ่นรถที่เลือกไว้มีอยู่ในรายการหรือไม่
+            selected_model = booking.get('model_name')
+            if selected_model:
+                model_found = False
+                for model in car_models:
+                    if model['car_model_name'] == selected_model:
+                        model_found = True
+                        print(f"Debug: Selected model '{selected_model}' found in car_models")
+                        break
+                if not model_found:
+                    print(f"Debug: Selected model '{selected_model}' NOT found in car_models")
+                    print(f"Debug: Available models: {[m['car_model_name'] for m in car_models]}")
+        else:
+            print(f"Debug: Brand ID not found for brand name: {booking['brand_name']}")
+    else:
+        print("Debug: No brand_name in booking data")
+    
     # ดึงข้อมูลยางที่มีอยู่แล้ว
     cursor.execute('SELECT * FROM service_tires WHERE booking_id = %s ORDER BY position', (booking_id,))
     existing_tires = cursor.fetchall()
@@ -1413,6 +1483,7 @@ def edit_booking(booking_id):
                          brands=brands,
                          tire_models=tire_models,
                          vehicle_brands=vehicle_brands,
+                         car_models=car_models,
                          provinces=provinces,
                          selected_services=selected_services,
                          selected_service_ids=selected_service_ids,
@@ -1602,7 +1673,7 @@ def admin_change_password():
         
         # อัปเดตรหัสผ่าน
         from werkzeug.security import generate_password_hash
-        new_password_hash = generate_password_hash(new_password, method='pbkdf2:sha256')
+        new_password_hash = generate_password_hash(new_password, method='scrypt')
         
         cursor.execute('UPDATE users SET password_hash = %s WHERE user_id = %s', 
                       (new_password_hash, session.get('user_id')))
@@ -1729,7 +1800,7 @@ def add_user():
         else:
             try:
                 from werkzeug.security import generate_password_hash
-                password_hash = generate_password_hash(password, method='pbkdf2:sha256')
+                password_hash = generate_password_hash(password, method='scrypt')
                 
                 # สร้างชื่อเต็มสำหรับตาราง users
                 full_name = f"{first_name} {last_name}"
@@ -1818,7 +1889,7 @@ def edit_user(user_id):
                 
                 if password:
                     from werkzeug.security import generate_password_hash
-                    password_hash = generate_password_hash(password, method='pbkdf2:sha256')
+                    password_hash = generate_password_hash(password, method='scrypt')
                     cursor.execute('UPDATE users SET username=%s, name=%s, role_name=%s, password_hash=%s WHERE user_id=%s', 
                                  (username, full_name, role, password_hash, user_id))
                 else:
@@ -1883,7 +1954,7 @@ def admin_dashboard():
 @admin_required
 def promotion_list():
     cursor = get_cursor()
-    cursor.execute('SELECT * FROM promotions ORDER BY start_date DESC')
+    cursor.execute('SELECT * FROM promotions ORDER BY promotion_id DESC')
     promotions = cursor.fetchall()
     return render_template('admin/promotion_list.html', promotions=promotions)
 
@@ -1911,7 +1982,7 @@ def add_promotion():
             cursor.execute('''INSERT INTO promotions (title, description, start_date, end_date, image_url) VALUES (%s, %s, %s, %s, %s)''',
                 (title, description, start_date, end_date, image_url))
             get_db().commit()
-            # ปกติ
+            flash('เพิ่มโปรโมชันเรียบร้อยแล้ว', 'success')
             return redirect(url_for('admin.promotion_list'))
         except Exception as e:
             error = 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + str(e)
@@ -1932,7 +2003,7 @@ def edit_promotion(promotion_id):
             image_url = promotion['image_url']
             if image_url:
                 try:
-                    promotions_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'promotions')
+                    promotions_folder = current_app.config['PROMOTION_UPLOAD_FOLDER']
                     os.remove(os.path.join(promotions_folder, image_url))
                 except Exception:
                     pass
@@ -1948,7 +2019,7 @@ def edit_promotion(promotion_id):
         if file and file.filename and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             # สร้างโฟลเดอร์ promotions ถ้ายังไม่มี
-            promotions_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'promotions')
+            promotions_folder = current_app.config['PROMOTION_UPLOAD_FOLDER']
             os.makedirs(promotions_folder, exist_ok=True)
             file.save(os.path.join(promotions_folder, filename))
             image_url = filename
@@ -1956,7 +2027,7 @@ def edit_promotion(promotion_id):
             cursor.execute('''UPDATE promotions SET title=%s, description=%s, start_date=%s, end_date=%s, image_url=%s WHERE promotion_id=%s''',
                 (title, description, start_date, end_date, image_url, promotion_id))
             get_db().commit()
-            # ปกติ
+            flash('บันทึกโปรโมชันเรียบร้อยแล้ว', 'success')
             return redirect(url_for('admin.promotion_list'))
         except Exception as e:
             error = 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + str(e)
@@ -1974,13 +2045,14 @@ def delete_promotion(promotion_id):
     row = cursor.fetchone()
     if row and row['image_url']:
         try:
-            promotions_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'promotions')
+            promotions_folder = current_app.config['PROMOTION_UPLOAD_FOLDER']
             os.remove(os.path.join(promotions_folder, row['image_url']))
             # ปกติ
         except Exception:
             pass
     cursor.execute('DELETE FROM promotions WHERE promotion_id=%s', (promotion_id,))
     get_db().commit()
+    flash('ลบโปรโมชันเรียบร้อยแล้ว', 'success')
     return redirect(url_for('admin.promotion_list'))
 
 @admin.route('/dashboard/chart-data')
@@ -2243,7 +2315,7 @@ def booking_report_pdf():
         query = '''
             SELECT b.*, 
                    c.first_name, c.last_name, c.phone,
-                   v.brand_name, v.model_name, v.license_plate,
+                   v.brand_name, v.model_name, v.license_plate, v.license_province,
                    GROUP_CONCAT(DISTINCT s.service_name ORDER BY s.service_name SEPARATOR ', ') AS service_names,
                    GROUP_CONCAT(DISTINCT CONCAT(s.service_name, 
                        CASE WHEN so.option_name IS NOT NULL 
@@ -2321,6 +2393,7 @@ def booking_report_pdf():
                 'brand_name': booking['brand_name'],
                 'model_name': booking['model_name'],
                 'license_plate': booking['license_plate'],
+                'license_province': booking['license_province'],
                 'service_names': booking.get('service_names') if isinstance(booking, dict) else booking['service_names'],
                 'service_details': booking.get('service_details') if isinstance(booking, dict) else booking['service_details'],
                 'note': booking.get('note') if isinstance(booking, dict) else booking['note'],
@@ -2333,7 +2406,6 @@ def booking_report_pdf():
         from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib.units import inch
-        from reportlab.lib import colors
         from reportlab.pdfbase import pdfmetrics
         from reportlab.pdfbase.ttfonts import TTFont
         import io
@@ -2412,7 +2484,7 @@ def booking_report_pdf():
             parent=styles['Heading1'],
             fontName='NotoSansThai-Bold',
             fontSize=20,
-            textColor=colors.HexColor('#14532d'),  # green-900
+            textColor=HexColor('#14532d'),  # green-900
             spaceAfter=15,
             alignment=1,  # center
             leading=24
@@ -2424,7 +2496,7 @@ def booking_report_pdf():
             parent=styles['Heading1'],
             fontName='NotoSansThai-Bold',
             fontSize=16,
-            textColor=colors.black,  # สีดำ
+            textColor=black,  # สีดำ
             spaceAfter=20,
             alignment=1,  # center
             leading=20
@@ -2443,8 +2515,17 @@ def booking_report_pdf():
         if start_date and end_date:
             # สร้าง Paragraph แยกสำหรับคำว่า "ระยะเวลาที่เลือก:" (ตัวหนา)
             date_label = Paragraph("ระยะเวลาที่เลือก:", bold_style)
+            # แปลงวันที่เป็นรูปแบบไทย (วว/ดด/ปปปป)
+            try:
+                start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+                thai_start_date = start_date_obj.strftime('%d/%m/%Y')
+                thai_end_date = end_date_obj.strftime('%d/%m/%Y')
+                date_text = f"{thai_start_date} ถึง {thai_end_date}"
+            except:
+                date_text = f"{start_date} ถึง {end_date}"
             # สร้าง Paragraph สำหรับวันที่ (ตัวปกติ)
-            date_value = Paragraph(f"{start_date} ถึง {end_date}", normal_style)
+            date_value = Paragraph(date_text, normal_style)
             
             # สร้างตารางเพื่อให้ข้อความอยู่บรรทัดเดียวกัน แต่ให้ใกล้กันมากขึ้น
             date_table = Table([[date_label, date_value]], colWidths=[1.2*inch, 4.8*inch])
@@ -2474,7 +2555,7 @@ def booking_report_pdf():
                 parent=styles['Normal'],
                 fontName='NotoSansThai-Bold',
                 fontSize=11,
-                textColor=colors.white,  # สีขาว
+                textColor=white,  # สีขาว
                 leading=14,
                 alignment=1  # จัดกึ่งกลาง
             )
@@ -2505,16 +2586,24 @@ def booking_report_pdf():
                     customer_name = Paragraph(f"{first_name}<br/>{last_name}", normal_style)
                 else:
                     customer_name = Paragraph(full_name, normal_style)
-                # จัดรูปแบบข้อมูลรถยนต์ - แยกยี่ห้อและรุ่น
+                # จัดรูปแบบข้อมูลรถยนต์ - แยกยี่ห้อ รุ่น ทะเบียนรถ และจังหวัด
                 brand_name = booking['brand_name'] or ''
                 model_name = booking['model_name'] or ''
+                license_plate = booking['license_plate'] or ''
+                license_province = booking['license_province'] or ''
                 
-                if brand_name and model_name:
-                    vehicle_info = Paragraph(f"ยี่ห้อ : {brand_name}<br/>รุ่น : {model_name}", normal_style)
-                elif brand_name:
-                    vehicle_info = Paragraph(f"ยี่ห้อ : {brand_name}", normal_style)
-                elif model_name:
-                    vehicle_info = Paragraph(f"รุ่น : {model_name}", normal_style)
+                vehicle_parts = []
+                if brand_name:
+                    vehicle_parts.append(f"ยี่ห้อ : {brand_name}")
+                if model_name:
+                    vehicle_parts.append(f"รุ่น : {model_name}")
+                if license_plate:
+                    vehicle_parts.append(f"ทะเบียน : {license_plate}")
+                if license_province:
+                    vehicle_parts.append(f"{license_province}")
+                
+                if vehicle_parts:
+                    vehicle_info = Paragraph("<br/>".join(vehicle_parts), normal_style)
                 else:
                     vehicle_info = Paragraph('-', normal_style)
                 # แปลงวันที่เป็นรูปแบบไทย (วว/ดด/ปป)
@@ -2648,16 +2737,16 @@ def booking_report_pdf():
                 colWidths=[35, 70, 100, 150, 60, 60, 70]  # เพิ่มความกว้างคอลัมน์สถานะจาก 50 เป็น 70
             )
             table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#166534')),  # green-800
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('BACKGROUND', (0, 0), (-1, 0), HexColor('#166534')),  # green-800
+                ('TEXTCOLOR', (0, 0), (-1, 0), white),
                 ('FONTNAME', (0, 0), (-1, 0), 'NotoSansThai-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 11),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                 ('ALIGN', (0, 0), (-1, 0), 'CENTER'),  # จัดกึ่งกลางหัวตารางทั้งหมด
                 ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),  # จัดกึ่งกลางแนวตั้งหัวตาราง
 
-                ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#fefce8')),  # yellow-50
-                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#166534')),  # green-800
+                ('BACKGROUND', (0, 1), (-1, -1), HexColor('#fefce8')),  # yellow-50
+                ('GRID', (0, 0), (-1, -1), 1, HexColor('#166534')),  # green-800
                 ('FONTNAME', (0, 1), (-1, -1), 'NotoSansThai'),
                 ('FONTSIZE', (0, 1), (-1, -1), 9),
                 ('VALIGN', (0, 1), (-1, -1), 'TOP'),
@@ -2703,9 +2792,8 @@ def booking_report_pdf():
             ('TOPPADDING', (0, 0), (-1, -1), 0),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ]))
-        # ขยับตารางให้มี indentation
-        info_table.hAlign = 'LEFT'
-        info_table.leftIndent = 40  # เพิ่ม indentation มากขึ้น
+        # จัดตารางให้อยู่ริมสุดขวา
+        info_table.hAlign = 'RIGHT'
         info_table.vAlign = 'TOP'
         elements.append(info_table)
         
@@ -2811,7 +2899,7 @@ def website_stats_pdf():
             parent=styles['Heading1'],
             fontName='NotoSansThai-Bold',
             fontSize=20,
-            textColor=colors.HexColor('#14532d'),  # green-900
+            textColor=HexColor('#14532d'),  # green-900
             spaceAfter=15,
             alignment=1,  # center
             leading=24
@@ -2823,7 +2911,7 @@ def website_stats_pdf():
             parent=styles['Heading1'],
             fontName='NotoSansThai-Bold',
             fontSize=16,
-            textColor=colors.black,  # สีดำ
+            textColor=black,  # สีดำ
             spaceAfter=20,
             alignment=1,  # center
             leading=20
@@ -2835,7 +2923,7 @@ def website_stats_pdf():
             parent=styles['Heading2'],
             fontName='NotoSansThai-Bold',
             fontSize=13,
-            textColor=colors.HexColor('#166534'),  # green-800
+            textColor=HexColor('#166534'),  # green-800
             spaceAfter=8,
             spaceBefore=5,  # ลดระยะห่างด้านบน
             leading=16
@@ -2847,7 +2935,7 @@ def website_stats_pdf():
             parent=styles['Normal'],
             fontName='NotoSansThai',
             fontSize=11,
-            textColor=colors.HexColor('#374151'),  # gray-700
+            textColor=HexColor('#374151'),  # gray-700
             leading=16,
             spaceAfter=6
         )
@@ -2858,7 +2946,7 @@ def website_stats_pdf():
             parent=styles['Normal'],
             fontName='NotoSansThai-Bold',
             fontSize=11,
-            textColor=colors.HexColor('#374151'),  # gray-700
+            textColor=HexColor('#374151'),  # gray-700
             leading=16,
             spaceAfter=6
         )
@@ -2876,8 +2964,17 @@ def website_stats_pdf():
         if start_date and end_date:
             # สร้าง Paragraph แยกสำหรับคำว่า "ระยะเวลาที่เลือก:" (ตัวหนา)
             date_label = Paragraph("ระยะเวลาที่เลือก:", bold_style)
+            # แปลงวันที่เป็นรูปแบบไทย (วว/ดด/ปปปป)
+            try:
+                start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+                thai_start_date = start_date_obj.strftime('%d/%m/%Y')
+                thai_end_date = end_date_obj.strftime('%d/%m/%Y')
+                date_text = f"{thai_start_date} ถึง {thai_end_date}"
+            except:
+                date_text = f"{start_date} ถึง {end_date}"
             # สร้าง Paragraph สำหรับวันที่ (ตัวปกติ)
-            date_value = Paragraph(f"{start_date} ถึง {end_date}", normal_style)
+            date_value = Paragraph(date_text, normal_style)
             
             # สร้างตารางเพื่อให้ข้อความอยู่บรรทัดเดียวกัน แต่ให้ใกล้กันมากขึ้น
             date_table = Table([[date_label, date_value]], colWidths=[1.2*inch, 4.8*inch])
@@ -2922,14 +3019,14 @@ def website_stats_pdf():
             
             device_table = Table(device_table_data, colWidths=[3*inch, 3*inch])
             device_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#166534')),  # green-800
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('BACKGROUND', (0, 0), (-1, 0), HexColor('#166534')),  # green-800
+                ('TEXTCOLOR', (0, 0), (-1, 0), white),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'NotoSansThai-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 11),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f0fdf4')),  # green-50
-                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#166534')),  # green-800
+                ('BACKGROUND', (0, 1), (-1, -1), HexColor('#f0fdf4')),  # green-50
+                ('GRID', (0, 0), (-1, -1), 1, HexColor('#166534')),  # green-800
                 ('ALIGN', (1, 1), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 1), (-1, -1), 'NotoSansThai'),
                 ('FONTSIZE', (0, 1), (-1, -1), 10),
@@ -2956,14 +3053,14 @@ def website_stats_pdf():
             
             daily_table = Table(daily_table_data, colWidths=[3*inch, 3*inch])
             daily_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#166534')),  # green-800
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('BACKGROUND', (0, 0), (-1, 0), HexColor('#166534')),  # green-800
+                ('TEXTCOLOR', (0, 0), (-1, 0), white),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'NotoSansThai-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 11),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#fefce8')),  # yellow-50
-                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#166534')),  # green-800
+                ('BACKGROUND', (0, 1), (-1, -1), HexColor('#fefce8')),  # yellow-50
+                ('GRID', (0, 0), (-1, -1), 1, HexColor('#166534')),  # green-800
                 ('ALIGN', (1, 1), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 1), (-1, -1), 'NotoSansThai'),
                 ('FONTSIZE', (0, 1), (-1, -1), 10),
@@ -3034,14 +3131,14 @@ def website_stats_pdf():
             # สร้างตาราง
             table = Table(table_data, colWidths=[4*inch, 2*inch])
             table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#166534')),  # green-800
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('BACKGROUND', (0, 0), (-1, 0), HexColor('#166534')),  # green-800
+                ('TEXTCOLOR', (0, 0), (-1, 0), white),
                 ('ALIGN', (0, 0), (-1, 0), 'CENTER'),  # หัวตารางอยู่กึ่งกลาง
                 ('FONTNAME', (0, 0), (-1, 0), 'NotoSansThai-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 11),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f0fdf4')),  # green-50
-                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#166534')),  # green-800
+                ('BACKGROUND', (0, 1), (-1, -1), HexColor('#f0fdf4')),  # green-50
+                ('GRID', (0, 0), (-1, -1), 1, HexColor('#166534')),  # green-800
                 ('ALIGN', (0, 1), (0, -1), 'LEFT'),  # คอลัมน์ชื่อหน้าชิดซ้าย
                 ('ALIGN', (1, 1), (1, -1), 'CENTER'),  # คอลัมน์จำนวนอยู่กึ่งกลาง
                 ('FONTNAME', (0, 1), (-1, -1), 'NotoSansThai'),
@@ -3067,7 +3164,7 @@ def website_stats_pdf():
         info_value = Paragraph(f"{datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", normal_style)
         
         # สร้างตารางเพื่อให้ข้อความอยู่บรรทัดเดียวกัน
-        info_table = Table([[info_label, info_value]], colWidths=[1.5*inch, 2*inch])
+        info_table = Table([[info_label, info_value]], colWidths=[1.2*inch, 3.5*inch])
         info_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, 0), 'LEFT'),  # คำว่า "รายงานนี้ถูกสร้างเมื่อ:" ชิดซ้าย
             ('ALIGN', (1, 0), (1, 0), 'LEFT'),  # วันที่และเวลาชิดซ้าย
@@ -3079,9 +3176,8 @@ def website_stats_pdf():
             ('TOPPADDING', (0, 0), (-1, -1), 0),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ]))
-        # ขยับตารางให้มี indentation
-        info_table.hAlign = 'LEFT'
-        info_table.leftIndent = 40  # เพิ่ม indentation มากขึ้น
+        # จัดตารางให้อยู่ริมสุดขวา
+        info_table.hAlign = 'RIGHT'
         info_table.vAlign = 'TOP'
         elements.append(info_table)
         
