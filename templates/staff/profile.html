@@ -26,9 +26,11 @@
                 </label>
                 <div class="flex flex-col items-center space-y-4">
                     {% if user.avatar_filename %}
-                        <img src="{{ url_for('static', filename='uploads/profile/' + user.avatar_filename) }}?v={{ range(1, 10000) | random }}"
-                             alt="Profile Avatar"
-                             class="w-32 h-32 rounded-full object-cover border-4 border-green-200 shadow-lg">
+                        ="{{ url_for('static', filename='uploads/profile/' + user.avatar_filename) }}?v={{ range(1, 10000) | random }}"
+                            <img src="{{ url_for('static', filename='uploads/profiles/' ~ user.avatar_filename) }}?v={{ range(1, 10000) | random }}"
+                                alt="Profile Avatar"
+                                class="w-32 h-32 rounded-full object-cover border-4 border-green-200 shadow-lg">
+
                     {% else %}
                         <div class="w-32 h-32 rounded-full bg-green-200 flex items-center justify-center text-green-900 text-4xl font-bold shadow-lg">
                             {{ user.name[:1]|upper if user.name else 'U' }}
@@ -163,7 +165,7 @@
         if (avatarUpdated === '1' && newFilename) {
             // สร้างรูปภาพใหม่
             const newImg = document.createElement('img');
-            newImg.src = `/static/uploads/profile/${newFilename}?t=${new Date().getTime()}`;
+            newImg.src = `/static/uploads/profiles/${newFilename}?t=${new Date().getTime()}`;
             newImg.alt = 'Profile Avatar';
             newImg.className = 'w-32 h-32 rounded-full object-cover border-4 border-green-200 shadow-lg';
             

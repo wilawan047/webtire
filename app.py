@@ -191,7 +191,7 @@ def staff_profile():
                     SET name = %s 
                     WHERE user_id = %s
                 ''', (name, user_id))
-            
+            get_db().commit()        
             # อัปเดต session
             session['name'] = name
             if avatar_filename:
