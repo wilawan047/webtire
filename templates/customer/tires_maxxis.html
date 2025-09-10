@@ -9,6 +9,26 @@
     <span class="text-black text-sm max-w-xs truncate">ยาง Maxxis</span>
 </nav>
   
+  <!-- รุ่นย่อย -->
+  {% if available_models %}
+  <div class="mb-6">
+    <h2 class="text-lg font-semibold text-gray-800 mb-3">เลือกรุ่นย่อย</h2>
+    <div class="flex flex-wrap gap-2">
+      <a href="{{ url_for('customer.tires_by_brand', brand='maxxis') }}" 
+         class="px-4 py-2 rounded-lg border-2 {% if not model %}border-green-500 bg-green-50 text-green-700{% else %}border-gray-300 bg-white text-gray-700 hover:border-green-300{% endif %} transition-colors">
+        ทั้งหมด
+      </a>
+      {% for model_item in available_models %}
+        <a href="{{ url_for('customer.tires_by_model', brand='maxxis', model=model_item.model_name) }}" 
+           class="px-4 py-2 rounded-lg border-2 {% if model == model_item.model_name %}border-green-500 bg-green-50 text-green-700{% else %}border-gray-300 bg-white text-gray-700 hover:border-green-300{% endif %} transition-colors">
+          {{ model_item.model_name }}
+          <span class="text-xs text-gray-500 ml-1">({{ model_item.tire_category }})</span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <div class="space-y-6">
     {% if tires %}
       {% for tire in tires %}
