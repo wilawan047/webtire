@@ -300,12 +300,14 @@ def register():
 def forgot_password():
     """ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมล"""
     try:
+        print(f"🔍 Forgot password request received for email: {request.form.get('email', '')}")
         email = request.form.get('email', '').strip()
         
         if not email:
             return jsonify({'success': False, 'message': 'กรุณากรอกอีเมล'}), 400
         
         cursor = get_cursor()
+        print(f"🔍 Database cursor obtained successfully")
         
         # ตรวจสอบว่ามีอีเมลนี้ในระบบหรือไม่
         cursor.execute("""
@@ -315,8 +317,10 @@ def forgot_password():
             WHERE c.email = %s AND u.role_name = 'customer'
         """, (email,))
         customer = cursor.fetchone()
+        print(f"🔍 Customer lookup result: {customer is not None}")
         
         if not customer:
+            print(f"❌ Customer not found for email: {email}")
             return jsonify({'success': False, 'message': 'ไม่พบอีเมลนี้ในระบบ'}), 400
         
         # สร้าง token สำหรับรีเซ็ตรหัสผ่าน
@@ -337,7 +341,9 @@ def forgot_password():
         get_db().commit()
         
         # ส่งอีเมล
+        print(f"📧 Attempting to send reset email to: {email}")
         email_sent = send_reset_email(email, customer['first_name'], reset_token)
+        print(f"📧 Email send result: {email_sent}")
         
         if email_sent:
             return jsonify({'success': True, 'message': 'ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลของคุณแล้ว กรุณาตรวจสอบอีเมล'})
