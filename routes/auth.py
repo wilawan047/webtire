@@ -564,7 +564,7 @@ def send_reset_email(email, first_name, token):
                             "to": [{"email": email}],
                             "subject": subject
                         }],
-                        "from": {"email": "noreply@sendgrid.com", "name": "ไทร์พลัส บุรีรัมย์"},
+                        "from": {"email": "computersci65@gmail.com", "name": "ไทร์พลัส บุรีรัมย์"},
                         "content": [{
                             "type": "text/html",
                             "value": html_content
