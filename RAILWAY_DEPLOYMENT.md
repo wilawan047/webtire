@@ -71,6 +71,31 @@ password_hash = generate_password_hash(password, method='scrypt')
 password_hash = generate_password_hash(password, method='pbkdf2:sha256')
 ```
 
+#### 5. แก้ไขปัญหา Static File Serving
+```python
+# เพิ่ม route สำหรับแสดงรูปภาพจาก temp directory
+@app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    """แสดงรูปภาพจาก upload folder"""
+    # หาไฟล์ในโฟลเดอร์ต่างๆ และส่งไฟล์กลับ
+
+# เพิ่ม template filter สำหรับสร้าง URL
+@app.template_filter('avatar_url')
+def avatar_url(filename):
+    """สร้าง URL สำหรับรูปโปรไฟล์"""
+    if app.config.get('RAILWAY_ENVIRONMENT'):
+        return url_for('uploaded_file', filename=filename)
+    else:
+        return url_for('static', filename='uploads/profiles/' + filename)
+```
+
+```html
+<!-- อัปเดต template ให้ใช้ filter ใหม่ -->
+<img src="{{ user.avatar_filename | avatar_url }}?v={{ range(1, 10000) | random }}"
+     alt="Profile Avatar"
+     class="w-32 h-32 rounded-full object-cover border-4 border-green-200 shadow-lg">
+```
+
 ### Environment Variables ที่ต้องตั้งค่าใน Railway
 
 1. **RAILWAY_ENVIRONMENT=true** - เพื่อให้แอปรู้ว่าใช้งานใน Railway

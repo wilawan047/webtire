@@ -42,7 +42,7 @@
                   class="block focus:outline-none"
                   onclick="toggleProfileMenu(event)">
             {% if session.get('customer_avatar') %}
-              <img id="header-avatar" src="{{ url_for('static', filename='uploads/profile/' ~ session.get('customer_avatar')) }}?v={{ range(1, 10000) | random }}"
+              <img id="header-avatar" src="{{ session.get('customer_avatar') | avatar_url }}?v={{ range(1, 10000) | random }}"
                   alt="โปรไฟล์"
                   class="w-10 h-10 rounded-full border-2 border-white object-cover"
                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">

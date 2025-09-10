@@ -144,6 +144,37 @@ from flask import redirect, url_for
 def index():
     return redirect(url_for('customer.home'))
 
+# Route สำหรับแสดงรูปภาพจาก upload folder
+@app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    """แสดงรูปภาพจาก upload folder"""
+    try:
+        # ตรวจสอบว่าเป็นไฟล์รูปภาพหรือไม่
+        if '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']:
+            # ลองหาไฟล์ในโฟลเดอร์ต่างๆ
+            upload_folders = [
+                app.config['PROFILE_UPLOAD_FOLDER'],
+                app.config['TIRE_UPLOAD_FOLDER'],
+                app.config['PROMOTION_UPLOAD_FOLDER'],
+                app.config['SLIDER_UPLOAD_FOLDER'],
+                app.config['LOGO_UPLOAD_FOLDER']
+            ]
+            
+            for folder in upload_folders:
+                file_path = os.path.join(folder, filename)
+                if os.path.exists(file_path):
+                    from flask import send_file
+                    return send_file(file_path)
+            
+            # ถ้าไม่เจอไฟล์ ให้แสดงรูป default
+            from flask import abort
+            abort(404)
+        else:
+            abort(404)
+    except Exception as e:
+        print(f"Error serving file {filename}: {e}")
+        abort(404)
+
 
 
 @app.route('/staff/profile', methods=['GET', 'POST'])
@@ -265,6 +296,19 @@ def date_thai(value):
         value = datetime.strptime(value, '%Y-%m-%d')
     
     return f"{value.day} {thai_months[value.month - 1]} {value.year + 543}"
+
+@app.template_filter('avatar_url')
+def avatar_url(filename):
+    """สร้าง URL สำหรับรูปโปรไฟล์"""
+    if not filename:
+        return None
+    
+    # ถ้าเป็น Railway environment ให้ใช้ route ที่เราสร้าง
+    if app.config.get('RAILWAY_ENVIRONMENT'):
+        return url_for('uploaded_file', filename=filename)
+    else:
+        # Local development ใช้ static folder
+        return url_for('static', filename='uploads/profiles/' + filename)
 
 @app.template_filter('comma')
 def comma_format(value):
