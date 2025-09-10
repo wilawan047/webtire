@@ -455,29 +455,33 @@ def tires_by_brand(brand):
         sample_tires = cursor.fetchall()
         print(f"Sample tires: {sample_tires}")
         
-        # ดึงข้อมูลยางตามแบรนด์
-        cursor.execute('''
-            SELECT t.*, b.brand_name, m.model_name
-            FROM tires t
-            JOIN tire_models m ON t.model_id = m.model_id
-            JOIN brands b ON m.brand_id = b.brand_id
-            WHERE b.brand_name = %s 
-            ORDER BY t.full_size ASC, t.price_each ASC, t.price_set ASC
-        ''', (brand_name,))
+        # รับ parameter model จาก URL
+        model_filter = request.args.get('model', '')
+        
+        # สร้าง SQL query ตาม model filter
+        if model_filter:
+            # กรองตามรุ่นยาง
+            cursor.execute('''
+                SELECT t.*, b.brand_name, m.model_name
+                FROM tires t
+                JOIN tire_models m ON t.model_id = m.model_id
+                JOIN brands b ON m.brand_id = b.brand_id
+                WHERE b.brand_name = %s AND m.model_name = %s
+                ORDER BY t.full_size ASC, t.price_each ASC, t.price_set ASC
+            ''', (brand_name, model_filter))
+        else:
+            # แสดงทั้งหมด
+            cursor.execute('''
+                SELECT t.*, b.brand_name, m.model_name
+                FROM tires t
+                JOIN tire_models m ON t.model_id = m.model_id
+                JOIN brands b ON m.brand_id = b.brand_id
+                WHERE b.brand_name = %s 
+                ORDER BY t.full_size ASC, t.price_each ASC, t.price_set ASC
+            ''', (brand_name,))
         
         tires = cursor.fetchall()
         print(f"Found {len(tires)} tires for {brand_name}")
-        
-        # ดึงข้อมูลรุ่นย่อยทั้งหมดของแบรนด์นี้
-        cursor.execute('''
-            SELECT DISTINCT m.model_name, m.tire_category
-            FROM tire_models m
-            JOIN brands b ON m.brand_id = b.brand_id
-            WHERE b.brand_name = %s
-            ORDER BY m.model_name ASC
-        ''', (brand_name,))
-        
-        available_models = cursor.fetchall()
         
         cursor.close()
         
@@ -491,10 +495,7 @@ def tires_by_brand(brand):
         else:
             template_name = 'customer/tires.html'
         
-        return render_customer_template(template_name, 
-                                       tires=tires, 
-                                       brand=brand_name,
-                                       available_models=available_models)
+        return render_customer_template(template_name, tires=tires, brand=brand_name)
         
     except Exception as e:
         print(f"Error loading {brand} tires: {e}")
@@ -509,74 +510,6 @@ def tires_by_brand(brand):
             template_name = 'customer/tires.html'
         
         return render_customer_template(template_name, tires=[], brand=brand)
-
-@customer.route('/tires/<brand>/<model>')
-def tires_by_model(brand, model):
-    """หน้ายางตามรุ่นย่อย"""
-    try:
-        db = get_db()
-        cursor = db.cursor(dictionary=True)
-        
-        # Commit เพื่อให้แน่ใจว่าข้อมูลล่าสุดถูกดึงมา
-        db.commit()
-        
-        # แปลงชื่อแบรนด์ให้ตรงกับฐานข้อมูล
-        brand_mapping = {
-            'bfgoodrich': 'BFGoodrich',
-            'michelin': 'Michelin',
-            'maxxis': 'Maxxis'
-        }
-        
-        brand_name = brand_mapping.get(brand.lower(), brand.title())
-        
-        print(f"Loading tires for brand: {brand_name}, model: {model}")
-        
-        # ดึงข้อมูลยางตามแบรนด์และรุ่น
-        cursor.execute('''
-            SELECT t.*, b.brand_name, m.model_name, m.tire_category
-            FROM tires t
-            JOIN tire_models m ON t.model_id = m.model_id
-            JOIN brands b ON m.brand_id = b.brand_id
-            WHERE b.brand_name = %s AND m.model_name = %s
-            ORDER BY t.full_size ASC, t.price_each ASC, t.price_set ASC
-        ''', (brand_name, model))
-        
-        tires = cursor.fetchall()
-        print(f"Found {len(tires)} tires for {brand_name} {model}")
-        
-        # ดึงข้อมูลรุ่นอื่นๆ ของแบรนด์เดียวกัน
-        cursor.execute('''
-            SELECT DISTINCT m.model_name, m.tire_category
-            FROM tire_models m
-            JOIN brands b ON m.brand_id = b.brand_id
-            WHERE b.brand_name = %s
-            ORDER BY m.model_name ASC
-        ''', (brand_name,))
-        
-        available_models = cursor.fetchall()
-        
-        cursor.close()
-        
-        # เลือก template ตามแบรนด์
-        if brand.lower() == 'bfgoodrich':
-            template_name = 'customer/tires_bfgoodrich.html'
-        elif brand.lower() == 'michelin':
-            template_name = 'customer/tires_michelin.html'
-        elif brand.lower() == 'maxxis':
-            template_name = 'customer/tires_maxxis.html'
-        else:
-            template_name = 'customer/tires.html'
-        
-        return render_customer_template(template_name, 
-                                       tires=tires, 
-                                       brand=brand_name,
-                                       model=model,
-                                       available_models=available_models)
-        
-    except Exception as e:
-        print(f"Error loading tires by model: {e}")
-        flash('เกิดข้อผิดพลาดในการโหลดข้อมูลยาง', 'error')
-        return redirect(url_for('customer.tires'))
 
 @customer.route('/compare')
 def compare():
