@@ -123,3 +123,51 @@ def get_brand_name(brand_id):
     
     return ''
 
+def safe_file_save(file, upload_folder, filename):
+    """บันทึกไฟล์อย่างปลอดภัยพร้อม error handling"""
+    try:
+        # สร้างโฟลเดอร์ถ้ายังไม่มี
+        os.makedirs(upload_folder, exist_ok=True)
+        
+        # สร้าง path สำหรับไฟล์
+        file_path = os.path.join(upload_folder, filename)
+        
+        # บันทึกไฟล์
+        file.save(file_path)
+        
+        # ตรวจสอบว่าไฟล์ถูกบันทึกจริง
+        if os.path.exists(file_path):
+            print(f"✅ File saved successfully: {file_path}")
+            return True, file_path
+        else:
+            print(f"❌ File not saved: {file_path}")
+            return False, None
+            
+    except Exception as e:
+        print(f"❌ Error saving file {filename}: {e}")
+        return False, None
+
+def get_upload_folder_path(upload_folder_name):
+    """ดึง path ของ upload folder พร้อม fallback"""
+    try:
+        from flask import current_app
+        folder_path = current_app.config.get(upload_folder_name)
+        
+        # ตรวจสอบว่าโฟลเดอร์มีอยู่จริงและสามารถเขียนได้
+        if folder_path and os.path.exists(folder_path) and os.access(folder_path, os.W_OK):
+            return folder_path
+        
+        # ถ้าเป็น Railway environment และโฟลเดอร์ไม่สามารถใช้งานได้
+        if current_app.config.get('RAILWAY_ENVIRONMENT'):
+            # ใช้ fallback directory
+            fallback_dir = os.path.join(os.path.expanduser('~'), 'uploads', upload_folder_name.lower())
+            os.makedirs(fallback_dir, exist_ok=True)
+            print(f"⚠️ Using fallback directory: {fallback_dir}")
+            return fallback_dir
+            
+        return folder_path
+        
+    except Exception as e:
+        print(f"❌ Error getting upload folder: {e}")
+        return None
+

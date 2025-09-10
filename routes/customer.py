@@ -1524,34 +1524,34 @@ def update_avatar():
                 timestamp = int(time.time() * 1000)
                 filename = f"{customer_id}_{timestamp}_{secure_filename(file.filename)}"
                 
-                # สร้างโฟลเดอร์ถ้ายังไม่มี
-                upload_folder = current_app.config['PROFILE_UPLOAD_FOLDER']
-                os.makedirs(upload_folder, exist_ok=True)
+                # ใช้ฟังก์ชัน safe_file_save ใหม่
+                from utils import safe_file_save, get_upload_folder_path
                 
-                # บันทึกไฟล์
-                file_path = os.path.join(upload_folder, filename)
-                print(f"Attempting to save file to: {file_path}")
-                print(f"Upload folder exists: {os.path.exists(upload_folder)}")
-                print(f"Upload folder: {upload_folder}")
+                # ดึง upload folder path พร้อม fallback
+                upload_folder = get_upload_folder_path('PROFILE_UPLOAD_FOLDER')
+                if not upload_folder:
+                    flash('ไม่สามารถเข้าถึงโฟลเดอร์อัปโหลดได้', 'error')
+                    return redirect(url_for('customer.profile'))
                 
-                file.save(file_path)
+                # บันทึกไฟล์อย่างปลอดภัย
+                success, file_path = safe_file_save(file, upload_folder, filename)
                 
-                # ตรวจสอบว่าไฟล์ถูกบันทึกจริง
-                if not os.path.exists(file_path):
-                    print(f"Error: File not saved to {file_path}")
+                if not success:
                     flash('เกิดข้อผิดพลาดในการบันทึกไฟล์', 'error')
                     return redirect(url_for('customer.profile'))
-                else:
-                    print(f"File successfully saved to: {file_path}")
                 
                 # ลบไฟล์เก่าถ้ามี
                 cursor = get_cursor()
                 cursor.execute('SELECT avatar_filename FROM users WHERE user_id = (SELECT user_id FROM customers WHERE customer_id = %s)', (customer_id,))
                 user_data = cursor.fetchone()
                 if user_data and user_data.get('avatar_filename'):
-                    old_file_path = os.path.join(current_app.config['PROFILE_UPLOAD_FOLDER'], user_data['avatar_filename'])
+                    old_file_path = os.path.join(upload_folder, user_data['avatar_filename'])
                     if os.path.exists(old_file_path):
-                        os.remove(old_file_path)
+                        try:
+                            os.remove(old_file_path)
+                            print(f"✅ Removed old file: {old_file_path}")
+                        except Exception as e:
+                            print(f"⚠️ Could not remove old file: {e}")
                 
                 # อัปเดตฐานข้อมูล
                 cursor.execute('''

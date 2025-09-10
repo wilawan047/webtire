@@ -46,8 +46,19 @@ upload_folders = [
     app.config['LOGO_UPLOAD_FOLDER']
 ]
 
+# สร้างโฟลเดอร์พร้อม error handling
 for folder in upload_folders:
-    os.makedirs(folder, exist_ok=True)
+    try:
+        os.makedirs(folder, exist_ok=True)
+        print(f"✅ Created upload folder: {folder}")
+    except Exception as e:
+        print(f"❌ Error creating folder {folder}: {e}")
+        # ถ้าเป็น Railway environment และไม่สามารถสร้างโฟลเดอร์ได้
+        if app.config.get('RAILWAY_ENVIRONMENT'):
+            print(f"⚠️ Railway environment detected - using fallback directory")
+            # ใช้ fallback directory
+            fallback_dir = os.path.join(os.path.expanduser('~'), 'uploads')
+            os.makedirs(fallback_dir, exist_ok=True)
 
 # ลงทะเบียน blueprints
 app.register_blueprint(auth)

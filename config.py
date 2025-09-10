@@ -1,4 +1,5 @@
 import os
+import tempfile
 from datetime import timedelta
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -13,14 +14,29 @@ class Config:
     DB_PASSWORD = os.environ.get('DB_PASSWORD', 'mxAiijYOvjVtdUrdtVCVyMygyvxOFOhO')
     DB_NAME = os.environ.get('DB_NAME', 'railway')
 
-    # ✅ Upload folders → ต้องอยู่ใน static/uploads
-    UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
-    PROFILE_UPLOAD_FOLDER = os.path.join(UPLOAD_FOLDER, 'profiles')
-    TIRE_UPLOAD_FOLDER = os.path.join(UPLOAD_FOLDER, 'tires')
-    PROMOTION_UPLOAD_FOLDER = os.path.join(UPLOAD_FOLDER, 'promotions')
-    SLIDER_UPLOAD_FOLDER = os.path.join(UPLOAD_FOLDER, 'sliders')
-    LOGO_UPLOAD_FOLDER = os.path.join(UPLOAD_FOLDER, 'logos')
+    # ✅ Upload folders → ใช้ temp directory สำหรับ Railway deployment
+    # ใน Railway ใช้ temporary directory เพื่อหลีกเลี่ยงปัญหา ephemeral filesystem
+    if os.environ.get('RAILWAY_ENVIRONMENT'):
+        # Railway deployment - ใช้ temp directory
+        TEMP_DIR = tempfile.gettempdir()
+        UPLOAD_FOLDER = os.path.join(TEMP_DIR, 'tireweb_uploads')
+        PROFILE_UPLOAD_FOLDER = os.path.join(UPLOAD_FOLDER, 'profiles')
+        TIRE_UPLOAD_FOLDER = os.path.join(UPLOAD_FOLDER, 'tires')
+        PROMOTION_UPLOAD_FOLDER = os.path.join(UPLOAD_FOLDER, 'promotions')
+        SLIDER_UPLOAD_FOLDER = os.path.join(UPLOAD_FOLDER, 'sliders')
+        LOGO_UPLOAD_FOLDER = os.path.join(UPLOAD_FOLDER, 'logos')
+    else:
+        # Local development - ใช้ static/uploads
+        UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
+        PROFILE_UPLOAD_FOLDER = os.path.join(UPLOAD_FOLDER, 'profiles')
+        TIRE_UPLOAD_FOLDER = os.path.join(UPLOAD_FOLDER, 'tires')
+        PROMOTION_UPLOAD_FOLDER = os.path.join(UPLOAD_FOLDER, 'promotions')
+        SLIDER_UPLOAD_FOLDER = os.path.join(UPLOAD_FOLDER, 'sliders')
+        LOGO_UPLOAD_FOLDER = os.path.join(UPLOAD_FOLDER, 'logos')
 
     # Allowed file extensions
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5MB
+    
+    # Railway specific settings
+    RAILWAY_ENVIRONMENT = os.environ.get('RAILWAY_ENVIRONMENT', False)

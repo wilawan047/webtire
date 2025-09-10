@@ -4,8 +4,6 @@ Werkzeug==2.3.7
 reportlab==4.0.4
 PyMySQL==1.1.0
 python-dotenv==1.0.0
-Flask
-Flask-WTF
-mysql-connector-python
-Werkzeug
-scrypt
+mysql-connector-python==8.2.0
+scrypt==0.8.20
+gunicorn==21.2.0
