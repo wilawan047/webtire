@@ -6,6 +6,9 @@ import secrets
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import json
+import urllib.request
+import urllib.error
 from werkzeug.security import generate_password_hash
 from flask_wtf.csrf import generate_csrf
 
@@ -433,6 +436,8 @@ def send_reset_email(email, first_name, token):
         smtp_port = current_app.config['MAIL_PORT']
         sender_email = current_app.config['MAIL_USERNAME']
         sender_password = current_app.config['MAIL_PASSWORD']
+        default_sender = current_app.config.get('MAIL_DEFAULT_SENDER') or sender_email
+        resend_api_key = current_app.config.get('RESEND_API_KEY', '')
         
         # ตรวจสอบว่ามีการตั้งค่าอีเมลหรือไม่
         if not sender_email or not sender_password:
@@ -486,17 +491,43 @@ def send_reset_email(email, first_name, token):
         </html>
         """
         
-        # สร้างอีเมล
+        # หากมี RESEND_API_KEY ให้ส่งผ่าน Resend (HTTPS) ก่อน
+        if resend_api_key:
+            try:
+                print("📮 Sending email via Resend API")
+                req = urllib.request.Request(
+                    url="https://api.resend.com/emails",
+                    method="POST",
+                    data=json.dumps({
+                        "from": default_sender or "no-reply@resend.dev",
+                        "to": email,
+                        "subject": subject,
+                        "html": html_content
+                    }).encode("utf-8"),
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {resend_api_key}"
+                    }
+                )
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    status = resp.getcode()
+                    body = resp.read().decode("utf-8")
+                    print(f"✅ Resend response {status}: {body}")
+                    return 200 <= status < 300
+            except urllib.error.HTTPError as he:
+                print(f"❌ Resend HTTPError {he.code}: {he.read().decode('utf-8', 'ignore')}")
+            except Exception as e_api:
+                print(f"❌ Resend send failed: {e_api}")
+
+        # สร้างอีเมล SMTP
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
-        msg['From'] = sender_email
+        msg['From'] = default_sender or sender_email
         msg['To'] = email
-        
-        # เพิ่มเนื้อหา HTML
         html_part = MIMEText(html_content, 'html', 'utf-8')
         msg.attach(html_part)
-        
-        # ส่งอีเมล (รองรับทั้ง STARTTLS และ SMTP_SSL แบบ fallback)
+
+        # ส่งอีเมลผ่าน SMTP (รองรับทั้ง STARTTLS และ SMTP_SSL แบบ fallback)
         try:
             print(f"🔗 Connecting to SMTP server (TLS): {smtp_server}:{smtp_port}")
             server = smtplib.SMTP(smtp_server, smtp_port, timeout=30)

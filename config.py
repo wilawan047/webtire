@@ -47,6 +47,10 @@ class Config:
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME', '')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() == 'true'
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', os.environ.get('MAIL_USERNAME', ''))
+    
+    # Email provider over HTTPS (Resend)
+    RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
     
     # App URL for reset links
     APP_URL = os.environ.get('APP_URL', 'http://localhost:5000')
