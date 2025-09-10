@@ -508,10 +508,51 @@ def send_reset_email(email, first_name, token):
         print(f"🔍 Debug - SENDGRID_API_KEY exists: {bool(sendgrid_api_key)}")
         print(f"🔍 Debug - MAIL_DEFAULT_SENDER: {default_sender}")
         
-        # ใช้ Gmail SMTP โดยตรง (ข้าม Resend/SendGrid)
-        print("📧 Using Gmail SMTP directly - skipping API providers")
+        # ใช้ Gmail API (Railway บล็อค SMTP แต่ Gmail API ใช้ HTTPS)
+        print("📧 Using Gmail API - Railway blocks SMTP but Gmail API works via HTTPS")
         
-        # หากมี SENDGRID_API_KEY ให้ส่งผ่าน SendGrid ก่อน
+        # ตรวจสอบว่ามี Gmail API credentials หรือไม่
+        gmail_api_key = current_app.config.get('GMAIL_API_KEY', '')
+        if gmail_api_key and gmail_api_key.strip():
+            try:
+                print("📮 Sending email via Gmail API")
+                # ใช้ Gmail API ผ่าน Google's API
+                import base64
+                from email.mime.text import MIMEText
+                
+                # สร้าง message
+                message = MIMEText(html_content, 'html', 'utf-8')
+                message['to'] = email
+                message['from'] = sender_email
+                message['subject'] = subject
+                
+                # Encode message
+                raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+                
+                # ส่งผ่าน Gmail API
+                req = urllib.request.Request(
+                    url="https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+                    method="POST",
+                    data=json.dumps({
+                        "raw": raw_message
+                    }).encode("utf-8"),
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {gmail_api_key}"
+                    }
+                )
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    status = resp.getcode()
+                    body = resp.read().decode("utf-8")
+                    print(f"✅ Gmail API response {status}: {body}")
+                    return 200 <= status < 300
+            except urllib.error.HTTPError as he:
+                error_body = he.read().decode('utf-8', 'ignore')
+                print(f"❌ Gmail API HTTPError {he.code}: {error_body}")
+            except Exception as e_api:
+                print(f"❌ Gmail API send failed: {e_api}")
+        
+        # หากมี SENDGRID_API_KEY ให้ส่งผ่าน SendGrid ต่อ
         if sendgrid_api_key and sendgrid_api_key.strip():
             try:
                 print("📮 Sending email via SendGrid API")
@@ -523,7 +564,7 @@ def send_reset_email(email, first_name, token):
                             "to": [{"email": email}],
                             "subject": subject
                         }],
-                        "from": {"email": "noreply@tireplus.com", "name": "ไทร์พลัส บุรีรัมย์"},
+                        "from": {"email": "computersci65@gmail.com", "name": "ไทร์พลัส บุรีรัมย์"},
                         "content": [{
                             "type": "text/html",
                             "value": html_content
@@ -586,7 +627,7 @@ def send_reset_email(email, first_name, token):
         msg['To'] = email
         html_part = MIMEText(html_content, 'html', 'utf-8')
         msg.attach(html_part)
-
+        
         # ส่งอีเมลผ่าน SMTP (รองรับทั้ง STARTTLS และ SMTP_SSL แบบ fallback)
         try:
             print(f"🔗 Connecting to SMTP server (TLS): {smtp_server}:{smtp_port}")
@@ -599,7 +640,7 @@ def send_reset_email(email, first_name, token):
             
             if current_app.config['MAIL_USE_TLS']:
                 print("🔒 Starting TLS connection")
-                server.starttls()
+        server.starttls()
                 # EHLO อีกครั้งหลัง TLS
                 try:
                     server.ehlo()
@@ -607,10 +648,10 @@ def send_reset_email(email, first_name, token):
                     pass
             
             print(f"🔑 Logging in with: {sender_email}")
-            server.login(sender_email, sender_password)
+        server.login(sender_email, sender_password)
             print(f"📧 Sending email to: {email}")
-            server.send_message(msg)
-            server.quit()
+        server.send_message(msg)
+        server.quit()
             print(f"✅ Reset email sent to {email} via TLS")
             return True
         except Exception as e_tls:

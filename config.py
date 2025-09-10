@@ -52,8 +52,11 @@ class Config:
     # Email provider over HTTPS (Resend)
     RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
     
-   # Alternative: SendGrid
+    # Alternative: SendGrid
     SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY', '')
+    
+    # Gmail API (preferred for Gmail users)
+    GMAIL_API_KEY = os.environ.get('GMAIL_API_KEY', '')
     
     # App URL for reset links
     APP_URL = os.environ.get('APP_URL', 'http://localhost:5000')
