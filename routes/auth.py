@@ -640,7 +640,7 @@ def send_reset_email(email, first_name, token):
             
             if current_app.config['MAIL_USE_TLS']:
                 print("🔒 Starting TLS connection")
-        server.starttls()
+                server.starttls()
                 # EHLO อีกครั้งหลัง TLS
                 try:
                     server.ehlo()
@@ -648,10 +648,10 @@ def send_reset_email(email, first_name, token):
                     pass
             
             print(f"🔑 Logging in with: {sender_email}")
-        server.login(sender_email, sender_password)
+            server.login(sender_email, sender_password)
             print(f"📧 Sending email to: {email}")
-        server.send_message(msg)
-        server.quit()
+            server.send_message(msg)
+            server.quit()
             print(f"✅ Reset email sent to {email} via TLS")
             return True
         except Exception as e_tls:
