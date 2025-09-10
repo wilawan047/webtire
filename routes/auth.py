@@ -510,11 +510,13 @@ def send_reset_email(email, first_name, token):
         if resend_api_key and resend_api_key.strip():
             try:
                 print("📮 Sending email via Resend API")
+                # ใช้อีเมลที่ลงทะเบียนเป็น sender สำหรับทดสอบ
+                from_email = "650112230047@bru.ac.th"
                 req = urllib.request.Request(
                     url="https://api.resend.com/emails",
                     method="POST",
                     data=json.dumps({
-                        "from": default_sender or "no-reply@resend.dev",
+                        "from": from_email,
                         "to": email,
                         "subject": subject,
                         "html": html_content
@@ -530,7 +532,11 @@ def send_reset_email(email, first_name, token):
                     print(f"✅ Resend response {status}: {body}")
                     return 200 <= status < 300
             except urllib.error.HTTPError as he:
-                print(f"❌ Resend HTTPError {he.code}: {he.read().decode('utf-8', 'ignore')}")
+                error_body = he.read().decode('utf-8', 'ignore')
+                print(f"❌ Resend HTTPError {he.code}: {error_body}")
+                # ถ้าเป็น 403 (domain not verified) ให้ลองใช้ SMTP ต่อ
+                if he.code == 403:
+                    print("⚠️ Resend domain not verified, falling back to SMTP")
             except Exception as e_api:
                 print(f"❌ Resend send failed: {e_api}")
 
