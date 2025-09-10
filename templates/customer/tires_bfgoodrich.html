@@ -11,20 +11,75 @@
   
   <!-- รุ่นย่อย -->
   {% if available_models %}
-  <div class="mb-6">
-    <h2 class="text-lg font-semibold text-gray-800 mb-3">เลือกรุ่นย่อย</h2>
-    <div class="flex flex-wrap gap-2">
-      <a href="{{ url_for('customer.tires_by_brand', brand='bfgoodrich') }}" 
-         class="px-4 py-2 rounded-lg border-2 {% if not model %}border-green-500 bg-green-50 text-green-700{% else %}border-gray-300 bg-white text-gray-700 hover:border-green-300{% endif %} transition-colors">
-        ทั้งหมด
-      </a>
-      {% for model_item in available_models %}
-        <a href="{{ url_for('customer.tires_by_model', brand='bfgoodrich', model=model_item.model_name) }}" 
-           class="px-4 py-2 rounded-lg border-2 {% if model == model_item.model_name %}border-green-500 bg-green-50 text-green-700{% else %}border-gray-300 bg-white text-gray-700 hover:border-green-300{% endif %} transition-colors">
-          {{ model_item.model_name }}
-          <span class="text-xs text-gray-500 ml-1">({{ model_item.tire_category }})</span>
+  <div class="mb-8">
+    <div class="bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl p-6 border border-orange-100 shadow-sm">
+      <div class="flex items-center mb-4">
+        <div class="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center mr-3">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+          </svg>
+        </div>
+        <h2 class="text-xl font-bold text-gray-800">เลือกรุ่นย่อย</h2>
+        <span class="ml-2 px-3 py-1 bg-orange-100 text-orange-700 text-sm font-medium rounded-full">
+          {{ available_models|length }} รุ่น
+        </span>
+      </div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        <!-- ปุ่มทั้งหมด -->
+        <a href="{{ url_for('customer.tires_by_brand', brand='bfgoodrich') }}" 
+           class="group relative overflow-hidden rounded-xl border-2 transition-all duration-300 hover:scale-105 hover:shadow-lg {% if not model %}border-orange-500 bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg{% else %}border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:bg-orange-50{% endif %}">
+          <div class="p-4 text-center">
+            <div class="w-8 h-8 mx-auto mb-2 {% if not model %}text-white{% else %}text-orange-500 group-hover:text-orange-600{% endif %}">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+              </svg>
+            </div>
+            <div class="font-semibold text-sm">ทั้งหมด</div>
+            <div class="text-xs {% if not model %}text-orange-100{% else %}text-gray-500 group-hover:text-orange-600{% endif %} mt-1">ดูทุกรุ่น</div>
+          </div>
+          {% if not model %}
+          <div class="absolute top-0 right-0 w-0 h-0 border-l-[20px] border-l-transparent border-t-[20px] border-t-orange-400"></div>
+          {% endif %}
         </a>
-      {% endfor %}
+        
+        <!-- ปุ่มรุ่นย่อย -->
+        {% for model_item in available_models %}
+        <a href="{{ url_for('customer.tires_by_model', brand='bfgoodrich', model=model_item.model_name) }}" 
+           class="group relative overflow-hidden rounded-xl border-2 transition-all duration-300 hover:scale-105 hover:shadow-lg {% if model == model_item.model_name %}border-orange-500 bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg{% else %}border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:bg-orange-50{% endif %}">
+          <div class="p-4 text-center">
+            <div class="w-8 h-8 mx-auto mb-2 {% if model == model_item.model_name %}text-white{% else %}text-orange-500 group-hover:text-orange-600{% endif %}">
+              {% if 'Comfort' in model_item.tire_category %}
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+              {% elif 'Performance' in model_item.tire_category %}
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+              {% elif 'All-Terrain' in model_item.tire_category %}
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                </svg>
+              {% elif 'Commercial' in model_item.tire_category %}
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+              {% else %}
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              {% endif %}
+            </div>
+            <div class="font-semibold text-sm">{{ model_item.model_name }}</div>
+            <div class="text-xs {% if model == model_item.model_name %}text-orange-100{% else %}text-gray-500 group-hover:text-orange-600{% endif %} mt-1">{{ model_item.tire_category }}</div>
+          </div>
+          {% if model == model_item.model_name %}
+          <div class="absolute top-0 right-0 w-0 h-0 border-l-[20px] border-l-transparent border-t-[20px] border-t-orange-400"></div>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
     </div>
   </div>
   {% endif %}
