@@ -448,6 +448,7 @@ def send_reset_email(email, first_name, token):
         sender_password = current_app.config['MAIL_PASSWORD']
         default_sender = current_app.config.get('MAIL_DEFAULT_SENDER') or sender_email
         resend_api_key = current_app.config.get('RESEND_API_KEY', '')
+        sendgrid_api_key = current_app.config.get('SENDGRID_API_KEY', '')
         
         # ตรวจสอบว่ามีการตั้งค่าอีเมลหรือไม่
         if not sender_email or not sender_password:
@@ -504,9 +505,47 @@ def send_reset_email(email, first_name, token):
         # Debug: ตรวจสอบค่า environment variables
         print(f"🔍 Debug - RESEND_API_KEY exists: {bool(resend_api_key)}")
         print(f"🔍 Debug - RESEND_API_KEY length: {len(resend_api_key) if resend_api_key else 0}")
+        print(f"🔍 Debug - SENDGRID_API_KEY exists: {bool(sendgrid_api_key)}")
         print(f"🔍 Debug - MAIL_DEFAULT_SENDER: {default_sender}")
         
-        # หากมี RESEND_API_KEY ให้ส่งผ่าน Resend (HTTPS) ก่อน
+        # ใช้ Gmail SMTP โดยตรง (ข้าม Resend/SendGrid)
+        print("📧 Using Gmail SMTP directly - skipping API providers")
+        
+        # หากมี SENDGRID_API_KEY ให้ส่งผ่าน SendGrid ก่อน
+        if sendgrid_api_key and sendgrid_api_key.strip():
+            try:
+                print("📮 Sending email via SendGrid API")
+                req = urllib.request.Request(
+                    url="https://api.sendgrid.com/v3/mail/send",
+                    method="POST",
+                    data=json.dumps({
+                        "personalizations": [{
+                            "to": [{"email": email}],
+                            "subject": subject
+                        }],
+                        "from": {"email": "noreply@tireplus.com", "name": "ไทร์พลัส บุรีรัมย์"},
+                        "content": [{
+                            "type": "text/html",
+                            "value": html_content
+                        }]
+                    }).encode("utf-8"),
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {sendgrid_api_key}"
+                    }
+                )
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    status = resp.getcode()
+                    body = resp.read().decode("utf-8")
+                    print(f"✅ SendGrid response {status}: {body}")
+                    return 200 <= status < 300
+            except urllib.error.HTTPError as he:
+                error_body = he.read().decode('utf-8', 'ignore')
+                print(f"❌ SendGrid HTTPError {he.code}: {error_body}")
+            except Exception as e_api:
+                print(f"❌ SendGrid send failed: {e_api}")
+        
+        # หากมี RESEND_API_KEY ให้ส่งผ่าน Resend (HTTPS) ต่อ
         if resend_api_key and resend_api_key.strip():
             try:
                 print("📮 Sending email via Resend API")
