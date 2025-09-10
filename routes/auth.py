@@ -491,8 +491,13 @@ def send_reset_email(email, first_name, token):
         </html>
         """
         
+        # Debug: ตรวจสอบค่า environment variables
+        print(f"🔍 Debug - RESEND_API_KEY exists: {bool(resend_api_key)}")
+        print(f"🔍 Debug - RESEND_API_KEY length: {len(resend_api_key) if resend_api_key else 0}")
+        print(f"🔍 Debug - MAIL_DEFAULT_SENDER: {default_sender}")
+        
         # หากมี RESEND_API_KEY ให้ส่งผ่าน Resend (HTTPS) ก่อน
-        if resend_api_key:
+        if resend_api_key and resend_api_key.strip():
             try:
                 print("📮 Sending email via Resend API")
                 req = urllib.request.Request(
