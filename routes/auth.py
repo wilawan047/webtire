@@ -338,7 +338,9 @@ def forgot_password():
             send_reset_email(email, customer['first_name'], reset_token)
             return jsonify({'success': True, 'message': 'ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลของคุณแล้ว กรุณาตรวจสอบอีเมล'})
         except Exception as e:
-            print(f"Error sending email: {e}")
+            print(f"❌ Error sending email: {e}")
+            print(f"❌ Error type: {type(e).__name__}")
+            # ไม่ raise error เพื่อไม่ให้ worker timeout
             return jsonify({'success': False, 'message': 'เกิดข้อผิดพลาดในการส่งอีเมล กรุณาลองใหม่อีกครั้ง'}), 500
             
     except Exception as e:
@@ -498,7 +500,7 @@ def send_reset_email(email, first_name, token):
         
         # ส่งอีเมล
         print(f"🔗 Connecting to SMTP server: {smtp_server}:{smtp_port}")
-        server = smtplib.SMTP(smtp_server, smtp_port)
+        server = smtplib.SMTP(smtp_server, smtp_port, timeout=30)
         
         # ใช้ TLS ถ้าตั้งค่าไว้
         if current_app.config['MAIL_USE_TLS']:
