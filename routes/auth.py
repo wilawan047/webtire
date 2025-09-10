@@ -334,13 +334,11 @@ def forgot_password():
         get_db().commit()
         
         # ส่งอีเมล
-        try:
-            send_reset_email(email, customer['first_name'], reset_token)
+        email_sent = send_reset_email(email, customer['first_name'], reset_token)
+        
+        if email_sent:
             return jsonify({'success': True, 'message': 'ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลของคุณแล้ว กรุณาตรวจสอบอีเมล'})
-        except Exception as e:
-            print(f"❌ Error sending email: {e}")
-            print(f"❌ Error type: {type(e).__name__}")
-            # ไม่ raise error เพื่อไม่ให้ worker timeout
+        else:
             return jsonify({'success': False, 'message': 'เกิดข้อผิดพลาดในการส่งอีเมล กรุณาลองใหม่อีกครั้ง'}), 500
             
     except Exception as e:
@@ -441,7 +439,7 @@ def send_reset_email(email, first_name, token):
             print("❌ Email configuration missing - skipping email send")
             print(f"MAIL_USERNAME: {sender_email}")
             print(f"MAIL_PASSWORD: {'*' * len(sender_password) if sender_password else 'None'}")
-            return
+            return False
         
         # สร้างลิงก์รีเซ็ต
         app_url = current_app.config['APP_URL']
@@ -515,11 +513,12 @@ def send_reset_email(email, first_name, token):
         server.quit()
         
         print(f"✅ Reset email sent to {email}")
+        return True
         
     except Exception as e:
         print(f"❌ Error sending reset email: {e}")
         print(f"❌ Error type: {type(e).__name__}")
-        raise e
+        return False
 
 @auth.route('/get-csrf-token')
 def get_csrf_token():
