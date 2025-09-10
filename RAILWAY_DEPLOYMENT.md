@@ -6,6 +6,7 @@
 - การอัปโหลดรูปโปรไฟล์ไม่ทำงานใน Railway deployment
 - ไฟล์ที่อัปโหลดหายไปเมื่อ container restart
 - ขาด error handling ที่เหมาะสม
+- scrypt package ไม่สามารถ build ได้ใน Railway environment
 
 ### การแก้ไข
 
@@ -55,6 +56,19 @@ def get_upload_folder_path(upload_folder_name):
         fallback_dir = os.path.join(os.path.expanduser('~'), 'uploads', upload_folder_name.lower())
         os.makedirs(fallback_dir, exist_ok=True)
         return fallback_dir
+```
+
+#### 4. แก้ไขปัญหา scrypt Build Error
+```python
+# ลบ scrypt ออกจาก requirements.txt
+# เปลี่ยนจาก:
+# scrypt==0.8.20
+
+# อัปเดตการสร้าง password hash
+# เปลี่ยนจาก:
+password_hash = generate_password_hash(password, method='scrypt')
+# เป็น:
+password_hash = generate_password_hash(password, method='pbkdf2:sha256')
 ```
 
 ### Environment Variables ที่ต้องตั้งค่าใน Railway

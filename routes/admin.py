@@ -1602,7 +1602,7 @@ def admin_change_password():
         
         # อัปเดตรหัสผ่าน
         from werkzeug.security import generate_password_hash
-        new_password_hash = generate_password_hash(new_password, method='scrypt')
+        new_password_hash = generate_password_hash(new_password, method='pbkdf2:sha256')
         
         cursor.execute('UPDATE users SET password_hash = %s WHERE user_id = %s', 
                       (new_password_hash, session.get('user_id')))
@@ -1729,7 +1729,7 @@ def add_user():
         else:
             try:
                 from werkzeug.security import generate_password_hash
-                password_hash = generate_password_hash(password, method='scrypt')
+                password_hash = generate_password_hash(password, method='pbkdf2:sha256')
                 
                 # สร้างชื่อเต็มสำหรับตาราง users
                 full_name = f"{first_name} {last_name}"
@@ -1818,7 +1818,7 @@ def edit_user(user_id):
                 
                 if password:
                     from werkzeug.security import generate_password_hash
-                    password_hash = generate_password_hash(password, method='scrypt')
+                    password_hash = generate_password_hash(password, method='pbkdf2:sha256')
                     cursor.execute('UPDATE users SET username=%s, name=%s, role_name=%s, password_hash=%s WHERE user_id=%s', 
                                  (username, full_name, role, password_hash, user_id))
                 else:

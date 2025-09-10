@@ -286,7 +286,7 @@ def sync_customers_with_users():
             # สร้าง password เริ่มต้น (รหัสผ่านชั่วคราว)
             from werkzeug.security import generate_password_hash
             temp_password = "123456"  # รหัสผ่านเริ่มต้น
-            password_hash = generate_password_hash(temp_password, method='scrypt')
+            password_hash = generate_password_hash(temp_password, method='pbkdf2:sha256')
             
             # สร้างชื่อเต็ม
             full_name = f"{customer['first_name']} {customer['last_name']}"

@@ -3,7 +3,6 @@ import re
 import json
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
-import scrypt
 from urllib.parse import urlparse, urljoin
 from flask import request, current_app
 
@@ -12,38 +11,18 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
-def verify_scrypt_password(password, hash_string):
-    """ตรวจสอบรหัสผ่าน scrypt"""
-    try:
-        if hash_string.startswith('scrypt:'):
-            # แยกส่วนของ hash string
-            parts = hash_string.split('$')
-            if len(parts) >= 3:
-                # scrypt:N:r:p$salt$hash
-                params = parts[0].split(':')
-                if len(params) >= 4:
-                    N = int(params[1])
-                    r = int(params[2])
-                    p = int(params[3])
-                    salt = parts[1]
-                    stored_hash = parts[2]
-                    
-                    # สร้าง hash ใหม่จาก password และ salt
-                    new_hash = scrypt.hash(password, salt, N=N, r=r, p=p)
-                    
-                    # เปรียบเทียบ hash
-                    return new_hash == stored_hash
-    except Exception as e:
-        print(f"Error verifying scrypt password: {e}")
-    return False
-
 def verify_password(password, hash_string):
     """ตรวจสอบรหัสผ่าน"""
     if not hash_string:
         return False
     
     # ใช้ werkzeug.security สำหรับการตรวจสอบรหัสผ่าน
-    return check_password_hash(hash_string, password)
+    # รองรับ pbkdf2 hashes (scrypt hashes จะยังทำงานได้ผ่าน werkzeug)
+    try:
+        return check_password_hash(hash_string, password)
+    except Exception as e:
+        print(f"Error verifying password: {e}")
+        return False
 
 def validate_booking_status(status):
     """ตรวจสอบสถานะการจอง"""

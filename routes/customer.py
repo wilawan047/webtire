@@ -1434,7 +1434,7 @@ def change_password():
             
             # อัปเดตรหัสผ่านใหม่
             from werkzeug.security import generate_password_hash
-            new_password_hash = generate_password_hash(new_password, method='scrypt')
+            new_password_hash = generate_password_hash(new_password, method='pbkdf2:sha256')
             
             cursor.execute('''
                 UPDATE users 
