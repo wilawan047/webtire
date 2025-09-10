@@ -452,10 +452,10 @@ def send_reset_email(email, first_name, token):
         
         # ตรวจสอบว่ามีการตั้งค่าอีเมลหรือไม่
         if not sender_email or not sender_password:
-            print("❌ Email configuration missing - skipping email send")
+            print("⚠️ Gmail SMTP not configured - trying API providers instead")
             print(f"MAIL_USERNAME: {sender_email}")
             print(f"MAIL_PASSWORD: {'*' * len(sender_password) if sender_password else 'None'}")
-            return False
+            # ไม่ return False แต่ให้ลองใช้ API providers ต่อ
         
         # สร้างลิงก์รีเซ็ต
         app_url = current_app.config['APP_URL']
