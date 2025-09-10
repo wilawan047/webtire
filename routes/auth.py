@@ -436,7 +436,9 @@ def send_reset_email(email, first_name, token):
         
         # ตรวจสอบว่ามีการตั้งค่าอีเมลหรือไม่
         if not sender_email or not sender_password:
-            print("Email configuration missing - skipping email send")
+            print("❌ Email configuration missing - skipping email send")
+            print(f"MAIL_USERNAME: {sender_email}")
+            print(f"MAIL_PASSWORD: {'*' * len(sender_password) if sender_password else 'None'}")
             return
         
         # สร้างลิงก์รีเซ็ต
@@ -495,13 +497,18 @@ def send_reset_email(email, first_name, token):
         msg.attach(html_part)
         
         # ส่งอีเมล
+        print(f"🔗 Connecting to SMTP server: {smtp_server}:{smtp_port}")
         server = smtplib.SMTP(smtp_server, smtp_port)
         
         # ใช้ TLS ถ้าตั้งค่าไว้
         if current_app.config['MAIL_USE_TLS']:
+            print("🔒 Starting TLS connection")
             server.starttls()
         
+        print(f"🔑 Logging in with: {sender_email}")
         server.login(sender_email, sender_password)
+        
+        print(f"📧 Sending email to: {email}")
         server.send_message(msg)
         server.quit()
         
@@ -509,6 +516,7 @@ def send_reset_email(email, first_name, token):
         
     except Exception as e:
         print(f"❌ Error sending reset email: {e}")
+        print(f"❌ Error type: {type(e).__name__}")
         raise e
 
 @auth.route('/get-csrf-token')
