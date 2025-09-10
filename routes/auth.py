@@ -299,6 +299,7 @@ def register():
 @auth.route('/forgot-password', methods=['POST'])
 def forgot_password():
     """ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมล"""
+    print("🚀 FORGOT PASSWORD ROUTE CALLED")
     try:
         print(f"🔍 Forgot password request received for email: {request.form.get('email', '')}")
         email = request.form.get('email', '').strip()
@@ -351,7 +352,10 @@ def forgot_password():
             return jsonify({'success': False, 'message': 'เกิดข้อผิดพลาดในการส่งอีเมล กรุณาลองใหม่อีกครั้ง'}), 500
             
     except Exception as e:
-        print(f"Forgot password error: {e}")
+        print(f"❌ FORGOT PASSWORD ERROR: {e}")
+        print(f"❌ Error type: {type(e).__name__}")
+        import traceback
+        print(f"❌ Traceback: {traceback.format_exc()}")
         return jsonify({'success': False, 'message': 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'}), 500
 
 @auth.route('/reset-password/<token>', methods=['GET', 'POST'])
