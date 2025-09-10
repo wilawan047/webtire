@@ -496,24 +496,53 @@ def send_reset_email(email, first_name, token):
         html_part = MIMEText(html_content, 'html', 'utf-8')
         msg.attach(html_part)
         
-        # ส่งอีเมล
-        print(f"🔗 Connecting to SMTP server: {smtp_server}:{smtp_port}")
-        server = smtplib.SMTP(smtp_server, smtp_port, timeout=30)
-        
-        # ใช้ TLS ถ้าตั้งค่าไว้
-        if current_app.config['MAIL_USE_TLS']:
-            print("🔒 Starting TLS connection")
-            server.starttls()
-        
-        print(f"🔑 Logging in with: {sender_email}")
-        server.login(sender_email, sender_password)
-        
-        print(f"📧 Sending email to: {email}")
-        server.send_message(msg)
-        server.quit()
-        
-        print(f"✅ Reset email sent to {email}")
-        return True
+        # ส่งอีเมล (รองรับทั้ง STARTTLS และ SMTP_SSL แบบ fallback)
+        try:
+            print(f"🔗 Connecting to SMTP server (TLS): {smtp_server}:{smtp_port}")
+            server = smtplib.SMTP(smtp_server, smtp_port, timeout=30)
+            # ทำ EHLO ก่อนเริ่ม TLS
+            try:
+                server.ehlo()
+            except Exception:
+                pass
+            
+            if current_app.config['MAIL_USE_TLS']:
+                print("🔒 Starting TLS connection")
+                server.starttls()
+                # EHLO อีกครั้งหลัง TLS
+                try:
+                    server.ehlo()
+                except Exception:
+                    pass
+            
+            print(f"🔑 Logging in with: {sender_email}")
+            server.login(sender_email, sender_password)
+            print(f"📧 Sending email to: {email}")
+            server.send_message(msg)
+            server.quit()
+            print(f"✅ Reset email sent to {email} via TLS")
+            return True
+        except Exception as e_tls:
+            print(f"⚠️ TLS send failed: {e_tls} - trying SMTP_SSL fallback")
+            try:
+                # Fallback ไปใช้ SMTP_SSL (ปกติพอร์ต 465)
+                ssl_port = 465
+                print(f"🔗 Connecting to SMTP server (SSL): {smtp_server}:{ssl_port}")
+                server_ssl = smtplib.SMTP_SSL(smtp_server, ssl_port, timeout=30)
+                try:
+                    server_ssl.ehlo()
+                except Exception:
+                    pass
+                print(f"🔑 Logging in with: {sender_email}")
+                server_ssl.login(sender_email, sender_password)
+                print(f"📧 Sending email to: {email}")
+                server_ssl.send_message(msg)
+                server_ssl.quit()
+                print(f"✅ Reset email sent to {email} via SSL")
+                return True
+            except Exception as e_ssl:
+                print(f"❌ SSL fallback failed: {e_ssl}")
+                return False
         
     except Exception as e:
         print(f"❌ Error sending reset email: {e}")
