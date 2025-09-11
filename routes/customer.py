@@ -691,8 +691,13 @@ def booking():
             flash('เกิดข้อผิดพลาดในการจองบริการ', 'error')
             return redirect(url_for('customer.booking'))
 
+    # ดึงข้อมูลที่จำเป็นสำหรับฟอร์ม
     try:
         cursor = get_cursor()
+        if not cursor:
+            print("ERROR: Cannot get database cursor for booking form")
+            flash('ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error')
+            return redirect(url_for('customer.booking'))
         
         # ดึงข้อมูลที่จำเป็นสำหรับฟอร์ม
         # 1. ประเภทรถ
@@ -1000,6 +1005,11 @@ def booking():
                                       vehicle_data=None,
                                       customer_vehicles=[],
                                       user_name=session.get('customer_name', ''))
+    
+    except Exception as e:
+        print(f"Error loading booking form data: {e}")
+        flash('เกิดข้อผิดพลาดในการโหลดข้อมูลฟอร์ม', 'error')
+        return redirect(url_for('customer.home'))
 
 @customer.route('/recommend', methods=['GET', 'POST'])
 def recommend():
