@@ -349,7 +349,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Slider width:', promoSlider.style.width);
         console.log('Slider height:', promoSlider.style.height);
         console.log('Slide widths:', Array.from(promoSlides).map(slide => slide.style.width));
-        console.log('Container overflow:', document.querySelector('.promo-slider-container').style.overflow);
+        const container = document.querySelector('.promo-slider-container');
+        console.log('Container overflow:', container ? container.style.overflow : 'Container not found');
         console.log('Slider display:', promoSlider.style.display);
         console.log('Slider position:', promoSlider.style.position);
         console.log('=== END TEST ===');

@@ -146,6 +146,12 @@ def customer_login():
 def register():
     """หน้าลงทะเบียน"""
     if request.method == 'POST':
+        # Debug: Print all form data
+        print("=== DEBUG REGISTRATION FORM DATA ===")
+        for key, value in request.form.items():
+            print(f"{key}: {value}")
+        print("=====================================")
+        
         # โค้ดการลงทะเบียน
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
@@ -209,6 +215,10 @@ def register():
         
         # ถ้ามี error และเป็น AJAX request
         if errors and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            print(f"=== REGISTRATION ERRORS ===")
+            print(f"Errors: {errors}")
+            print(f"Request headers: {dict(request.headers)}")
+            print("==========================")
             return jsonify({'success': False, 'errors': errors}), 400
         
         # ถ้ามี error และเป็น normal request
@@ -222,7 +232,16 @@ def register():
             return redirect(url_for('customer.home') + "#register")
         
         try:
+            print("=== DATABASE CONNECTION TEST ===")
             cursor = get_cursor()
+            if not cursor:
+                print("ERROR: Cannot get database cursor")
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': False, 'errors': {'general': 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้'}}), 500
+                else:
+                    flash('ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error')
+                    return redirect(url_for('customer.home') + "#register")
+            print("Database cursor obtained successfully")
             
             # ตรวจสอบ username ซ้ำ
             cursor.execute('SELECT user_id FROM users WHERE username = %s', (username,))

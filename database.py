@@ -1,23 +1,30 @@
 import mysql.connector
-from mysql.connector import pooling
+from mysql.connector import pooling, Error as MySQLError
 from flask import g, current_app
 import os
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
 
+# ตั้งค่า logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # ตั้งค่า MySQL Connection Pool
-# NOTE: ใช้ port 3307 ห้ามแก้กลับเป็น 3306
+# ใช้ Railway database configuration
 DB_CONFIG = dict(
-    host=os.getenv("DB_HOST"),
-    port=int(os.getenv("DB_PORT", 3307)),  # NOTE: ใช้ port 3307 ห้ามแก้กลับเป็น 3306
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    database=os.getenv("DB_NAME"),
+    host=os.getenv("DB_HOST", "switchyard.proxy.rlwy.net"),
+    port=int(os.getenv("DB_PORT", 21922)),  # Railway default port
+    user=os.getenv("DB_USER", "root"),
+    password=os.getenv("DB_PASSWORD", "mxAiijYOvjVtdUrdtVCVyMygyvxOFOhO"),
+    database=os.getenv("DB_NAME", "railway"),
     autocommit=False,
     charset='utf8mb4',
     collation='utf8mb4_unicode_ci',
-    use_unicode=True
+    use_unicode=True,
+    connect_timeout=30,
+    sql_mode='TRADITIONAL'
 )
 
 try:
@@ -27,11 +34,16 @@ try:
         pool_reset_session=True,
         **DB_CONFIG
     )
+    logger.info("Database connection pool initialized successfully")
+except MySQLError as e:
+    logger.error(f"MySQL error initializing DB pool: {e}")
+    connection_pool = None
 except Exception as e:
-    print(f"Error initializing DB pool: {e}")
+    logger.error(f"Unexpected error initializing DB pool: {e}")
     connection_pool = None
 
 def _get_db_connection():
+    """สร้างการเชื่อมต่อฐานข้อมูล"""
     if connection_pool is None:
         # สร้าง connection แบบตรงถ้า pool ไม่ได้
         try:
@@ -42,39 +54,45 @@ def _get_db_connection():
             cursor.execute("SET CHARACTER SET utf8mb4")
             cursor.execute("SET character_set_connection=utf8mb4")
             cursor.close()
+            logger.info("Direct database connection created successfully")
             return connection
+        except MySQLError as e:
+            logger.error(f"MySQL error creating direct connection: {e}")
+            raise RuntimeError(f"Cannot connect to database: {e}")
         except Exception as e:
-            print(f"Error creating direct connection: {e}")
-            raise RuntimeError("Cannot connect to database")
-    return connection_pool.get_connection()
+            logger.error(f"Unexpected error creating direct connection: {e}")
+            raise RuntimeError(f"Cannot connect to database: {e}")
+    
+    try:
+        connection = connection_pool.get_connection()
+        logger.debug("Got connection from pool")
+        return connection
+    except MySQLError as e:
+        logger.error(f"MySQL error getting connection from pool: {e}")
+        raise RuntimeError(f"Cannot get connection from pool: {e}")
+    except Exception as e:
+        logger.error(f"Unexpected error getting connection from pool: {e}")
+        raise RuntimeError(f"Cannot get connection from pool: {e}")
 
 def get_db():
     """ดึงการเชื่อมต่อฐานข้อมูลจาก Flask g object"""
     if 'db_conn' not in g:
         try:
             g.db_conn = _get_db_connection()
-            # ตั้งค่า charset สำหรับการเชื่อมต่อใหม่
-            cursor = g.db_conn.cursor()
-            cursor.execute("SET NAMES utf8mb4")
-            cursor.execute("SET CHARACTER SET utf8mb4")
-            cursor.execute("SET character_set_connection=utf8mb4")
-            cursor.close()
+            _configure_connection(g.db_conn)
+            logger.debug("New database connection established")
         except Exception as e:
-            print(f"Error getting database connection: {e}")
+            logger.error(f"Error getting database connection: {e}")
             # ลองรีเซ็ต pool และลองใหม่
             try:
                 global connection_pool
                 if connection_pool:
                     connection_pool.reset_session()
                 g.db_conn = _get_db_connection()
-                # ตั้งค่า charset สำหรับการเชื่อมต่อใหม่
-                cursor = g.db_conn.cursor()
-                cursor.execute("SET NAMES utf8mb4")
-                cursor.execute("SET CHARACTER SET utf8mb4")
-                cursor.execute("SET character_set_connection=utf8mb4")
-                cursor.close()
+                _configure_connection(g.db_conn)
+                logger.info("Database connection re-established after pool reset")
             except Exception as e2:
-                print(f"Error after pool reset: {e2}")
+                logger.error(f"Error after pool reset: {e2}")
                 raise
     else:
         try:
@@ -82,44 +100,50 @@ def get_db():
             if hasattr(g.db_conn, 'is_connected') and not g.db_conn.is_connected():
                 try:
                     g.db_conn.reconnect(attempts=2, delay=1)
-                    # ตั้งค่า charset หลังจาก reconnect
-                    cursor = g.db_conn.cursor()
-                    cursor.execute("SET NAMES utf8mb4")
-                    cursor.execute("SET CHARACTER SET utf8mb4")
-                    cursor.execute("SET character_set_connection=utf8mb4")
-                    cursor.close()
-                except Exception:
+                    _configure_connection(g.db_conn)
+                    logger.info("Database connection reconnected")
+                except Exception as e:
+                    logger.warning(f"Reconnect failed, getting new connection: {e}")
                     # ขอ connection ใหม่จาก pool
                     try:
                         g.db_conn.close()
                     except:
                         pass
                     g.db_conn = _get_db_connection()
-                    # ตั้งค่า charset สำหรับการเชื่อมต่อใหม่
-                    cursor = g.db_conn.cursor()
-                    cursor.execute("SET NAMES utf8mb4")
-                    cursor.execute("SET CHARACTER SET utf8mb4")
-                    cursor.execute("SET character_set_connection=utf8mb4")
-                    cursor.close()
-        except Exception:
+                    _configure_connection(g.db_conn)
+                    logger.info("New database connection established after reconnect failure")
+        except Exception as e:
+            logger.error(f"Error checking connection status: {e}")
             try:
                 g.db_conn = _get_db_connection()
-                # ตั้งค่า charset สำหรับการเชื่อมต่อใหม่
-                cursor = g.db_conn.cursor()
-                cursor.execute("SET NAMES utf8mb4")
-                cursor.execute("SET CHARACTER SET utf8mb4")
-                cursor.execute("SET character_set_connection=utf8mb4")
-                cursor.close()
-            except Exception:
+                _configure_connection(g.db_conn)
+                logger.info("New database connection established after error")
+            except Exception as e2:
+                logger.error(f"Failed to establish new connection: {e2}")
                 raise
     return g.db_conn
 
+def _configure_connection(connection):
+    """ตั้งค่า charset สำหรับการเชื่อมต่อ"""
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SET NAMES utf8mb4")
+        cursor.execute("SET CHARACTER SET utf8mb4")
+        cursor.execute("SET character_set_connection=utf8mb4")
+        cursor.close()
+    except Exception as e:
+        logger.warning(f"Error configuring connection charset: {e}")
+
 def get_cursor(buffered=True, dictionary=True):
     """สร้าง cursor สำหรับฐานข้อมูล"""
-    db = get_db()
-    if db:
-        return db.cursor(buffered=buffered, dictionary=dictionary)
-    return None
+    try:
+        db = get_db()
+        if db:
+            return db.cursor(buffered=buffered, dictionary=dictionary)
+        return None
+    except Exception as e:
+        logger.error(f"Error creating cursor: {e}")
+        return None
 
 def close_db_connection(exc):
     """ปิดการเชื่อมต่อฐานข้อมูล"""
@@ -127,13 +151,18 @@ def close_db_connection(exc):
     if db is not None:
         try:
             db.close()
+            logger.debug("Database connection closed")
         except Exception as e:
-            print(f"Error closing database connection: {e}")
+            logger.error(f"Error closing database connection: {e}")
 
 def ensure_page_views_table():
     """สร้างตาราง page_views ถ้ายังไม่มี"""
     try:
         cursor = get_cursor()
+        if not cursor:
+            logger.error("Cannot create cursor for page_views table")
+            return False
+            
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS page_views (
                 page_id VARCHAR(100) NOT NULL PRIMARY KEY,
@@ -145,9 +174,14 @@ def ensure_page_views_table():
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
         get_db().commit()
-        print("ตาราง page_views พร้อมใช้งาน")
+        logger.info("ตาราง page_views พร้อมใช้งาน")
+        return True
+    except MySQLError as e:
+        logger.error(f"MySQL error creating page_views table: {e}")
+        return False
     except Exception as e:
-        print(f"Error creating page_views table: {e}")
+        logger.error(f"Unexpected error creating page_views table: {e}")
+        return False
 
 def ensure_password_reset_table():
     """สร้างตาราง password_reset_tokens ถ้ายังไม่มี"""
@@ -246,17 +280,60 @@ def ensure_vehicles_table():
 
 def ensure_all_tables():
     """สร้างตารางทั้งหมดที่จำเป็น"""
-    ensure_page_views_table()
-    ensure_password_reset_table()
-    ensure_service_tires_table()
-    ensure_booking_item_options_table()
-    ensure_vehicles_table()
-    print("สร้างตารางทั้งหมดเสร็จสิ้น")
+    success_count = 0
+    total_tables = 5
+    
+    if ensure_page_views_table():
+        success_count += 1
+    if ensure_password_reset_table():
+        success_count += 1
+    if ensure_service_tires_table():
+        success_count += 1
+    if ensure_booking_item_options_table():
+        success_count += 1
+    if ensure_vehicles_table():
+        success_count += 1
+    
+    if success_count == total_tables:
+        logger.info("สร้างตารางทั้งหมดเสร็จสิ้น")
+        return True
+    else:
+        logger.warning(f"สร้างตารางเสร็จ {success_count}/{total_tables} ตาราง")
+        return False
+
+def test_database_connection():
+    """ทดสอบการเชื่อมต่อฐานข้อมูล"""
+    try:
+        cursor = get_cursor()
+        if not cursor:
+            logger.error("Cannot create cursor for database test")
+            return False
+            
+        cursor.execute("SELECT 1")
+        result = cursor.fetchone()
+        cursor.close()
+        
+        if result:
+            logger.info("Database connection test successful")
+            return True
+        else:
+            logger.error("Database connection test failed - no result")
+            return False
+            
+    except MySQLError as e:
+        logger.error(f"MySQL error during database test: {e}")
+        return False
+    except Exception as e:
+        logger.error(f"Unexpected error during database test: {e}")
+        return False
 
 def sync_customers_with_users():
     """ซิงค์ข้อมูลระหว่างตาราง customers และ users ที่มีอยู่แล้ว"""
     try:
         cursor = get_cursor()
+        if not cursor:
+            logger.error("Cannot create cursor for sync operation")
+            return False
         
         # หาลูกค้าที่มีข้อมูลในตาราง customers แต่ไม่มี user_id
         cursor.execute("""
@@ -303,16 +380,19 @@ def sync_customers_with_users():
             cursor.execute("UPDATE customers SET user_id = %s WHERE customer_id = %s", 
                          (user_id, customer['customer_id']))
             
-            print(f"สร้าง user สำหรับลูกค้า: {full_name} (username: {username}, password: {temp_password})")
+            logger.info(f"สร้าง user สำหรับลูกค้า: {full_name} (username: {username}, password: {temp_password})")
         
         if customers_without_user:
             get_db().commit()
-            print(f"ซิงค์ข้อมูลสำเร็จสำหรับลูกค้า {len(customers_without_user)} คน")
+            logger.info(f"ซิงค์ข้อมูลสำเร็จสำหรับลูกค้า {len(customers_without_user)} คน")
         else:
-            print("ไม่มีลูกค้าที่ต้องซิงค์ข้อมูล")
+            logger.info("ไม่มีลูกค้าที่ต้องซิงค์ข้อมูล")
             
         return True
+    except MySQLError as e:
+        logger.error(f"MySQL error syncing customers with users: {e}")
+        return False
     except Exception as e:
-        print(f"Error syncing customers with users: {e}")
+        logger.error(f"Unexpected error syncing customers with users: {e}")
         return False
 
