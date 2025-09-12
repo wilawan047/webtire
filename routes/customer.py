@@ -1584,8 +1584,8 @@ def update_avatar():
                 print(f"Updated database with filename: {filename}")
                 print(f"Customer ID: {customer_id}")
                 
-                # อัปเดต session
-                session['customer_avatar'] = filename
+                # อัปเดต session ให้ตรงกับฐานข้อมูล
+                session['customer_avatar'] = f"/static/uploads/profile/{filename}"
                 session.permanent = True  # ทำให้ session อยู่ถาวร
                 
                 print(f"Updated session with avatar: {filename}")

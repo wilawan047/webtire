@@ -27,9 +27,9 @@
                 รูปโปรไฟล์
             </h2>
             <div class="flex flex-col items-center space-y-4">
-                {% if user.avatar_filename %}
+                {% if session.get('customer_avatar') %}
                     <img id="profile-avatar"
-                         src="{{ url_for('static', filename='uploads/profile/' + user.avatar_filename) }}?v={{ range(1, 10000) | random }}"
+                         src="{{ session.get('customer_avatar') }}?v={{ range(1, 10000) | random }}"
                          alt="Profile Avatar"
                          class="w-32 h-32 rounded-full object-cover border-4 border-green-200 shadow-lg"
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -266,7 +266,7 @@
                                         }, 3000);
                                     }
                                     
-                                    // อัปเดตรูปภาพโดยไม่ต้อง reload หน้า
+                                        // อัปเดตรูปภาพโดยไม่ต้อง reload หน้า
                                     setTimeout(() => {
                                         // ใช้ filename ที่ส่งกลับมาจาก server
                                         const newFilename = data.filename || '{{ user.avatar_filename if user.avatar_filename else "" }}';
@@ -282,6 +282,36 @@
                                         const headerAvatar = document.querySelector('#header-avatar');
                                         if (headerAvatar && newFilename) {
                                             headerAvatar.src = `/static/uploads/profile/${newFilename}?v=${timestamp}`;
+                                        }
+                                        
+                                        // อัปเดต session ในหน้าโปรไฟล์ (สำหรับการแสดงผลทันที)
+                                        if (newFilename) {
+                                            // สร้างรูปภาพใหม่ในหน้าโปรไฟล์
+                                            const avatarContainer = document.querySelector('.flex.flex-col.items-center.space-y-4');
+                                            const existingImg = avatarContainer.querySelector('img');
+                                            const existingDiv = avatarContainer.querySelector('div.w-32.h-32.rounded-full.bg-green-200');
+                                            
+                                            // ลบรูปเก่า
+                                            if (existingImg) {
+                                                existingImg.remove();
+                                            }
+                                            if (existingDiv) {
+                                                existingDiv.remove();
+                                            }
+                                            
+                                            // สร้างรูปใหม่
+                                            const newImg = document.createElement('img');
+                                            newImg.id = 'profile-avatar';
+                                            newImg.src = `/static/uploads/profile/${newFilename}?v=${timestamp}`;
+                                            newImg.alt = 'Profile Avatar';
+                                            newImg.className = 'w-32 h-32 rounded-full object-cover border-4 border-green-200 shadow-lg';
+                                            newImg.onerror = function() {
+                                                this.style.display = 'none';
+                                                this.nextElementSibling.style.display = 'flex';
+                                            };
+                                            
+                                            // เพิ่มรูปใหม่
+                                            avatarContainer.insertBefore(newImg, avatarContainer.firstChild);
                                         }
                                     }, 1000);
                                 } else {
