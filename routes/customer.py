@@ -1548,7 +1548,7 @@ def update_avatar():
                 upload_folder = current_app.config['PROFILE_UPLOAD_FOLDER']
                 os.makedirs(upload_folder, exist_ok=True)
                 
-                # บันทึกไฟล์
+                # บันทึกไฟล์ใน upload folder
                 file_path = os.path.join(upload_folder, filename)
                 print(f"Attempting to save file to: {file_path}")
                 print(f"Upload folder exists: {os.path.exists(upload_folder)}")
@@ -1564,14 +1564,29 @@ def update_avatar():
                 else:
                     print(f"File successfully saved to: {file_path}")
                 
+                # Copy ไฟล์ไปยัง static directory สำหรับ serving
+                static_folder = os.path.join(current_app.static_folder, 'uploads', 'profile')
+                os.makedirs(static_folder, exist_ok=True)
+                static_file_path = os.path.join(static_folder, filename)
+                
+                import shutil
+                shutil.copy2(file_path, static_file_path)
+                print(f"File copied to static folder: {static_file_path}")
+                
                 # ลบไฟล์เก่าถ้ามี
                 cursor = get_cursor()
                 cursor.execute('SELECT avatar_filename FROM users WHERE user_id = (SELECT user_id FROM customers WHERE customer_id = %s)', (customer_id,))
                 user_data = cursor.fetchone()
                 if user_data and user_data.get('avatar_filename'):
+                    # ลบไฟล์เก่าจาก upload folder
                     old_file_path = os.path.join(current_app.config['PROFILE_UPLOAD_FOLDER'], user_data['avatar_filename'])
                     if os.path.exists(old_file_path):
                         os.remove(old_file_path)
+                    
+                    # ลบไฟล์เก่าจาก static folder
+                    old_static_path = os.path.join(current_app.static_folder, 'uploads', 'profile', user_data['avatar_filename'])
+                    if os.path.exists(old_static_path):
+                        os.remove(old_static_path)
                 
                 # อัปเดตฐานข้อมูล
                 cursor.execute('''
