@@ -78,7 +78,38 @@
                 </a>
               </div>
             </li>
-            <li><a href="/admin/bookings" class="flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-green-900 hover:bg-green-50 transition {% if '/admin/bookings' in request.path %}bg-green-100{% endif %}" @click="$parent.open = false"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="hidden md:inline">การจอง</span></a></li>
+            <li x-data="{ open: false }" x-init="open = {% if '/admin/bookings' in request.path or '/admin/check-queue' in request.path %}true{% else %}false{% endif %}">
+              <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-lg font-semibold text-green-900 hover:bg-green-50 transition cursor-pointer {% if '/admin/bookings' in request.path or '/admin/check-queue' in request.path %}bg-green-100{% endif %}" @click="open = !open">
+                <div class="flex items-center gap-3">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  <span class="hidden md:inline">การจอง</span>
+                </div>
+                <svg class="w-4 h-4 hidden md:block transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
+              <div x-show="open" 
+                   x-transition:enter="transition ease-out duration-200"
+                   x-transition:enter-start="opacity-0 max-h-0"
+                   x-transition:enter-end="opacity-100 max-h-32"
+                   x-transition:leave="transition ease-in duration-150"
+                   x-transition:leave-start="opacity-100 max-h-32"
+                   x-transition:leave-end="opacity-0 max-h-0"
+                   class="overflow-hidden">
+                <a href="/admin/bookings" class="flex items-center gap-3 px-4 py-3 ml-4 md:ml-8 text-sm text-green-900 hover:bg-green-50 transition {% if '/admin/bookings' in request.path %}bg-green-100{% endif %}">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+                  </svg>
+                  <span class="hidden md:inline">รายการจอง</span>
+                </a>
+                <a href="/admin/check-queue" class="flex items-center gap-3 px-4 py-3 ml-4 md:ml-8 text-sm text-green-900 hover:bg-green-50 transition {% if '/admin/check-queue' in request.path %}bg-green-100{% endif %}">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                  </svg>
+                  <span>เช็คคิว</span>
+                </a>
+              </div>
+            </li>
             <li><a href="/admin/promotions" class="flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-green-900 hover:bg-green-50 transition {% if '/admin/promotions' in request.path %}bg-green-100{% endif %}" @click="$parent.open = false"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span class="hidden md:inline">โปรโมชัน</span></a></li>
             <li><a href="/admin/customers" class="flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-green-900 hover:bg-green-50 transition {% if '/admin/customers' in request.path %}bg-green-100{% endif %}" @click="$parent.open = false"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a4 4 0 0 0-3-3.87M9 20H4v-2a4 4 0 0 1 3-3.87m6-2.13a4 4 0 1 0-8 0 4 4 0 0 0 8 0zm6 2.13A4 4 0 0 0 17 20M9 20a4 4 0 0 0 8 0"/></svg><span class="hidden md:inline">ลูกค้า</span></a></li>
             <li><a href="/admin/tires" class="flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-green-900 hover:bg-green-50 transition {% if '/admin/tires' in request.path %}bg-green-100{% endif %}" @click="$parent.open = false"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span class="hidden md:inline">รายการยาง</span></a></li>

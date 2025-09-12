@@ -6,9 +6,6 @@ import secrets
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import json
-import urllib.request
-import urllib.error
 from werkzeug.security import generate_password_hash
 from flask_wtf.csrf import generate_csrf
 
@@ -146,12 +143,6 @@ def customer_login():
 def register():
     """หน้าลงทะเบียน"""
     if request.method == 'POST':
-        # Debug: Print all form data
-        print("=== DEBUG REGISTRATION FORM DATA ===")
-        for key, value in request.form.items():
-            print(f"{key}: {value}")
-        print("=====================================")
-        
         # โค้ดการลงทะเบียน
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
@@ -164,16 +155,6 @@ def register():
         # แปลง email เป็น None ถ้าเป็นสตริงว่าง
         if email == '':
             email = None
-        gender = request.form.get('gender', '').strip()
-        
-        # แปลง gender เป็น 'ไม่ระบุ' ถ้าเป็นสตริงว่าง
-        if gender == '':
-            gender = 'ไม่ระบุ'
-        birthdate = request.form.get('birthdate', '').strip()
-        
-        # แปลง birthdate เป็น None ถ้าเป็นสตริงว่าง
-        if birthdate == '':
-            birthdate = None
         
         # ตรวจสอบข้อมูล
         errors = {}
@@ -215,10 +196,6 @@ def register():
         
         # ถ้ามี error และเป็น AJAX request
         if errors and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            print(f"=== REGISTRATION ERRORS ===")
-            print(f"Errors: {errors}")
-            print(f"Request headers: {dict(request.headers)}")
-            print("==========================")
             return jsonify({'success': False, 'errors': errors}), 400
         
         # ถ้ามี error และเป็น normal request
@@ -232,16 +209,7 @@ def register():
             return redirect(url_for('customer.home') + "#register")
         
         try:
-            print("=== DATABASE CONNECTION TEST ===")
             cursor = get_cursor()
-            if not cursor:
-                print("ERROR: Cannot get database cursor")
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return jsonify({'success': False, 'errors': {'general': 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้'}}), 500
-                else:
-                    flash('ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error')
-                    return redirect(url_for('customer.home') + "#register")
-            print("Database cursor obtained successfully")
             
             # ตรวจสอบ username ซ้ำ
             cursor.execute('SELECT user_id FROM users WHERE username = %s', (username,))
@@ -285,9 +253,9 @@ def register():
             
             # เพิ่ม customer
             cursor.execute('''
-                INSERT INTO customers (user_id, first_name, last_name, phone, email, gender, birthdate) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ''', (user_id, first_name, last_name, phone, email, gender, birthdate))
+                INSERT INTO customers (user_id, first_name, last_name, phone, email) 
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (user_id, first_name, last_name, phone, email))
             
             # Commit transaction
             get_db().commit()
@@ -318,16 +286,13 @@ def register():
 @auth.route('/forgot-password', methods=['POST'])
 def forgot_password():
     """ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมล"""
-    print("🚀 FORGOT PASSWORD ROUTE CALLED")
     try:
-        print(f"🔍 Forgot password request received for email: {request.form.get('email', '')}")
         email = request.form.get('email', '').strip()
         
         if not email:
             return jsonify({'success': False, 'message': 'กรุณากรอกอีเมล'}), 400
         
         cursor = get_cursor()
-        print(f"🔍 Database cursor obtained successfully")
         
         # ตรวจสอบว่ามีอีเมลนี้ในระบบหรือไม่
         cursor.execute("""
@@ -337,10 +302,8 @@ def forgot_password():
             WHERE c.email = %s AND u.role_name = 'customer'
         """, (email,))
         customer = cursor.fetchone()
-        print(f"🔍 Customer lookup result: {customer is not None}")
         
         if not customer:
-            print(f"❌ Customer not found for email: {email}")
             return jsonify({'success': False, 'message': 'ไม่พบอีเมลนี้ในระบบ'}), 400
         
         # สร้าง token สำหรับรีเซ็ตรหัสผ่าน
@@ -361,20 +324,15 @@ def forgot_password():
         get_db().commit()
         
         # ส่งอีเมล
-        print(f"📧 Attempting to send reset email to: {email}")
-        email_sent = send_reset_email(email, customer['first_name'], reset_token)
-        print(f"📧 Email send result: {email_sent}")
-        
-        if email_sent:
+        try:
+            send_reset_email(email, customer['first_name'], reset_token)
             return jsonify({'success': True, 'message': 'ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลของคุณแล้ว กรุณาตรวจสอบอีเมล'})
-        else:
+        except Exception as e:
+            print(f"Error sending email: {e}")
             return jsonify({'success': False, 'message': 'เกิดข้อผิดพลาดในการส่งอีเมล กรุณาลองใหม่อีกครั้ง'}), 500
             
     except Exception as e:
-        print(f"❌ FORGOT PASSWORD ERROR: {e}")
-        print(f"❌ Error type: {type(e).__name__}")
-        import traceback
-        print(f"❌ Traceback: {traceback.format_exc()}")
+        print(f"Forgot password error: {e}")
         return jsonify({'success': False, 'message': 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'}), 500
 
 @auth.route('/reset-password/<token>', methods=['GET', 'POST'])
@@ -458,27 +416,14 @@ def reset_password(token):
 def send_reset_email(email, first_name, token):
     """ส่งอีเมลรีเซ็ตรหัสผ่าน"""
     try:
-        from flask import current_app
-        
-        # ตั้งค่าอีเมลจาก config
-        smtp_server = current_app.config['MAIL_SERVER']
-        smtp_port = current_app.config['MAIL_PORT']
-        sender_email = current_app.config['MAIL_USERNAME']
-        sender_password = current_app.config['MAIL_PASSWORD']
-        default_sender = current_app.config.get('MAIL_DEFAULT_SENDER') or sender_email
-        resend_api_key = current_app.config.get('RESEND_API_KEY', '')
-        sendgrid_api_key = current_app.config.get('SENDGRID_API_KEY', '')
-        
-        # ตรวจสอบว่ามีการตั้งค่าอีเมลหรือไม่
-        if not sender_email or not sender_password:
-            print("⚠️ Gmail SMTP not configured - trying API providers instead")
-            print(f"MAIL_USERNAME: {sender_email}")
-            print(f"MAIL_PASSWORD: {'*' * len(sender_password) if sender_password else 'None'}")
-            # ไม่ return False แต่ให้ลองใช้ API providers ต่อ
+        # ตั้งค่าอีเมล (ใช้ Gmail SMTP)
+        smtp_server = "smtp.gmail.com"
+        smtp_port = 587
+        sender_email = "computersci65@gmail.com"  # อีเมลจาก .env
+        sender_password = "xmkw jdpk aaof fsrs"  # App Password จาก .env
         
         # สร้างลิงก์รีเซ็ต
-        app_url = current_app.config['APP_URL']
-        reset_link = f"{app_url}/reset-password/{token}"
+        reset_link = f"http://localhost:5000/reset-password/{token}"
         
         # สร้างเนื้อหาอีเมล
         subject = "รีเซ็ตรหัสผ่าน - ไทร์พลัส บุรีรัมย์แสงเจริญการยาง"
@@ -521,184 +466,28 @@ def send_reset_email(email, first_name, token):
         </html>
         """
         
-        # Debug: ตรวจสอบค่า environment variables
-        print(f"🔍 Debug - RESEND_API_KEY exists: {bool(resend_api_key)}")
-        print(f"🔍 Debug - RESEND_API_KEY length: {len(resend_api_key) if resend_api_key else 0}")
-        print(f"🔍 Debug - SENDGRID_API_KEY exists: {bool(sendgrid_api_key)}")
-        print(f"🔍 Debug - MAIL_DEFAULT_SENDER: {default_sender}")
-        
-        # ใช้ Gmail API (Railway บล็อค SMTP แต่ Gmail API ใช้ HTTPS)
-        print("📧 Using Gmail API - Railway blocks SMTP but Gmail API works via HTTPS")
-        
-        # ตรวจสอบว่ามี Gmail API credentials หรือไม่
-        gmail_api_key = current_app.config.get('GMAIL_API_KEY', '')
-        if gmail_api_key and gmail_api_key.strip():
-            try:
-                print("📮 Sending email via Gmail API")
-                # ใช้ Gmail API ผ่าน Google's API
-                import base64
-                from email.mime.text import MIMEText
-                
-                # สร้าง message
-                message = MIMEText(html_content, 'html', 'utf-8')
-                message['to'] = email
-                message['from'] = sender_email
-                message['subject'] = subject
-                
-                # Encode message
-                raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
-                
-                # ส่งผ่าน Gmail API
-                req = urllib.request.Request(
-                    url="https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
-                    method="POST",
-                    data=json.dumps({
-                        "raw": raw_message
-                    }).encode("utf-8"),
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {gmail_api_key}"
-                    }
-                )
-                with urllib.request.urlopen(req, timeout=30) as resp:
-                    status = resp.getcode()
-                    body = resp.read().decode("utf-8")
-                    print(f"✅ Gmail API response {status}: {body}")
-                    return 200 <= status < 300
-            except urllib.error.HTTPError as he:
-                error_body = he.read().decode('utf-8', 'ignore')
-                print(f"❌ Gmail API HTTPError {he.code}: {error_body}")
-            except Exception as e_api:
-                print(f"❌ Gmail API send failed: {e_api}")
-        
-        # หากมี SENDGRID_API_KEY ให้ส่งผ่าน SendGrid ต่อ
-        if sendgrid_api_key and sendgrid_api_key.strip():
-            try:
-                print("📮 Sending email via SendGrid API")
-                req = urllib.request.Request(
-                    url="https://api.sendgrid.com/v3/mail/send",
-                    method="POST",
-                    data=json.dumps({
-                        "personalizations": [{
-                            "to": [{"email": email}],
-                            "subject": subject
-                        }],
-                        "from": {"email": "computersci65@gmail.com", "name": "ไทร์พลัส บุรีรัมย์"},
-                        "content": [{
-                            "type": "text/html",
-                            "value": html_content
-                        }]
-                    }).encode("utf-8"),
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {sendgrid_api_key}"
-                    }
-                )
-                with urllib.request.urlopen(req, timeout=30) as resp:
-                    status = resp.getcode()
-                    body = resp.read().decode("utf-8")
-                    print(f"✅ SendGrid response {status}: {body}")
-                    return 200 <= status < 300
-            except urllib.error.HTTPError as he:
-                error_body = he.read().decode('utf-8', 'ignore')
-                print(f"❌ SendGrid HTTPError {he.code}: {error_body}")
-            except Exception as e_api:
-                print(f"❌ SendGrid send failed: {e_api}")
-        
-        # หากมี RESEND_API_KEY ให้ส่งผ่าน Resend (HTTPS) ต่อ
-        if resend_api_key and resend_api_key.strip():
-            try:
-                print("📮 Sending email via Resend API")
-                # ใช้อีเมลที่ลงทะเบียนเป็น sender สำหรับทดสอบ
-                from_email = "650112230047@bru.ac.th"
-                req = urllib.request.Request(
-                    url="https://api.resend.com/emails",
-                    method="POST",
-                    data=json.dumps({
-                        "from": from_email,
-                        "to": email,
-                        "subject": subject,
-                        "html": html_content
-                    }).encode("utf-8"),
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {resend_api_key}"
-                    }
-                )
-                with urllib.request.urlopen(req, timeout=30) as resp:
-                    status = resp.getcode()
-                    body = resp.read().decode("utf-8")
-                    print(f"✅ Resend response {status}: {body}")
-                    return 200 <= status < 300
-            except urllib.error.HTTPError as he:
-                error_body = he.read().decode('utf-8', 'ignore')
-                print(f"❌ Resend HTTPError {he.code}: {error_body}")
-                # ถ้าเป็น 403 (domain not verified) ให้ลองใช้ SMTP ต่อ
-                if he.code == 403:
-                    print("⚠️ Resend domain not verified, falling back to SMTP")
-            except Exception as e_api:
-                print(f"❌ Resend send failed: {e_api}")
-
-        # สร้างอีเมล SMTP
+        # สร้างอีเมล
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
-        msg['From'] = default_sender or sender_email
+        msg['From'] = sender_email
         msg['To'] = email
+        
+        # เพิ่มเนื้อหา HTML
         html_part = MIMEText(html_content, 'html', 'utf-8')
         msg.attach(html_part)
         
-        # ส่งอีเมลผ่าน SMTP (รองรับทั้ง STARTTLS และ SMTP_SSL แบบ fallback)
-        try:
-            print(f"🔗 Connecting to SMTP server (TLS): {smtp_server}:{smtp_port}")
-            server = smtplib.SMTP(smtp_server, smtp_port, timeout=30)
-            # ทำ EHLO ก่อนเริ่ม TLS
-            try:
-                server.ehlo()
-            except Exception:
-                pass
-            
-            if current_app.config['MAIL_USE_TLS']:
-                print("🔒 Starting TLS connection")
-                server.starttls()
-                # EHLO อีกครั้งหลัง TLS
-                try:
-                    server.ehlo()
-                except Exception:
-                    pass
-            
-            print(f"🔑 Logging in with: {sender_email}")
-            server.login(sender_email, sender_password)
-            print(f"📧 Sending email to: {email}")
-            server.send_message(msg)
-            server.quit()
-            print(f"✅ Reset email sent to {email} via TLS")
-            return True
-        except Exception as e_tls:
-            print(f"⚠️ TLS send failed: {e_tls} - trying SMTP_SSL fallback")
-            try:
-                # Fallback ไปใช้ SMTP_SSL (ปกติพอร์ต 465)
-                ssl_port = 465
-                print(f"🔗 Connecting to SMTP server (SSL): {smtp_server}:{ssl_port}")
-                server_ssl = smtplib.SMTP_SSL(smtp_server, ssl_port, timeout=30)
-                try:
-                    server_ssl.ehlo()
-                except Exception:
-                    pass
-                print(f"🔑 Logging in with: {sender_email}")
-                server_ssl.login(sender_email, sender_password)
-                print(f"📧 Sending email to: {email}")
-                server_ssl.send_message(msg)
-                server_ssl.quit()
-                print(f"✅ Reset email sent to {email} via SSL")
-                return True
-            except Exception as e_ssl:
-                print(f"❌ SSL fallback failed: {e_ssl}")
-                return False
+        # ส่งอีเมล
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        server.quit()
+        
+        print(f"Reset email sent to {email}")
         
     except Exception as e:
-        print(f"❌ Error sending reset email: {e}")
-        print(f"❌ Error type: {type(e).__name__}")
-        return False
+        print(f"Error sending reset email: {e}")
+        raise e
 
 @auth.route('/get-csrf-token')
 def get_csrf_token():

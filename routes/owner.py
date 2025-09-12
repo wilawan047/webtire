@@ -86,15 +86,16 @@ def bookings_report():
         ''')
         monthly_bookings = cursor.fetchall()
         
-        # ดึงข้อมูลการจองทั้งหมด
+        # ดึงข้อมูลการจองล่าสุด 10 รายการ
         cursor.execute('''
             SELECT b.*, 
                    c.first_name, c.last_name, c.phone,
-                   v.brand_name, v.model_name, v.license_plate
+                   v.brand_name, v.model_name, v.license_plate, v.license_province
             FROM bookings b
             JOIN customers c ON b.customer_id = c.customer_id
             JOIN vehicles v ON b.vehicle_id = v.vehicle_id
-            ORDER BY b.booking_date DESC
+            ORDER BY b.booking_date DESC, b.booking_id DESC
+            LIMIT 10
         ''')
         bookings = cursor.fetchall()
         
@@ -126,7 +127,7 @@ def bookings_report_pdf():
         query = '''
             SELECT DISTINCT b.booking_id, b.booking_date, b.service_date, b.service_time, b.status, b.note,
                    c.first_name, c.last_name, c.phone,
-                   v.brand_name, v.model_name, v.license_plate,
+                   v.brand_name, v.model_name, v.license_plate, v.license_province,
                    GROUP_CONCAT(DISTINCT s.service_name ORDER BY s.service_name SEPARATOR ', ') AS service_names,
                    GROUP_CONCAT(DISTINCT CONCAT(s.service_name, 
                             CASE WHEN so.option_name IS NOT NULL 
@@ -148,7 +149,7 @@ def bookings_report_pdf():
             query += ' WHERE DATE(b.booking_date) BETWEEN %s AND %s'
             params.extend([start_date, end_date])
         
-        query += ' GROUP BY b.booking_id ORDER BY b.booking_date DESC'
+        query += ' GROUP BY b.booking_id ORDER BY v.license_province ASC, b.booking_date DESC'
         cursor.execute(query, params)
         bookings = cursor.fetchall()
         
@@ -202,6 +203,7 @@ def bookings_report_pdf():
                 'brand_name': booking['brand_name'],
                 'model_name': booking['model_name'],
                 'license_plate': booking['license_plate'],
+                'license_province': booking['license_province'],
                 'service_names': booking.get('service_names') if isinstance(booking, dict) else booking['service_names'],
                 'service_details': booking.get('service_details') if isinstance(booking, dict) else booking['service_details'],
                 'note': booking.get('note') if isinstance(booking, dict) else booking['note'],
@@ -223,8 +225,40 @@ def bookings_report_pdf():
         
         # สร้าง buffer สำหรับ PDF
         buffer = io.BytesIO()
+        
+        # ฟังก์ชันสำหรับเพิ่มเส้นขีดและเลขหน้า
+        def add_page_number(canvas, doc):
+            canvas.saveState()
+            # วาดเส้นขีดสีเขียว green-700
+            canvas.setStrokeColor(colors.HexColor('#15803d'))  # green-700
+            canvas.setLineWidth(1.2)
+            
+            # เส้นวาดเหนือ margin (เช่น y=doc.bottomMargin-10)
+            y_line = doc.bottomMargin - 10
+            canvas.line(doc.leftMargin, y_line, A4[0] - doc.rightMargin, y_line)
+            
+            # วันที่และเวลาปัจจุบัน - ย้ายไปมุมล่างซ้าย
+            canvas.setFont('Helvetica', 9)
+            current_time = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+            canvas.drawString(doc.leftMargin, y_line - 12, f"This report was created: {current_time}")
+            
+            #เลขหน้า
+            page_num = canvas.getPageNumber()
+            canvas.drawRightString(A4[0] - doc.rightMargin, y_line - 12, f"หน้าที่ {page_num}")
+            
+            canvas.restoreState()
+        
         # ตั้ง margin ให้มีพื้นที่ว่างรอบขอบกระดาษเพื่อความอ่านง่าย
-        doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=0.5*inch, topMargin=0.5*inch, rightMargin=0.5*inch, bottomMargin=0.5*inch)
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            leftMargin=36,   # 0.5 inch
+            rightMargin=36,  # 0.5 inch
+            topMargin=36,    # 0.5 inch
+            bottomMargin=36,  # 0.5 inch
+            onFirstPage=add_page_number,
+            onLaterPages=add_page_number
+        )
         elements = []
         
         # ลงทะเบียนฟอนต์ภาษาไทย
@@ -242,15 +276,16 @@ def bookings_report_pdf():
         # สร้างสไตล์
         styles = getSampleStyleSheet()
         
-        # สไตล์สำหรับชื่อร้าน
+        # สร้างสไตล์สำหรับชื่อร้าน (กลางหน้ากระดาษ, สีเขียว, ตัวหนา)
         shop_name_style = ParagraphStyle(
             'ShopName',
-            parent=styles['Normal'],
+            parent=styles['Heading1'],
             fontName='NotoSansThai-Bold',
-            fontSize=16,
-            textColor=colors.HexColor('#166534'),  # green-800
+            fontSize=20,
+            textColor=colors.HexColor('#14532d'),  # green-900
+            spaceAfter=15,
             alignment=1,  # center
-            spaceAfter=5
+            leading=24
         )
         
         # สไตล์สำหรับหัวข้อหลัก
@@ -258,10 +293,23 @@ def bookings_report_pdf():
             'CustomTitle',
             parent=styles['Heading1'],
             fontName='NotoSansThai-Bold',
-            fontSize=18,
-            textColor=colors.black,
+            fontSize=14,  # ลดขนาดลง
+            textColor=colors.black,  # สีดำ
+            spaceAfter=15,  # ลดระยะห่าง
             alignment=1,  # center
-            spaceAfter=5
+            leading=18
+        )
+        
+        # สไตล์สำหรับ Selected Period (ตัวปกติ, ขนาดเล็กมาก, จัดกึ่งกลาง)
+        selected_period_style = ParagraphStyle(
+            'SelectedPeriod',
+            parent=styles['Heading1'],
+            fontName='Helvetica',  # ใช้ฟอนต์ภาษาอังกฤษ
+            fontSize=10,  # ขนาดเล็กมาก
+            textColor=colors.black,  # สีดำ
+            spaceAfter=8,  # ลดระยะห่าง
+            alignment=1,  # center
+            leading=14
         )
         
         # สไตล์สำหรับหัวข้อส่วน
@@ -313,35 +361,31 @@ def bookings_report_pdf():
             leading=13
         )
         
-        # เพิ่มชื่อร้าน
-        shop_name = Paragraph("Tyre Plus Buriram Sangjaroenkarnyang", shop_name_style)
-        shop_name.hAlign = 'CENTER'
+        # ชื่อร้านที่กลางหน้ากระดาษ
+        shop_name = Paragraph("TYRE PLUS BURIRAM SANGJAROENKARNYANG", shop_name_style)
         elements.append(shop_name)
-        elements.append(Spacer(1, 5))
         
-        # หัวข้อรายงาน
-        title = Paragraph("รายงานการจองบริการ", title_style)
-        title.hAlign = 'CENTER'
-        elements.append(title)
-        elements.append(Spacer(1, 5))
-        
-        # ข้อมูลช่วงวันที่
+        # ข้อมูลช่วงวันที่ (ย้ายมาอยู่บนชื่อรายงาน)
         if start_date and end_date:
-            # สร้างตารางสำหรับแสดงช่วงวันที่
-            date_label = Paragraph("ระยะเวลาที่เลือก:", bold_style)
-            date_value = Paragraph(f"{start_date} ถึง {end_date}", normal_style)
-            date_table = Table([[date_label, date_value]], colWidths=[1.2*inch, 4.8*inch])
-            date_table.setStyle(TableStyle([
-                ('LEFTPADDING', (0, 0), (-1, -1), 0),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                ('TOPPADDING', (0, 0), (-1, -1), 0),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-            ]))
-            date_table.hAlign = 'LEFT'
-            date_table.leftIndent = 40
-            date_table.vAlign = 'TOP'
-            elements.append(date_table)
-            elements.append(Spacer(1, 3))
+            # แปลงวันที่เป็นรูปแบบไทย (วว/ดด/ปปปป)
+            try:
+                start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+                thai_start_date = start_date_obj.strftime('%d/%m/%Y')
+                thai_end_date = end_date_obj.strftime('%d/%m/%Y')
+                date_text = f"Selected Period: {thai_start_date} to {thai_end_date}"
+            except:
+                date_text = f"Selected Period: {start_date} to {end_date}"
+            
+            # สร้าง Paragraph สำหรับวันที่ (ตัวปกติ, ขนาดเล็กมาก, จัดกึ่งกลาง)
+            date_paragraph = Paragraph(date_text, selected_period_style)
+            elements.append(date_paragraph)
+            elements.append(Spacer(1, 2))  # ลดระยะห่าง
+        
+        # หัวเรื่อง
+        title = Paragraph("Booking Service Report", title_style)
+        elements.append(title)
+        elements.append(Spacer(1, 3))  # ลดระยะห่างหลังหัวเรื่อง
         
         # สร้างตารางข้อมูล
         if bookings_data:
@@ -519,22 +563,6 @@ def bookings_report_pdf():
             table.repeatRows = 1
             
             elements.append(table)
-            
-            # เพิ่มข้อมูลการสร้างรายงาน
-            elements.append(Spacer(1, 8))
-            info_label = Paragraph("รายงานนี้ถูกสร้างเมื่อ:", bold_style)
-            info_value = Paragraph(f"{datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", normal_style)
-            info_table = Table([[info_label, info_value]], colWidths=[1.5*inch, 2*inch])
-            info_table.setStyle(TableStyle([
-                ('LEFTPADDING', (0, 0), (-1, -1), 0),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                ('TOPPADDING', (0, 0), (-1, -1), 0),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-            ]))
-            info_table.hAlign = 'LEFT'
-            info_table.leftIndent = 40
-            info_table.vAlign = 'TOP'
-            elements.append(info_table)
         else:
             no_data = Paragraph("ไม่พบข้อมูลการจองในช่วงวันที่ที่เลือก", normal_style)
             no_data.leftIndent = 40
@@ -568,6 +596,7 @@ def page_views_report_pdf():
     try:
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
+        report_type = request.args.get('report_type', 'device')  # เปลี่ยนค่าเริ่มต้นเป็น device
         
         cursor = get_cursor()
         
@@ -618,7 +647,39 @@ def page_views_report_pdf():
         
         # สร้างไฟล์ PDF
         buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36, bottomMargin=36)
+        
+        # ฟังก์ชันสำหรับเพิ่มเส้นขีดและเลขหน้า
+        def add_page_number(canvas, doc):
+            canvas.saveState()
+            # วาดเส้นขีดสีเขียว green-700
+            canvas.setStrokeColor(colors.HexColor('#15803d'))  # green-700
+            canvas.setLineWidth(1.2)
+            
+            # เส้นวาดเหนือ margin (เช่น y=doc.bottomMargin-10)
+            y_line = doc.bottomMargin - 10
+            canvas.line(doc.leftMargin, y_line, A4[0] - doc.rightMargin, y_line)
+            
+            # วันที่และเวลาปัจจุบัน - ย้ายไปมุมล่างซ้าย
+            canvas.setFont('Helvetica', 9)
+            current_time = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+            canvas.drawString(doc.leftMargin, y_line - 12, f"This report was created: {current_time}")
+            
+            #เลขหน้า
+            page_num = canvas.getPageNumber()
+            canvas.drawRightString(A4[0] - doc.rightMargin, y_line - 12, f"หน้าที่ {page_num}")
+            
+            canvas.restoreState()
+        
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            leftMargin=36,
+            rightMargin=36,
+            topMargin=36,
+            bottomMargin=36,
+            onFirstPage=add_page_number,
+            onLaterPages=add_page_number
+        )
         elements = []
         
         # ลงทะเบียน font ภาษาไทย
@@ -653,11 +714,23 @@ def page_views_report_pdf():
             'CustomTitle',
             parent=styles['Heading1'],
             fontName='NotoSansThai-Bold',
-            fontSize=16,
+            fontSize=14,  # ลดขนาดลง
             textColor=colors.black,  # สีดำ
-            spaceAfter=20,
+            spaceAfter=15,  # ลดระยะห่าง
             alignment=1,  # center
-            leading=20
+            leading=18
+        )
+        
+        # สไตล์สำหรับ Selected Period (ตัวปกติ, ขนาดเล็กมาก, จัดกึ่งกลาง)
+        selected_period_style = ParagraphStyle(
+            'SelectedPeriod',
+            parent=styles['Heading1'],
+            fontName='Helvetica',  # ใช้ฟอนต์ภาษาอังกฤษ
+            fontSize=10,  # ขนาดเล็กมาก
+            textColor=colors.black,  # สีดำ
+            spaceAfter=8,  # ลดระยะห่าง
+            alignment=1,  # center
+            leading=14
         )
         
         # สไตล์สำหรับหัวข้อย่อย
@@ -695,46 +768,42 @@ def page_views_report_pdf():
         )
         
         # ชื่อร้านที่กลางหน้ากระดาษ
-        shop_name = Paragraph("Tyre Plus Buriram Sangjaroenkarnyang", shop_name_style)
+        shop_name = Paragraph("TYRE PLUS BURIRAM SANGJAROENKARNYANG", shop_name_style)
         elements.append(shop_name)
         
-        # หัวเรื่อง
-        title = Paragraph("รายงานสถิติการเข้าชมหน้าเว็บ", title_style)
-        elements.append(title)
-        elements.append(Spacer(1, 5))  # ลดระยะห่างหลังหัวเรื่อง
-        
-        # ข้อมูลช่วงวันที่
+        # ข้อมูลช่วงวันที่ (ย้ายมาอยู่บนชื่อรายงาน)
         if start_date and end_date:
-            # สร้าง Paragraph แยกสำหรับคำว่า "ระยะเวลาที่เลือก:" (ตัวหนา)
-            date_label = Paragraph("ระยะเวลาที่เลือก:", bold_style)
-            # สร้าง Paragraph สำหรับวันที่ (ตัวปกติ)
-            date_value = Paragraph(f"{start_date} ถึง {end_date}", normal_style)
+            # แปลงวันที่เป็นรูปแบบไทย (วว/ดด/ปปปป)
+            try:
+                start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+                thai_start_date = start_date_obj.strftime('%d/%m/%Y')
+                thai_end_date = end_date_obj.strftime('%d/%m/%Y')
+                date_text = f"Selected Period: {thai_start_date} to {thai_end_date}"
+            except:
+                date_text = f"Selected Period: {start_date} to {end_date}"
             
-            # สร้างตารางเพื่อให้ข้อความอยู่บรรทัดเดียวกัน แต่ให้ใกล้กันมากขึ้น
-            date_table = Table([[date_label, date_value]], colWidths=[1.2*inch, 4.8*inch])
-            date_table.setStyle(TableStyle([
-                ('ALIGN', (0, 0), (0, 0), 'LEFT'),  # คำว่า "ระยะเวลาที่เลือก:" ชิดซ้าย
-                ('ALIGN', (1, 0), (1, 0), 'LEFT'),  # วันที่ชิดซ้าย
-                ('VALIGN', (0, 0), (-1, -1), 'TOP'),  # จัดแนวตั้งด้านบน
-                ('LEFTPADDING', (0, 0), (0, 0), 0),  # ไม่มี padding ซ้ายสำหรับคอลัมน์แรก
-                ('RIGHTPADDING', (0, 0), (0, 0), 0),  # ไม่มี padding ขวาสำหรับคอลัมน์แรก
-                ('LEFTPADDING', (1, 0), (1, 0), 0),  # ไม่มี padding ซ้ายสำหรับคอลัมน์ที่สอง
-                ('RIGHTPADDING', (1, 0), (1, 0), 0),  # ไม่มี padding ขวาสำหรับคอลัมน์ที่สอง
-                ('TOPPADDING', (0, 0), (-1, -1), 0),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-            ]))
-            # ขยับตารางให้มี indentation
-            date_table.hAlign = 'LEFT'
-            date_table.leftIndent = 40  # เพิ่ม indentation มากขึ้น
-            date_table.vAlign = 'TOP'
-            elements.append(date_table)
-            elements.append(Spacer(1, 3))  # ลดระยะห่างหลังข้อมูลวันที่
+            # สร้าง Paragraph สำหรับวันที่ (ตัวปกติ, ขนาดเล็กมาก, จัดกึ่งกลาง)
+            date_paragraph = Paragraph(date_text, selected_period_style)
+            elements.append(date_paragraph)
+            elements.append(Spacer(1, 2))  # ลดระยะห่าง
+        
+        # หัวเรื่อง
+        if report_type == 'device':
+            title_text = "รายงานอุปกรณ์ผู้เข้าชมเว็บไซต์"
+        elif report_type == 'daily':
+            title_text = "รายงานสถิติการเข้าชมรายวัน"
+        elif report_type == 'pages':
+            title_text = "รายงานสถิติหน้าที่เข้าชมมากที่สุด"
+        else:
+            title_text = "รายงานอุปกรณ์ผู้เข้าชมเว็บไซต์"
+            
+        title = Paragraph(title_text, title_style)
+        elements.append(title)
+        elements.append(Spacer(1, 3))  # ลดระยะห่างหลังหัวเรื่อง
         
         # ส่วนอุปกรณ์ที่ใช้เข้าชม
-        if device_stats:
-            device_title = Paragraph("ตารางแสดงข้อมูลอุปกรณ์ที่ใช้เข้าชม", heading_style)
-            device_title.leftIndent = 40  # เพิ่ม indentation มากขึ้น
-            elements.append(device_title)
+        if device_stats and report_type == 'device':
             
             # สร้างตารางอุปกรณ์
             device_table_data = [['อุปกรณ์', 'จำนวนการเข้าชม']]
@@ -774,10 +843,7 @@ def page_views_report_pdf():
             elements.append(Spacer(1, 5))  # ลดระยะห่างหลังตารางอุปกรณ์
         
         # ส่วนการเข้าชมรายวัน
-        if daily_visits:
-            daily_title = Paragraph("ตารางแสดงข้อมูลการเข้าชมรายวัน", heading_style)
-            daily_title.leftIndent = 40  # เพิ่ม indentation มากขึ้น
-            elements.append(daily_title)
+        if daily_visits and report_type == 'daily':
             
             # สร้างตารางการเข้าชมรายวัน
             daily_table_data = [['วันที่', 'จำนวนการเข้าชม']]
@@ -808,11 +874,7 @@ def page_views_report_pdf():
             elements.append(Spacer(1, 5))  # ลดระยะห่างหลังตารางรายวัน
         
         # สร้างตารางข้อมูลหน้าเว็บ
-        if page_views:
-            # หัวข้อตารางหน้าเว็บ
-            page_title = Paragraph("ตารางแสดงข้อมูลการเข้าชมหน้าเว็บ", heading_style)
-            page_title.leftIndent = 40  # เพิ่ม indentation มากขึ้น
-            elements.append(page_title)
+        if page_views and report_type == 'pages':
             
             # หัวตาราง
             table_data = [['หน้าเว็บ', 'จำนวนการเข้าชม']]
@@ -885,36 +947,11 @@ def page_views_report_pdf():
             
             elements.append(table)
         else:
-            # ถ้าไม่มีข้อมูล
-            no_data = Paragraph("ไม่พบข้อมูลการเข้าชมในช่วงวันที่ที่เลือก", normal_style)
-            elements.append(no_data)
+            # ถ้าไม่มีข้อมูลในตารางหน้าเว็บ และไม่มีข้อมูลในส่วนอื่นๆ ด้วย
+            if not device_stats and not daily_visits:
+                no_data = Paragraph("ไม่พบข้อมูลการเข้าชมในช่วงวันที่ที่เลือก", normal_style)
+                elements.append(no_data)
         
-        elements.append(Spacer(1, 8))  # ลดระยะห่างก่อนข้อมูลเพิ่มเติม
-        
-        # ข้อมูลเพิ่มเติม
-        # สร้าง Paragraph แยกสำหรับคำว่า "รายงานนี้ถูกสร้างเมื่อ:" (ตัวหนา)
-        info_label = Paragraph("รายงานนี้ถูกสร้างเมื่อ:", bold_style)
-        # สร้าง Paragraph สำหรับวันที่และเวลา (ตัวปกติ)
-        info_value = Paragraph(f"{datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", normal_style)
-        
-        # สร้างตารางเพื่อให้ข้อความอยู่บรรทัดเดียวกัน
-        info_table = Table([[info_label, info_value]], colWidths=[1.5*inch, 2*inch])
-        info_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (0, 0), 'LEFT'),  # คำว่า "รายงานนี้ถูกสร้างเมื่อ:" ชิดซ้าย
-            ('ALIGN', (1, 0), (1, 0), 'LEFT'),  # วันที่และเวลาชิดซ้าย
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),  # จัดแนวตั้งด้านบน
-            ('LEFTPADDING', (0, 0), (0, 0), 0),  # ไม่มี padding ซ้ายสำหรับคอลัมน์แรก
-            ('RIGHTPADDING', (0, 0), (0, 0), 0),  # ไม่มี padding ขวาสำหรับคอลัมน์แรก
-            ('LEFTPADDING', (1, 0), (1, 0), 0),  # ไม่มี padding ซ้ายสำหรับคอลัมน์ที่สอง
-            ('RIGHTPADDING', (1, 0), (1, 0), 0),  # ไม่มี padding ขวาสำหรับคอลัมน์ที่สอง
-            ('TOPPADDING', (0, 0), (-1, -1), 0),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        # ขยับตารางให้มี indentation
-        info_table.hAlign = 'LEFT'
-        info_table.leftIndent = 40  # เพิ่ม indentation มากขึ้น
-        info_table.vAlign = 'TOP'
-        elements.append(info_table)
         # สร้าง PDF
         doc.build(elements)
         buffer.seek(0)
@@ -944,12 +981,24 @@ def page_views_report():
     try:
         cursor = get_cursor()
         
-        # สถิติสรุป
-        cursor.execute('SELECT COUNT(*) as total FROM page_views')
-        total_page_views = cursor.fetchone()['total']
+        # สถิติสรุป - นับเฉพาะหน้าในส่วนของลูกค้า
+        cursor.execute('''
+            SELECT COUNT(DISTINCT page_id) as total 
+            FROM page_views 
+            WHERE page_id LIKE 'customer/%' 
+               OR page_id LIKE 'customer_%'
+        ''')
+        result = cursor.fetchone()
+        total_page_views = result['total'] if result else 0
         
-        cursor.execute('SELECT SUM(views) as total FROM page_views')
-        total_visits = cursor.fetchone()['total'] or 0
+        cursor.execute('''
+            SELECT SUM(views) as total 
+            FROM page_views 
+            WHERE page_id LIKE 'customer/%' 
+               OR page_id LIKE 'customer_%'
+        ''')
+        result = cursor.fetchone()
+        total_visits = result['total'] if result and result['total'] else 0
         
         # ดึงข้อมูลสถิติการเข้าชมจากตาราง page_views (top pages)
         cursor.execute('''
@@ -1038,8 +1087,3 @@ def logout():
     session.permanent = False
     flash('ออกจากระบบเจ้าของกิจการเรียบร้อย', 'success')
     return redirect(url_for('auth.login'))
-
-
-
-
-

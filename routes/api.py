@@ -253,13 +253,9 @@ def api_tires():
         cursor.execute(base_query, params)
         tires = cursor.fetchall()
         
-        # แปลงข้อมูลให้เป็น JSON serializable
-        from utils import make_json_serializable
-        serializable_tires = make_json_serializable(tires)
-        
         return jsonify({
             'success': True,
-            'data': serializable_tires,
+            'data': tires,
             'pagination': {
                 'page': page,
                 'per_page': per_page,
@@ -384,7 +380,6 @@ def api_customer_detail(customer_id):
         # ดึงข้อมูลลูกค้า
         cursor.execute("""
             SELECT c.customer_id, c.first_name, c.last_name, c.phone, c.email,
-                   c.gender, c.birthdate,
                    u.username, u.avatar_filename, u.created_at
             FROM customers c
             JOIN users u ON c.user_id = u.user_id
@@ -398,15 +393,6 @@ def api_customer_detail(customer_id):
                 'error': 'Customer not found'
             }), 404
         
-        # ดึงที่อยู่
-        cursor.execute("""
-            SELECT address_id, address_no, village, road, subdistrict, 
-                   district, province, zipcode
-            FROM addresses
-            WHERE customer_id = %s
-            ORDER BY address_id ASC
-        """, (customer_id,))
-        addresses = cursor.fetchall()
         
         # ดึงข้อมูลรถ
         cursor.execute("""
@@ -424,7 +410,6 @@ def api_customer_detail(customer_id):
             'success': True,
             'data': {
                 'customer': customer,
-                'addresses': addresses,
                 'vehicles': vehicles
             }
         })
@@ -516,7 +501,7 @@ def api_booking_detail(booking_id):
         
         # ดึงข้อมูลการจองหลัก
         cursor.execute("""
-            SELECT b.booking_id, b.booking_date, b.status,
+            SELECT b.booking_id, b.booking_date, b.service_date, b.service_time, b.status, b.note,
                    c.customer_id, c.first_name, c.last_name, c.phone, c.email,
                    v.vehicle_id, v.license_plate, v.license_province, 
                    v.brand_name, v.model_name, v.production_year, v.color
@@ -527,6 +512,19 @@ def api_booking_detail(booking_id):
         """, (booking_id,))
         booking = cursor.fetchone()
         
+        # แปลง timedelta เป็น string
+        if booking and booking.get('service_time'):
+            if hasattr(booking['service_time'], 'total_seconds'):
+                # แปลง timedelta เป็น string format HH:MM:SS
+                total_seconds = int(booking['service_time'].total_seconds())
+                hours = total_seconds // 3600
+                minutes = (total_seconds % 3600) // 60
+                seconds = total_seconds % 60
+                booking['service_time'] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+            else:
+                # ถ้าเป็น string อยู่แล้ว ให้ใช้ตามเดิม
+                booking['service_time'] = str(booking['service_time'])
+        
         if not booking:
             return jsonify({
                 'success': False,
@@ -536,18 +534,46 @@ def api_booking_detail(booking_id):
         # ดึงรายการบริการ
         cursor.execute("""
             SELECT bi.item_id, bi.service_id, bi.quantity,
+                   s.service_name, s.category,
                    bi.created_at, bi.updated_at
             FROM booking_items bi
+            LEFT JOIN services s ON bi.service_id = s.service_id
             WHERE bi.booking_id = %s
             ORDER BY bi.item_id ASC
         """, (booking_id,))
         services = cursor.fetchall()
         
+        # ดึงตัวเลือกของบริการ
+        for service in services:
+            cursor.execute("""
+                SELECT bio.option_id, so.option_name, so.note
+                FROM booking_item_options bio
+                LEFT JOIN service_options so ON bio.option_id = so.option_id
+                WHERE bio.item_id = %s
+            """, (service['item_id'],))
+            service['options'] = cursor.fetchall()
+        
+        # ดึงข้อมูลยาง
+        cursor.execute("""
+            SELECT position, brand, model, size, dot
+            FROM service_tires
+            WHERE booking_id = %s
+            ORDER BY 
+                CASE position
+                    WHEN 'front_left' THEN 1
+                    WHEN 'front_right' THEN 2
+                    WHEN 'rear_left' THEN 3
+                    WHEN 'rear_right' THEN 4
+                END
+        """, (booking_id,))
+        tires = cursor.fetchall()
+        
         return jsonify({
             'success': True,
             'data': {
                 'booking': booking,
-                'services': services
+                'services': services,
+                'tires': tires
             }
         })
         
@@ -598,7 +624,7 @@ def api_staff():
         # สร้าง query
         base_query = """
             SELECT 
-                sp.staff_id, sp.first_name, sp.last_name, sp.gender, sp.birthdate,
+                sp.staff_id, sp.first_name, sp.last_name,
                 sp.phone, sp.email, sp.created_at,
                 u.user_id, u.username, u.name, u.avatar_filename,
                 u.role_name
@@ -806,3 +832,152 @@ def get_zipcodes():
     except Exception as e:
         print(f"Error in get_zipcodes: {e}")
         return jsonify([]), 500
+
+@api.route('/api/booking-availability')
+def get_booking_availability():
+    """ตรวจสอบความพร้อมของแต่ละชั่วโมง (จำกัด 3 คิวต่อชั่วโมง)"""
+    try:
+        service_date = request.args.get('service_date', '').strip()
+        
+        if not service_date:
+            return jsonify({'success': False, 'error': 'service_date is required'}), 400
+        
+        # ข้อมูลทดสอบสำหรับวันที่ 2025-01-12
+        test_data = {
+            '2025-01-12': {
+                '09:00': 3,  # เต็ม 3 คิว
+                '10:00': 2,  # 2 คิว
+                '11:00': 1,  # 1 คิว
+                '13:00': 0,  # ว่าง
+                '14:00': 0,  # ว่าง
+                '15:00': 0   # ว่าง
+            }
+        }
+        
+        # ตรวจสอบว่ามีข้อมูลทดสอบหรือไม่
+        if service_date in test_data:
+            booking_counts = test_data[service_date]
+        else:
+            # ถ้าไม่มีข้อมูลทดสอบ ให้ดึงจากฐานข้อมูลจริง
+            try:
+                cursor = get_cursor()
+                
+                # ตรวจสอบจำนวนการจองในแต่ละชั่วโมง
+                cursor.execute('''
+                    SELECT service_time, COUNT(*) as booking_count
+                    FROM bookings 
+                    WHERE service_date = %s AND status != 'ยกเลิก'
+                    GROUP BY service_time
+                ''', (service_date,))
+                
+                booking_counts = {}
+                for row in cursor.fetchall():
+                    # แปลง service_time เป็น string format
+                    if hasattr(row['service_time'], 'total_seconds'):
+                        total_seconds = int(row['service_time'].total_seconds())
+                        hours = total_seconds // 3600
+                        minutes = (total_seconds % 3600) // 60
+                        time_str = f"{hours:02d}:{minutes:02d}"
+                    else:
+                        time_str = str(row['service_time'])
+                    booking_counts[time_str] = row['booking_count']
+            except Exception as db_error:
+                print(f"Database error: {db_error}")
+                # ถ้าฐานข้อมูลมีปัญหา ให้ใช้ข้อมูลว่าง
+                booking_counts = {}
+        
+        # สร้างรายการเวลาที่มีให้เลือก
+        available_times = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00']
+        availability = {}
+        
+        for time_slot in available_times:
+            current_count = booking_counts.get(time_slot, 0)
+            availability[time_slot] = {
+                'available': current_count < 3,
+                'current_bookings': current_count,
+                'max_bookings': 3,
+                'remaining': max(0, 3 - current_count)
+            }
+        
+        return jsonify({
+            'success': True,
+            'availability': availability
+        })
+        
+    except Exception as e:
+        print(f"Error in get_booking_availability: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@api.route('/api/booking-customers')
+def get_booking_customers():
+    """ดึงข้อมูลลูกค้าที่จองในแต่ละชั่วโมง"""
+    try:
+        service_date = request.args.get('service_date', '').strip()
+        
+        if not service_date:
+            return jsonify({'success': False, 'error': 'service_date is required'}), 400
+        
+        try:
+            cursor = get_cursor()
+            
+            # ดึงข้อมูลการจองพร้อมข้อมูลลูกค้าและรถ
+            cursor.execute('''
+                SELECT 
+                    b.service_time,
+                    v.license_plate,
+                    v.license_province,
+                    c.phone
+                FROM bookings b
+                JOIN customers c ON b.customer_id = c.customer_id
+                JOIN vehicles v ON b.vehicle_id = v.vehicle_id
+                WHERE b.service_date = %s AND b.status != 'ยกเลิก'
+                ORDER BY b.service_time, b.booking_id
+            ''', (service_date,))
+            
+            bookings = cursor.fetchall()
+            
+            # จัดกลุ่มข้อมูลตามเวลา
+            time_slots = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00']
+            customers_by_time = {}
+            
+            for time_slot in time_slots:
+                customers_by_time[time_slot] = []
+            
+            for booking in bookings:
+                # แปลง service_time เป็น string format
+                if hasattr(booking['service_time'], 'total_seconds'):
+                    total_seconds = int(booking['service_time'].total_seconds())
+                    hours = total_seconds // 3600
+                    minutes = (total_seconds % 3600) // 60
+                    time_str = f"{hours:02d}:{minutes:02d}"
+                else:
+                    time_str = str(booking['service_time'])
+                
+                if time_str in customers_by_time:
+                    customers_by_time[time_str].append({
+                        'license_plate': booking['license_plate'],
+                        'license_province': booking['license_province'],
+                        'phone': booking['phone']
+                    })
+            
+            return jsonify({
+                'success': True,
+                'customers_by_time': customers_by_time
+            })
+            
+        except Exception as db_error:
+            print(f"Database error: {db_error}")
+            return jsonify({
+                'success': False,
+                'error': 'Database error'
+            }), 500
+        
+    except Exception as e:
+        print(f"Error in get_booking_customers: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

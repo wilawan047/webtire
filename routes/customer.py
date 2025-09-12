@@ -483,10 +483,6 @@ def tires_by_brand(brand):
         tires = cursor.fetchall()
         print(f"Found {len(tires)} tires for {brand_name}")
         
-        # แปลงข้อมูลให้เป็น JSON serializable
-        from utils import make_json_serializable
-        serializable_tires = make_json_serializable(tires)
-        
         cursor.close()
         
         # เลือก template ตามแบรนด์
@@ -499,7 +495,7 @@ def tires_by_brand(brand):
         else:
             template_name = 'customer/tires.html'
         
-        return render_customer_template(template_name, tires=serializable_tires, brand=brand_name)
+        return render_customer_template(template_name, tires=tires, brand=brand_name)
         
     except Exception as e:
         print(f"Error loading {brand} tires: {e}")
@@ -532,6 +528,9 @@ def booking():
                 flash('กรุณาเข้าสู่ระบบก่อนจองบริการ', 'error')
                 return redirect(url_for('customer.login'))
             
+            # ประกาศ cursor สำหรับการทำงานกับฐานข้อมูล
+            cursor = get_cursor()
+            
             # ดึงข้อมูลจากฟอร์ม
             preferred_date = request.form.get('preferred_date', '')
             preferred_time = request.form.get('preferred_time', '')
@@ -558,6 +557,18 @@ def booking():
             model_name = request.form.get('model_name', '').strip()
             color = request.form.get('color', '').strip()
             production_year = request.form.get('production_year', '').strip()
+            
+            # ตรวจสอบและแก้ไข vehicle_type_id
+            if not vehicle_type_id or vehicle_type_id == '' or vehicle_type_id == 'None':
+                vehicle_type_id = None  # ใช้ค่า NULL ตามที่ตารางรองรับ
+            else:
+                try:
+                    vehicle_type_id = int(vehicle_type_id)
+                    # ตรวจสอบว่า vehicle_type_id อยู่ในช่วงที่ถูกต้อง (1-3)
+                    if vehicle_type_id not in [1, 2, 3]:
+                        vehicle_type_id = None  # ถ้าไม่อยู่ในช่วงที่ถูกต้องให้ใช้ค่า NULL
+                except (ValueError, TypeError):
+                    vehicle_type_id = None  # ถ้าแปลงไม่ได้ให้ใช้ค่า NULL
             
             # หา vehicle_id ที่มีอยู่แล้วหรือสร้างใหม่
             vehicle_id = None
@@ -695,13 +706,8 @@ def booking():
             flash('เกิดข้อผิดพลาดในการจองบริการ', 'error')
             return redirect(url_for('customer.booking'))
 
-    # ดึงข้อมูลที่จำเป็นสำหรับฟอร์ม
     try:
         cursor = get_cursor()
-        if not cursor:
-            print("ERROR: Cannot get database cursor for booking form")
-            flash('ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error')
-            return redirect(url_for('customer.booking'))
         
         # ดึงข้อมูลที่จำเป็นสำหรับฟอร์ม
         # 1. ประเภทรถ
@@ -875,32 +881,18 @@ def booking():
         print(f"Session customer_id: {session.get('customer_id')}")
         if session.get('customer_id'):
             try:
-                # ดึงข้อมูลลูกค้าและที่อยู่จากตาราง addresses
+                # ดึงข้อมูลลูกค้า
                 cursor.execute('''
-                    SELECT c.*, a.*
+                    SELECT c.*
                     FROM customers c
-                    LEFT JOIN addresses a ON c.customer_id = a.customer_id
                     WHERE c.customer_id = %s
-                    ORDER BY a.address_id ASC
-                    LIMIT 1
                 ''', (session.get('customer_id'),))
                 customer_data = cursor.fetchone()
-                print(f"Customer data with address: {customer_data}")
+                print(f"Customer data: {customer_data}")
             except Exception as e:
-                print(f"Error fetching customer data with address: {e}")
-                # ถ้าไม่มีตาราง addresses ให้ดึงเฉพาะข้อมูลลูกค้า
-                try:
-                    cursor.execute('''
-                        SELECT c.*
-                        FROM customers c
-                        WHERE c.customer_id = %s
-                    ''', (session.get('customer_id'),))
-                    customer_data = cursor.fetchone()
-                    print(f"Customer data without address: {customer_data}")
-                except Exception as e2:
-                    print(f"Error fetching customer data: {e2}")
-                    customer_data = None
-                    print("Using fallback customer_data")
+                print(f"Error fetching customer data: {e}")
+                customer_data = None
+                print("Using fallback customer_data")
         else:
             print("No customer_id in session")
         
@@ -1009,11 +1001,6 @@ def booking():
                                       vehicle_data=None,
                                       customer_vehicles=[],
                                       user_name=session.get('customer_name', ''))
-    
-    except Exception as e:
-        print(f"Error loading booking form data: {e}")
-        flash('เกิดข้อผิดพลาดในการโหลดข้อมูลฟอร์ม', 'error')
-        return redirect(url_for('customer.home'))
 
 @customer.route('/recommend', methods=['GET', 'POST'])
 def recommend():
@@ -1276,8 +1263,6 @@ def profile():
         try:
             # ดึงข้อมูลจากฟอร์ม
             name = request.form.get('name', '').strip()
-            gender = request.form.get('gender', '').strip()
-            birthdate = request.form.get('birthdate', '').strip()
             phone = request.form.get('phone', '').strip()
             
             # แยกชื่อและนามสกุล
@@ -1289,9 +1274,9 @@ def profile():
             cursor = get_cursor()
             cursor.execute('''
                 UPDATE customers 
-                SET first_name = %s, last_name = %s, gender = %s, birthdate = %s, phone = %s 
+                SET first_name = %s, last_name = %s, phone = %s 
                 WHERE customer_id = %s
-            ''', (first_name, last_name, gender, birthdate, phone, session.get('customer_id')))
+            ''', (first_name, last_name, phone, session.get('customer_id')))
             
             # อัปเดต name ในตาราง users ด้วย
             cursor.execute('''
@@ -1314,7 +1299,7 @@ def profile():
     try:
         cursor = get_cursor()
         cursor.execute('''
-            SELECT c.customer_id, c.first_name, c.last_name, c.phone, c.email, c.gender, c.birthdate,
+            SELECT c.customer_id, c.first_name, c.last_name, c.phone, c.email,
                    u.username, u.avatar_filename, u.created_at, u.name
             FROM customers c
             JOIN users u ON c.user_id = u.user_id
@@ -1409,7 +1394,7 @@ def edit_profile():
     try:
         cursor = get_cursor()
         cursor.execute('''
-            SELECT c.customer_id, c.first_name, c.last_name, c.phone, c.email, c.gender, c.birthdate,
+            SELECT c.customer_id, c.first_name, c.last_name, c.phone, c.email,
                    u.username, u.avatar_filename, u.created_at
             FROM customers c
             JOIN users u ON c.user_id = u.user_id

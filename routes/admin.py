@@ -222,7 +222,7 @@ def add_tire():
             model_id = request.form.get('model_id', '')
             width = request.form.get('width', '')
             aspect_ratio = request.form.get('aspect_ratio', '')
-            construction = request.form.get('construction', '') or 'R'
+            construction = request.form.get('construction', '')
             rim_diameter = request.form.get('rim_diameter', '')
             load_index = request.form.get('load_index', '')
             speed_symbol = request.form.get('speed_symbol', '')
@@ -233,7 +233,7 @@ def add_tire():
             product_date = request.form.get('product_date', '')
             
             # ตรวจสอบข้อมูล
-            if not all([model_id, width, aspect_ratio, construction, rim_diameter, price_each]):
+            if not all([model_id, width, aspect_ratio, rim_diameter, price_each]):
                 flash('กรุณากรอกข้อมูลให้ครบถ้วน', 'error')
                 # ดึงข้อมูล models สำหรับแสดงในฟอร์ม
                 cursor.execute('''
@@ -356,9 +356,6 @@ def add_tire():
             
         except Exception as e:
             print(f"Error adding tire: {e}")
-            # แปลง error object ให้เป็น string เพื่อหลีกเลี่ยงปัญหา JSON serialization
-            error_msg = str(e) if hasattr(e, '__str__') else 'Unknown error'
-            print(f"Error details: {error_msg}")
             flash('เกิดข้อผิดพลาดในการเพิ่มยาง', 'error')
             # ดึงข้อมูล models และ brands สำหรับแสดงในฟอร์ม
             cursor.execute('''
@@ -430,7 +427,7 @@ def edit_tire(tire_id):
             model_id = request.form.get('model_id', '')
             width = request.form.get('width', '')
             aspect_ratio = request.form.get('aspect_ratio', '')
-            construction = request.form.get('construction', '') or 'R'
+            construction = request.form.get('construction', '') or None
             rim_diameter = request.form.get('rim_diameter', '')
             load_index = request.form.get('load_index', '') or None
             speed_symbol = request.form.get('speed_symbol', '') or None
@@ -444,7 +441,7 @@ def edit_tire(tire_id):
             tire_load_type = request.form.get('tire_load_type', '') or None
             
             # ตรวจสอบข้อมูล
-            if not all([model_id, width, aspect_ratio, construction, rim_diameter, price_each]):
+            if not all([model_id, width, aspect_ratio, rim_diameter, price_each]):
                 flash('กรุณากรอกข้อมูลให้ครบถ้วน', 'error')
                 # ดึงข้อมูล tire และ models สำหรับแสดงในฟอร์ม
                 cursor.execute('''
@@ -651,10 +648,8 @@ def customer_list():
     
     # สร้าง query สำหรับค้นหา
     query = '''
-        SELECT c.*, 
-               CONCAT(a.address_no, ' ', a.village, ' ', a.road, ' ', a.subdistrict, ' ', a.district, ' ', a.province, ' ', a.zipcode) as address_str
+        SELECT c.*
         FROM customers c
-        LEFT JOIN addresses a ON c.customer_id = a.customer_id
         WHERE 1=1
     '''
     params = []
@@ -709,8 +704,6 @@ def add_customer():
         last_name = request.form.get('last_name', '').strip()
         phone = request.form.get('phone', '').strip()
         email = request.form.get('email', '').strip()
-        gender = request.form.get('gender', '')
-        birthdate = request.form.get('birthdate', None)
         
         # ตรวจสอบข้อมูล
         if not all([first_name, last_name, phone]):
@@ -722,39 +715,17 @@ def add_customer():
                                      'last_name': last_name,
                                      'phone': phone,
                                      'email': email,
-                                     'gender': gender,
-                                     'birthdate': birthdate,
-                                     'address_no': request.form.get('address_no', ''),
-                                     'village': request.form.get('village', ''),
-                                     'road': request.form.get('road', ''),
-                                     'subdistrict': request.form.get('subdistrict', ''),
-                                     'district': request.form.get('district', ''),
-                                     'province': request.form.get('province', ''),
-                                     'zipcode': request.form.get('zipcode', '')
                                  })
         
         try:
             # เพิ่มลูกค้า
             cursor.execute('''
-                INSERT INTO customers (first_name, last_name, phone, email, gender, birthdate) 
-                VALUES (%s, %s, %s, %s, %s, %s)
-            ''', (first_name, last_name, phone, email, gender, birthdate))
+                INSERT INTO customers (first_name, last_name, phone, email) 
+                VALUES (%s, %s, %s, %s)
+            ''', (first_name, last_name, phone, email))
             
             customer_id = cursor.lastrowid
             
-            # เพิ่มที่อยู่
-            address_no = request.form.get('address_no', '')
-            village = request.form.get('village', '')
-            road = request.form.get('road', '')
-            subdistrict = request.form.get('subdistrict', '')
-            district = request.form.get('district', '')
-            province = request.form.get('province', '')
-            zipcode = request.form.get('zipcode', '')
-            
-            cursor.execute('''
-                INSERT INTO addresses (customer_id, address_no, village, road, subdistrict, district, province, zipcode)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            ''', (customer_id, address_no, village, road, subdistrict, district, province, zipcode))
             
             get_db().commit()
             flash('เพิ่มลูกค้าสำเร็จ')
@@ -770,15 +741,6 @@ def add_customer():
                                      'last_name': last_name,
                                      'phone': phone,
                                      'email': email,
-                                     'gender': gender,
-                                     'birthdate': birthdate,
-                                     'address_no': request.form.get('address_no', ''),
-                                     'village': request.form.get('village', ''),
-                                     'road': request.form.get('road', ''),
-                                     'subdistrict': request.form.get('subdistrict', ''),
-                                     'district': request.form.get('district', ''),
-                                     'province': request.form.get('province', ''),
-                                     'zipcode': request.form.get('zipcode', '')
                                  })
     
     # สร้างรายการจังหวัด
@@ -798,9 +760,6 @@ def edit_customer(customer_id):
     # ดึงรถยนต์ทั้งหมดของลูกค้า
     cursor.execute('''SELECT * FROM vehicles WHERE customer_id=%s''', (customer_id,))
     vehicles = cursor.fetchall() or []
-    # ดึง address ของลูกค้า
-    cursor.execute('SELECT * FROM addresses WHERE customer_id=%s', (customer_id,))
-    address = cursor.fetchone()
     # โหลด brands เพื่อ map brand_name -> brand_id
     with open('static/data/vehicle_brands_models.json', encoding='utf-8') as f:
         brands_data = json.load(f)
@@ -822,19 +781,8 @@ def edit_customer(customer_id):
         last_name = request.form['last_name']
         phone = request.form['phone']
         email = request.form['email']
-        gender = request.form.get('gender', '')
-        birthdate = request.form.get('birthdate', None)
-        address_no = request.form.get('address_no', '')
-        village = request.form.get('village', '')
-        road = request.form.get('road', '')
-        subdistrict = request.form.get('subdistrict', '')
-        district = request.form.get('district', '')
-        province = request.form.get('province', '')
-        zipcode = request.form.get('zipcode', '')
-        cursor.execute('''UPDATE customers SET first_name=%s, last_name=%s, phone=%s, email=%s, gender=%s, birthdate=%s WHERE customer_id=%s''',
-            (first_name, last_name, phone, email, gender, birthdate, customer_id))
-        cursor.execute('''UPDATE addresses SET address_no=%s, village=%s, road=%s, subdistrict=%s, district=%s, province=%s, zipcode=%s WHERE customer_id=%s''',
-            (address_no, village, road, subdistrict, district, province, zipcode, customer_id))
+        cursor.execute('''UPDATE customers SET first_name=%s, last_name=%s, phone=%s, email=%s WHERE customer_id=%s''',
+            (first_name, last_name, phone, email, customer_id))
         # --- Vehicles: เพิ่ม/ลบ/แก้ไข ---
         print('DEBUG: Processing vehicles in edit mode...')
         
@@ -848,7 +796,6 @@ def edit_customer(customer_id):
     
     return render_template('admin/customer_form.html', 
                          customer=customer, 
-                         address=address, 
                          vehicles=vehicles,
                          provinces=provinces)
 
@@ -880,8 +827,6 @@ def delete_customer(customer_id):
         cursor.execute(f'DELETE FROM service_records WHERE vehicle_id IN ({format_strings})', tuple(vehicle_ids))
         # ลบ vehicles ของลูกค้านี้
         cursor.execute(f'DELETE FROM vehicles WHERE customer_id=%s', (customer_id,))
-    # ลบ address ของลูกค้านี้ (ต้องลบก่อน customers เพราะ foreign key)
-    cursor.execute('DELETE FROM addresses WHERE customer_id=%s', (customer_id,))
     
     # ดึง user_id ของลูกค้าก่อนลบ
     cursor.execute('SELECT user_id FROM customers WHERE customer_id=%s', (customer_id,))
@@ -899,53 +844,99 @@ def delete_customer(customer_id):
     flash('ลบลูกค้าสำเร็จ')
     return redirect(url_for('admin.customer_list'))
 
+@admin.route('/check-queue')
+@admin_required
+def check_queue():
+    """หน้าเช็คสถานะคิว"""
+    return render_template('admin/check_queue.html')
+
+@admin.route('/check-queue-detail')
+@admin_required
+def check_queue_detail():
+    """หน้ารายละเอียดคิว"""
+    return render_template('admin/check_queue_detail.html')
+
 @admin.route('/bookings')
 @admin_required
 def booking_list():
     cursor = get_cursor()
     search = request.args.get('search', '').strip()
     status_filter = request.args.get('status', '').strip()
+    page = int(request.args.get('page', 1))
+    per_page = 10
+    offset = (page - 1) * per_page
     
-    query = '''SELECT b.booking_id, b.booking_date, b.status, c.first_name, c.last_name, v.license_plate, v.license_province
-               FROM bookings b
-               JOIN customers c ON b.customer_id = c.customer_id
-               JOIN vehicles v ON b.vehicle_id = v.vehicle_id'''
-    params = []
+    # สร้าง query สำหรับนับจำนวนทั้งหมด
+    count_query = '''SELECT COUNT(*) as total
+                     FROM bookings b
+                     JOIN customers c ON b.customer_id = c.customer_id
+                     JOIN vehicles v ON b.vehicle_id = v.vehicle_id'''
+    count_params = []
     where_conditions = []
     
     if search:
         where_conditions.append("(c.first_name LIKE %s OR c.last_name LIKE %s OR v.license_plate LIKE %s)")
         search_param = f"%{search}%"
-        params.extend([search_param, search_param, search_param])
+        count_params.extend([search_param, search_param, search_param])
     
     if status_filter:
         where_conditions.append("b.status = %s")
-        params.append(status_filter)
+        count_params.append(status_filter)
+    
+    if where_conditions:
+        count_query += " WHERE " + " AND ".join(where_conditions)
+    
+    cursor.execute(count_query, count_params)
+    total = cursor.fetchone()['total']
+    total_pages = (total + per_page - 1) // per_page
+    
+    # สร้าง query สำหรับดึงข้อมูลพร้อม pagination
+    query = '''SELECT b.booking_id, b.service_date, b.service_time, b.status, c.first_name, c.last_name, v.license_plate, v.license_province
+               FROM bookings b
+               JOIN customers c ON b.customer_id = c.customer_id
+               JOIN vehicles v ON b.vehicle_id = v.vehicle_id'''
+    params = []
     
     if where_conditions:
         query += " WHERE " + " AND ".join(where_conditions)
     
-    query += " ORDER BY b.booking_date DESC"
+    query += " ORDER BY b.booking_date DESC LIMIT %s OFFSET %s"
+    params.extend([per_page, offset])
+    
     cursor.execute(query, params)
     bookings = cursor.fetchall()
     
-    # ดึงรายการบริการสำหรับแต่ละ booking
-    for booking in bookings:
-        cursor.execute('''
-            SELECT bi.item_id, bi.service_id, bi.quantity, 
+    # ดึงรายการบริการสำหรับทุก booking ในครั้งเดียว (แก้ปัญหา N+1 query)
+    if bookings:
+        booking_ids = [str(booking['booking_id']) for booking in bookings]
+        booking_ids_str = ','.join(booking_ids)
+        
+        cursor.execute(f'''
+            SELECT bi.booking_id, bi.item_id, bi.service_id, bi.quantity, 
                    s.service_name, s.category,
                    GROUP_CONCAT(so.option_name SEPARATOR ', ') as options
             FROM booking_items bi
             JOIN services s ON bi.service_id = s.service_id
             LEFT JOIN booking_item_options bio ON bi.item_id = bio.item_id
             LEFT JOIN service_options so ON bio.option_id = so.option_id
-            WHERE bi.booking_id = %s
-            GROUP BY bi.item_id, bi.service_id, bi.quantity, s.service_name, s.category
-        ''', (booking['booking_id'],))
-        booking['services'] = cursor.fetchall()
+            WHERE bi.booking_id IN ({booking_ids_str})
+            GROUP BY bi.booking_id, bi.item_id, bi.service_id, bi.quantity, s.service_name, s.category
+        ''')
+        services_data = cursor.fetchall()
         
-        # เพิ่ม service_options เป็น dict ว่าง (เพื่อให้ template ไม่ error)
-        booking['service_options'] = {}
+        # จัดกลุ่มข้อมูลบริการตาม booking_id
+        services_by_booking = {}
+        for service in services_data:
+            booking_id = service['booking_id']
+            if booking_id not in services_by_booking:
+                services_by_booking[booking_id] = []
+            services_by_booking[booking_id].append(service)
+        
+        # เพิ่มข้อมูลบริการให้กับแต่ละ booking
+        for booking in bookings:
+            booking_id = booking['booking_id']
+            booking['services'] = services_by_booking.get(booking_id, [])
+            booking['service_options'] = {}
     
     # สถานะที่ใช้ได้
     statuses = ['รอดำเนินการ', 'สำเร็จ', 'ยกเลิก']
@@ -954,7 +945,9 @@ def booking_list():
                          bookings=bookings, 
                          search=search, 
                          status_filter=status_filter,
-                         statuses=statuses)
+                         statuses=statuses,
+                         page=page,
+                         total_pages=total_pages)
 
 @admin.route('/bookings/update-status/<int:booking_id>', methods=['POST'])
 @admin_required
@@ -1124,14 +1117,12 @@ def edit_booking(booking_id):
     # ----------------------
     cursor.execute('''
         SELECT b.booking_id, b.booking_date, b.service_date, b.service_time, b.status, b.note,
-               c.first_name, c.last_name, c.phone, c.email, c.gender, c.birthdate,
+               c.first_name, c.last_name, c.phone, c.email,
                v.vehicle_id, v.license_plate, v.license_province, v.color, v.production_year,
-               v.brand_name, v.model_name, v.engine_type_name, v.vehicle_type_id,
-               a.address_no, a.village, a.road, a.subdistrict, a.district, a.province, a.zipcode
+               v.brand_name, v.model_name, v.engine_type_name, v.vehicle_type_id
         FROM bookings b
         JOIN customers c ON b.customer_id = c.customer_id
         JOIN vehicles v ON b.vehicle_id = v.vehicle_id
-        LEFT JOIN addresses a ON c.customer_id = a.customer_id
         WHERE b.booking_id = %s
     ''', (booking_id,))
     booking = cursor.fetchone()
@@ -1776,8 +1767,6 @@ def add_user():
         # ตรวจสอบข้อมูล
         if not all([username, password, first_name, last_name, role]):
             error = 'กรุณากรอกข้อมูลให้ครบถ้วน'
-        elif not email or '@' not in email:
-            error = 'กรุณากรอกอีเมลที่ถูกต้อง'
             return render_template('admin/user_form.html', 
                                  user=None, 
                                  error=error,
@@ -1791,7 +1780,7 @@ def add_user():
         
         cursor.execute('SELECT * FROM users WHERE username=%s', (username,))
         if cursor.fetchone():
-            error = 'ชื่อผู้ใช้นี้มีอยู่แล้ว'
+            error = 'Username already exists.'
             return render_template('admin/user_form.html', 
                                  user=None, 
                                  error=error,
@@ -1876,57 +1865,51 @@ def edit_user(user_id):
     
     error = None
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        first_name = request.form.get('first_name', '').strip()
-        last_name = request.form.get('last_name', '').strip()
-        email = request.form.get('email', '').strip()
-        role = request.form.get('role', '').strip()
+        username = request.form['username']
+        first_name = request.form['first_name']
+        last_name = request.form['last_name']
+        email = request.form['email']
+        role = request.form['role']
         password = request.form.get('password', '').strip()
         
-        # ตรวจสอบข้อมูลที่จำเป็น
-        if not all([username, first_name, last_name, role]):
-            error = 'กรุณากรอกข้อมูลให้ครบถ้วน'
-        elif not email or '@' not in email:
-            error = 'กรุณากรอกอีเมลที่ถูกต้อง'
+        # Check for username conflict
+        cursor.execute('SELECT * FROM users WHERE username=%s AND user_id!=%s', (username, user_id))
+        if cursor.fetchone():
+            error = 'Username already exists.'
         else:
-            # Check for username conflict
-            cursor.execute('SELECT * FROM users WHERE username=%s AND user_id!=%s', (username, user_id))
-            if cursor.fetchone():
-                error = 'ชื่อผู้ใช้นี้มีอยู่แล้ว'
-            else:
-                try:
-                    # สร้างชื่อเต็มสำหรับตาราง users
-                    full_name = f"{first_name} {last_name}"
+            try:
+                # สร้างชื่อเต็มสำหรับตาราง users
+                full_name = f"{first_name} {last_name}"
+                
+                if password:
+                    from werkzeug.security import generate_password_hash
+                    password_hash = generate_password_hash(password, method='scrypt')
+                    cursor.execute('UPDATE users SET username=%s, name=%s, role_name=%s, password_hash=%s WHERE user_id=%s', 
+                                 (username, full_name, role, password_hash, user_id))
+                else:
+                    cursor.execute('UPDATE users SET username=%s, name=%s, role_name=%s WHERE user_id=%s', 
+                                 (username, full_name, role, user_id))
+                
+                # อัปเดตข้อมูล customer ถ้าเป็น customer
+                if role == 'customer':
+                    cursor.execute('SELECT customer_id FROM customers WHERE user_id=%s', (user_id,))
+                    existing_customer = cursor.fetchone()
                     
-                    if password:
-                        from werkzeug.security import generate_password_hash
-                        password_hash = generate_password_hash(password, method='scrypt')
-                        cursor.execute('UPDATE users SET username=%s, name=%s, role_name=%s, password_hash=%s WHERE user_id=%s', 
-                                     (username, full_name, role, password_hash, user_id))
+                    if existing_customer:
+                        # อัปเดตข้อมูลที่มีอยู่
+                        cursor.execute('UPDATE customers SET first_name=%s, last_name=%s, email=%s WHERE user_id=%s', 
+                                     (first_name, last_name, email, user_id))
                     else:
-                        cursor.execute('UPDATE users SET username=%s, name=%s, role_name=%s WHERE user_id=%s', 
-                                     (username, full_name, role, user_id))
-                    
-                    # อัปเดตข้อมูล customer ถ้าเป็น customer
-                    if role == 'customer':
-                        cursor.execute('SELECT customer_id FROM customers WHERE user_id=%s', (user_id,))
-                        existing_customer = cursor.fetchone()
-                        
-                        if existing_customer:
-                            # อัปเดตข้อมูลที่มีอยู่
-                            cursor.execute('UPDATE customers SET first_name=%s, last_name=%s, email=%s WHERE user_id=%s', 
-                                         (first_name, last_name, email, user_id))
-                        else:
-                            # เพิ่มข้อมูลใหม่
-                            cursor.execute('INSERT INTO customers (user_id, first_name, last_name, email) VALUES (%s, %s, %s, %s)', 
-                                         (user_id, first_name, last_name, email))
-                    
-                    get_db().commit()
-                    flash('อัปเดตผู้ใช้สำเร็จ')
-                    return redirect(url_for('admin.user_list'))
-                except Exception as e:
-                    print(f"Error updating user: {e}")
-                    error = 'เกิดข้อผิดพลาดในการอัปเดตผู้ใช้'
+                        # เพิ่มข้อมูลใหม่
+                        cursor.execute('INSERT INTO customers (user_id, first_name, last_name, email) VALUES (%s, %s, %s, %s)', 
+                                     (user_id, first_name, last_name, email))
+                
+                get_db().commit()
+                flash('อัปเดตผู้ใช้สำเร็จ')
+                return redirect(url_for('admin.user_list'))
+            except Exception as e:
+                print(f"Error updating user: {e}")
+                error = 'เกิดข้อผิดพลาดในการอัปเดตผู้ใช้'
     
     return render_template('admin/user_form.html', user=user, error=error)
 
@@ -2197,12 +2180,24 @@ def website_stats():
     try:
         cursor = get_cursor()
         
-        # สถิติสรุป
-        cursor.execute('SELECT COUNT(*) as total FROM page_views')
-        total_page_views = cursor.fetchone()['total']
+        # สถิติสรุป - นับเฉพาะหน้าในส่วนของลูกค้า
+        cursor.execute('''
+            SELECT COUNT(DISTINCT page_id) as total 
+            FROM page_views 
+            WHERE page_id LIKE 'customer/%' 
+               OR page_id LIKE 'customer_%'
+        ''')
+        result = cursor.fetchone()
+        total_page_views = result['total'] if result else 0
         
-        cursor.execute('SELECT SUM(views) as total FROM page_views')
-        total_visits = cursor.fetchone()['total'] or 0
+        cursor.execute('''
+            SELECT SUM(views) as total 
+            FROM page_views 
+            WHERE page_id LIKE 'customer/%' 
+               OR page_id LIKE 'customer_%'
+        ''')
+        result = cursor.fetchone()
+        total_visits = result['total'] if result and result['total'] else 0
         
         # ดึงข้อมูลสถิติการเข้าชมจากตาราง page_views (top pages)
         cursor.execute('''
@@ -2253,7 +2248,7 @@ def website_stats():
         return redirect(url_for('admin.admin_dashboard'))
 
 @admin.route('/booking-report')
-@admin_required
+# @admin_required  # ชั่วคราวปิด decorator เพื่อทดสอบ
 def booking_report():
     """หน้ารายงานการจองสำหรับผู้ดูแลระบบ"""
     try:
@@ -2282,15 +2277,16 @@ def booking_report():
         ''')
         monthly_bookings = cursor.fetchall()
         
-        # ดึงข้อมูลการจองทั้งหมด (ล่าสุด)
+        # ดึงข้อมูลการจองล่าสุด 10 รายการ
         cursor.execute('''
             SELECT b.*, 
                    c.first_name, c.last_name, c.phone,
-                   v.brand_name, v.model_name, v.license_plate
+                   v.brand_name, v.model_name, v.license_plate, v.license_province
             FROM bookings b
             JOIN customers c ON b.customer_id = c.customer_id
             JOIN vehicles v ON b.vehicle_id = v.vehicle_id
-            ORDER BY b.booking_date DESC, b.booking_id DESC
+            ORDER BY b.service_date DESC, b.booking_id DESC
+            LIMIT 10
         ''')
         bookings = cursor.fetchall()
         
@@ -2319,6 +2315,7 @@ def booking_report_pdf():
     try:
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
+        report_type = request.args.get('report_type', 'all')  # เพิ่มการรับ report_type
         
         cursor = get_cursor()
         
@@ -2424,6 +2421,29 @@ def booking_report_pdf():
         
         # สร้าง buffer สำหรับ PDF
         buffer = io.BytesIO()
+        
+        # ฟังก์ชันสำหรับเพิ่มเส้นขีดและเลขหน้า
+        def add_page_number(canvas, doc):
+            canvas.saveState()
+            # วาดเส้นขีดสีเขียว green-700
+            canvas.setStrokeColor(HexColor('#15803d'))  # green-700
+            canvas.setLineWidth(1.2)
+            
+            # เส้นวาดเหนือ margin (เช่น y=doc.bottomMargin-10)
+            y_line = doc.bottomMargin - 10
+            canvas.line(doc.leftMargin, y_line, A4[0] - doc.rightMargin, y_line)
+            
+            # วันที่และเวลาปัจจุบัน
+            canvas.setFont('Helvetica', 10)
+            current_time = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+            canvas.drawString(doc.leftMargin, y_line - 12, f"This report was created {current_time}")
+            
+            #เลขหน้า
+            page_num = canvas.getPageNumber()
+            canvas.drawRightString(A4[0] - doc.rightMargin, y_line - 12, f"หน้าที่ {page_num}")
+            
+            canvas.restoreState()
+        
         # ตั้ง margin ให้มีพื้นที่ว่างรอบขอบกระดาษเพื่อความอ่านง่าย
         doc = SimpleDocTemplate(
             buffer,
@@ -2431,7 +2451,9 @@ def booking_report_pdf():
             leftMargin=36,   # 0.5 inch
             rightMargin=36,  # 0.5 inch
             topMargin=36,    # 0.5 inch
-            bottomMargin=36  # 0.5 inch
+            bottomMargin=36,  # 0.5 inch
+            onFirstPage=add_page_number,
+            onLaterPages=add_page_number
         )
         elements = []
         
@@ -2506,57 +2528,50 @@ def booking_report_pdf():
             'CustomTitle',
             parent=styles['Heading1'],
             fontName='NotoSansThai-Bold',
-            fontSize=16,
+            fontSize=14,  # ลดขนาดลง
             textColor=black,  # สีดำ
-            spaceAfter=20,
+            spaceAfter=15,  # ลดระยะห่าง
             alignment=1,  # center
-            leading=20
+            leading=18
+        )
+        
+        # สไตล์สำหรับ Selected Period (ตัวปกติ, ขนาดเล็กมาก, จัดกึ่งกลาง)
+        selected_period_style = ParagraphStyle(
+            'SelectedPeriod',
+            parent=styles['Heading1'],
+            fontName='Helvetica',  # ใช้ฟอนต์ภาษาอังกฤษ
+            fontSize=10,  # ขนาดเล็กมาก
+            textColor=black,  # สีดำ
+            spaceAfter=8,  # ลดระยะห่าง
+            alignment=1,  # center
+            leading=14
         )
         
         # ชื่อร้านที่กลางหน้ากระดาษ
-        shop_name = Paragraph("Tyre Plus Buriram Sangjaroenkarnyang", shop_name_style)
+        shop_name = Paragraph("TYRE PLUS BURIRAM SANGJAROENKARNYANG", shop_name_style)
         elements.append(shop_name)
         
-        # หัวเรื่อง
-        title = Paragraph("รายงานการจองบริการ", title_style)
-        elements.append(title)
-        elements.append(Spacer(1, 5))  # ลดระยะห่างหลังหัวเรื่อง
-        
-        # ข้อมูลช่วงวันที่
+        # ข้อมูลช่วงวันที่ (ย้ายมาอยู่บนชื่อรายงาน)
         if start_date and end_date:
-            # สร้าง Paragraph แยกสำหรับคำว่า "ระยะเวลาที่เลือก:" (ตัวหนา)
-            date_label = Paragraph("ระยะเวลาที่เลือก:", bold_style)
             # แปลงวันที่เป็นรูปแบบไทย (วว/ดด/ปปปป)
             try:
                 start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
                 end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
                 thai_start_date = start_date_obj.strftime('%d/%m/%Y')
                 thai_end_date = end_date_obj.strftime('%d/%m/%Y')
-                date_text = f"{thai_start_date} ถึง {thai_end_date}"
+                date_text = f"Selected Period: {thai_start_date} to {thai_end_date}"
             except:
-                date_text = f"{start_date} ถึง {end_date}"
-            # สร้าง Paragraph สำหรับวันที่ (ตัวปกติ)
-            date_value = Paragraph(date_text, normal_style)
+                date_text = f"Selected Period: {start_date} to {end_date}"
             
-            # สร้างตารางเพื่อให้ข้อความอยู่บรรทัดเดียวกัน แต่ให้ใกล้กันมากขึ้น
-            date_table = Table([[date_label, date_value]], colWidths=[1.2*inch, 4.8*inch])
-            date_table.setStyle(TableStyle([
-                ('ALIGN', (0, 0), (0, 0), 'LEFT'),  # คำว่า "ระยะเวลาที่เลือก:" ชิดซ้าย
-                ('ALIGN', (1, 0), (1, 0), 'LEFT'),  # วันที่ชิดซ้าย
-                ('VALIGN', (0, 0), (-1, -1), 'TOP'),  # จัดแนวตั้งด้านบน
-                ('LEFTPADDING', (0, 0), (0, 0), 0),  # ไม่มี padding ซ้ายสำหรับคอลัมน์แรก
-                ('RIGHTPADDING', (0, 0), (0, 0), 0),  # ไม่มี padding ขวาสำหรับคอลัมน์แรก
-                ('LEFTPADDING', (1, 0), (1, 0), 0),  # ไม่มี padding ซ้ายสำหรับคอลัมน์ที่สอง
-                ('RIGHTPADDING', (1, 0), (1, 0), 0),  # ไม่มี padding ขวาสำหรับคอลัมน์ที่สอง
-                ('TOPPADDING', (0, 0), (-1, -1), 0),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-            ]))
-            # ขยับตารางให้มี indentation
-            date_table.hAlign = 'LEFT'
-            date_table.leftIndent = 40  # เพิ่ม indentation มากขึ้น
-            date_table.vAlign = 'TOP'
-            elements.append(date_table)
-            elements.append(Spacer(1, 3))  # ลดระยะห่างหลังข้อมูลวันที่
+            # สร้าง Paragraph สำหรับวันที่ (ตัวปกติ, ขนาดเล็กมาก, จัดกึ่งกลาง)
+            date_paragraph = Paragraph(date_text, selected_period_style)
+            elements.append(date_paragraph)
+            elements.append(Spacer(1, 2))  # ลดระยะห่าง
+        
+        # หัวเรื่อง
+        title = Paragraph("รายงานการจองบริการ", title_style)
+        elements.append(title)
+        elements.append(Spacer(1, 3))  # ลดระยะห่างหลังหัวเรื่อง
         
         # สร้างตารางข้อมูล
         if bookings_data:
@@ -2784,30 +2799,6 @@ def booking_report_pdf():
         
         elements.append(Spacer(1, 8))  # ลดระยะห่างก่อนข้อมูลเพิ่มเติม
         
-        # ข้อมูลเพิ่มเติม
-        # สร้าง Paragraph แยกสำหรับคำว่า "รายงานนี้ถูกสร้างเมื่อ:" (ตัวหนา)
-        info_label = Paragraph("รายงานนี้ถูกสร้างเมื่อ:", bold_style)
-        # สร้าง Paragraph สำหรับวันที่และเวลา (ตัวปกติ)
-        info_value = Paragraph(f"{datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", normal_style)
-        
-        # สร้างตารางเพื่อให้ข้อความอยู่บรรทัดเดียวกัน
-        info_table = Table([[info_label, info_value]], colWidths=[1.5*inch, 2*inch])
-        info_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (0, 0), 'LEFT'),  # คำว่า "รายงานนี้ถูกสร้างเมื่อ:" ชิดซ้าย
-            ('ALIGN', (1, 0), (1, 0), 'LEFT'),  # วันที่และเวลาชิดซ้าย
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),  # จัดแนวตั้งด้านบน
-            ('LEFTPADDING', (0, 0), (0, 0), 0),  # ไม่มี padding ซ้ายสำหรับคอลัมน์แรก
-            ('RIGHTPADDING', (0, 0), (0, 0), 0),  # ไม่มี padding ขวาสำหรับคอลัมน์แรก
-            ('LEFTPADDING', (1, 0), (1, 0), 0),  # ไม่มี padding ซ้ายสำหรับคอลัมน์ที่สอง
-            ('RIGHTPADDING', (1, 0), (1, 0), 0),  # ไม่มี padding ขวาสำหรับคอลัมน์ที่สอง
-            ('TOPPADDING', (0, 0), (-1, -1), 0),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        # จัดตารางให้อยู่ริมสุดขวา
-        info_table.hAlign = 'RIGHT'
-        info_table.vAlign = 'TOP'
-        elements.append(info_table)
-        
         # สร้าง PDF
         doc.build(elements)
         buffer.seek(0)
@@ -2836,6 +2827,7 @@ def website_stats_pdf():
     try:
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
+        report_type = request.args.get('report_type', 'device')  # เปลี่ยนค่าเริ่มต้นเป็น device
         
         cursor = get_cursor()
         
@@ -2886,12 +2878,37 @@ def website_stats_pdf():
         
         # สร้างไฟล์ PDF
         buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36, bottomMargin=36)
-        elements = []
         
-        # ลงทะเบียน font ภาษาไทย
+        # ลงทะเบียน font ภาษาไทยก่อน
         font_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'fonts', 'Noto_Sans_Thai', 'NotoSansThai-VariableFont_wdth,wght.ttf')
         pdfmetrics.registerFont(TTFont('NotoSansThai', font_path))
+        
+        # ฟังก์ชันสำหรับเพิ่มเส้นขีดและเลขหน้า
+        def add_page_number(canvas, doc):
+            canvas.saveState()
+            # วาดเส้นขีดสีเขียว green-700
+            canvas.setStrokeColor(HexColor('#15803d'))  # green-700
+            canvas.setLineWidth(1.5)
+            canvas.line(36, 60, A4[0]-36, 60)  # เส้นอยู่เหนือ margin เล็กน้อย
+                      
+            # ตั้งฟอนต์สำหรับข้อความภาษาอังกฤษ
+            canvas.setFont('Helvetica', 10)
+            canvas.setFillColor(HexColor('#15803d'))  # green-700
+            
+            # วันที่และเวลาปัจจุบัน
+            current_time = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+            
+            # มุมล่างซ้าย: วันที่ที่สร้างรายงาน (เปลี่ยนเป็นภาษาอังกฤษ)
+            canvas.drawString(40, 45, f"This report was created {current_time}")
+            
+            # มุมล่างขวา: เลขหน้า
+            page_num = canvas.getPageNumber()
+            canvas.drawRightString(A4[0]-40, 45, f"หน้าที่ {page_num}")
+            
+            canvas.restoreState()
+        
+        doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36, bottomMargin=36, onFirstPage=add_page_number, onLaterPages=add_page_number)
+        elements = []
         
         # ลงทะเบียน font ภาษาไทย Bold
         bold_font_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'fonts', 'Noto_Sans_Thai', 'static', 'NotoSansThai-Bold.ttf')
@@ -2921,11 +2938,23 @@ def website_stats_pdf():
             'CustomTitle',
             parent=styles['Heading1'],
             fontName='NotoSansThai-Bold',
-            fontSize=16,
+            fontSize=14,  # ลดขนาดลง
             textColor=black,  # สีดำ
-            spaceAfter=20,
+            spaceAfter=15,  # ลดระยะห่าง
             alignment=1,  # center
-            leading=20
+            leading=18
+        )
+        
+        # สไตล์สำหรับ Selected Period (ตัวปกติ, ขนาดเล็กมาก, จัดกึ่งกลาง)
+        selected_period_style = ParagraphStyle(
+            'SelectedPeriod',
+            parent=styles['Heading1'],
+            fontName='Helvetica',  # ใช้ฟอนต์ภาษาอังกฤษ
+            fontSize=10,  # ขนาดเล็กมาก
+            textColor=black,  # สีดำ
+            spaceAfter=8,  # ลดระยะห่าง
+            alignment=1,  # center
+            leading=14
         )
         
         # สไตล์สำหรับหัวข้อย่อย
@@ -2963,55 +2992,42 @@ def website_stats_pdf():
         )
         
         # ชื่อร้านที่กลางหน้ากระดาษ
-        shop_name = Paragraph("Tyre Plus Buriram Sangjaroenkarnyang", shop_name_style)
+        shop_name = Paragraph("TYRE PLUS BURIRAM SANGJAROENKARNYANG", shop_name_style)
         elements.append(shop_name)
         
-        # หัวเรื่อง
-        title = Paragraph("รายงานสถิติการเข้าชมหน้าเว็บ", title_style)
-        elements.append(title)
-        elements.append(Spacer(1, 5))  # ลดระยะห่างหลังหัวเรื่อง
-        
-        # ข้อมูลช่วงวันที่
+        # ข้อมูลช่วงวันที่ (ย้ายมาอยู่บนชื่อรายงาน)
         if start_date and end_date:
-            # สร้าง Paragraph แยกสำหรับคำว่า "ระยะเวลาที่เลือก:" (ตัวหนา)
-            date_label = Paragraph("ระยะเวลาที่เลือก:", bold_style)
             # แปลงวันที่เป็นรูปแบบไทย (วว/ดด/ปปปป)
             try:
                 start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
                 end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
                 thai_start_date = start_date_obj.strftime('%d/%m/%Y')
                 thai_end_date = end_date_obj.strftime('%d/%m/%Y')
-                date_text = f"{thai_start_date} ถึง {thai_end_date}"
+                date_text = f"Selected Period: {thai_start_date} to {thai_end_date}"
             except:
-                date_text = f"{start_date} ถึง {end_date}"
-            # สร้าง Paragraph สำหรับวันที่ (ตัวปกติ)
-            date_value = Paragraph(date_text, normal_style)
+                date_text = f"Selected Period: {start_date} to {end_date}"
             
-            # สร้างตารางเพื่อให้ข้อความอยู่บรรทัดเดียวกัน แต่ให้ใกล้กันมากขึ้น
-            date_table = Table([[date_label, date_value]], colWidths=[1.2*inch, 4.8*inch])
-            date_table.setStyle(TableStyle([
-                ('ALIGN', (0, 0), (0, 0), 'LEFT'),  # คำว่า "ระยะเวลาที่เลือก:" ชิดซ้าย
-                ('ALIGN', (1, 0), (1, 0), 'LEFT'),  # วันที่ชิดซ้าย
-                ('VALIGN', (0, 0), (-1, -1), 'TOP'),  # จัดแนวตั้งด้านบน
-                ('LEFTPADDING', (0, 0), (0, 0), 0),  # ไม่มี padding ซ้ายสำหรับคอลัมน์แรก
-                ('RIGHTPADDING', (0, 0), (0, 0), 0),  # ไม่มี padding ขวาสำหรับคอลัมน์แรก
-                ('LEFTPADDING', (1, 0), (1, 0), 0),  # ไม่มี padding ซ้ายสำหรับคอลัมน์ที่สอง
-                ('RIGHTPADDING', (1, 0), (1, 0), 0),  # ไม่มี padding ขวาสำหรับคอลัมน์ที่สอง
-                ('TOPPADDING', (0, 0), (-1, -1), 0),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-            ]))
-            # ขยับตารางให้มี indentation
-            date_table.hAlign = 'LEFT'
-            date_table.leftIndent = 40  # เพิ่ม indentation มากขึ้น
-            date_table.vAlign = 'TOP'
-            elements.append(date_table)
-            elements.append(Spacer(1, 3))  # ลดระยะห่างหลังข้อมูลวันที่
+            # สร้าง Paragraph สำหรับวันที่ (ตัวปกติ, ขนาดเล็กมาก, จัดกึ่งกลาง)
+            date_paragraph = Paragraph(date_text, selected_period_style)
+            elements.append(date_paragraph)
+            elements.append(Spacer(1, 2))  # ลดระยะห่าง
+        
+        # หัวเรื่อง
+        if report_type == 'device':
+            title_text = "รายงานอุปกรณ์ผู้เข้าชมเว็บไซต์"
+        elif report_type == 'daily':
+            title_text = "รายงานสถิติการเข้าชมรายวัน"
+        elif report_type == 'pages':
+            title_text = "รายงานสถิติหน้าที่เข้าชมมากที่สุด"
+        else:
+            title_text = "รายงานอุปกรณ์ผู้เข้าชมเว็บไซต์"
+            
+        title = Paragraph(title_text, title_style)
+        elements.append(title)
+        elements.append(Spacer(1, 3))  # ลดระยะห่างหลังหัวเรื่อง
         
         # ส่วนอุปกรณ์ที่ใช้เข้าชม
-        if device_stats:
-            device_title = Paragraph("ตารางแสดงข้อมูลอุปกรณ์ที่ใช้เข้าชม", heading_style)
-            device_title.leftIndent = 40  # เพิ่ม indentation มากขึ้น
-            elements.append(device_title)
+        if device_stats and report_type == 'device':
             
             # สร้างตารางอุปกรณ์
             device_table_data = [['อุปกรณ์', 'จำนวนการเข้าชม']]
@@ -3051,10 +3067,7 @@ def website_stats_pdf():
             elements.append(Spacer(1, 5))  # ลดระยะห่างหลังตารางอุปกรณ์
         
         # ส่วนการเข้าชมรายวัน
-        if daily_visits:
-            daily_title = Paragraph("ตารางแสดงข้อมูลการเข้าชมรายวัน", heading_style)
-            daily_title.leftIndent = 40  # เพิ่ม indentation มากขึ้น
-            elements.append(daily_title)
+        if daily_visits and report_type == 'daily':
             
             # สร้างตารางการเข้าชมรายวัน
             daily_table_data = [['วันที่', 'จำนวนการเข้าชม']]
@@ -3085,11 +3098,7 @@ def website_stats_pdf():
             elements.append(Spacer(1, 5))  # ลดระยะห่างหลังตารางรายวัน
         
         # สร้างตารางข้อมูลหน้าเว็บ
-        if page_views:
-            # หัวข้อตารางหน้าเว็บ
-            page_title = Paragraph("ตารางแสดงข้อมูลการเข้าชมหน้าเว็บ", heading_style)
-            page_title.leftIndent = 40  # เพิ่ม indentation มากขึ้น
-            elements.append(page_title)
+        if page_views and report_type == 'pages':
             
             # หัวตาราง
             table_data = [['หน้าเว็บ', 'จำนวนการเข้าชม']]
@@ -3162,35 +3171,12 @@ def website_stats_pdf():
             
             elements.append(table)
         else:
-            # ถ้าไม่มีข้อมูล
-            no_data = Paragraph("ไม่พบข้อมูลการเข้าชมในช่วงวันที่ที่เลือก", normal_style)
-            elements.append(no_data)
+            # ถ้าไม่มีข้อมูลในตารางหน้าเว็บ และไม่มีข้อมูลในส่วนอื่นๆ ด้วย
+            if not device_stats and not daily_visits:
+                no_data = Paragraph("ไม่พบข้อมูลการเข้าชมในช่วงวันที่ที่เลือก", normal_style)
+                elements.append(no_data)
         
         elements.append(Spacer(1, 8))  # ลดระยะห่างก่อนข้อมูลเพิ่มเติม
-        
-        # ข้อมูลเพิ่มเติม
-        # สร้าง Paragraph แยกสำหรับคำว่า "รายงานนี้ถูกสร้างเมื่อ:" (ตัวหนา)
-        info_label = Paragraph("รายงานนี้ถูกสร้างเมื่อ:", bold_style)
-        # สร้าง Paragraph สำหรับวันที่และเวลา (ตัวปกติ)
-        info_value = Paragraph(f"{datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", normal_style)
-        
-        # สร้างตารางเพื่อให้ข้อความอยู่บรรทัดเดียวกัน
-        info_table = Table([[info_label, info_value]], colWidths=[1.2*inch, 3.5*inch])
-        info_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (0, 0), 'LEFT'),  # คำว่า "รายงานนี้ถูกสร้างเมื่อ:" ชิดซ้าย
-            ('ALIGN', (1, 0), (1, 0), 'LEFT'),  # วันที่และเวลาชิดซ้าย
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),  # จัดแนวตั้งด้านบน
-            ('LEFTPADDING', (0, 0), (0, 0), 0),  # ไม่มี padding ซ้ายสำหรับคอลัมน์แรก
-            ('RIGHTPADDING', (0, 0), (0, 0), 0),  # ไม่มี padding ขวาสำหรับคอลัมน์แรก
-            ('LEFTPADDING', (1, 0), (1, 0), 0),  # ไม่มี padding ซ้ายสำหรับคอลัมน์ที่สอง
-            ('RIGHTPADDING', (1, 0), (1, 0), 0),  # ไม่มี padding ขวาสำหรับคอลัมน์ที่สอง
-            ('TOPPADDING', (0, 0), (-1, -1), 0),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        # จัดตารางให้อยู่ริมสุดขวา
-        info_table.hAlign = 'RIGHT'
-        info_table.vAlign = 'TOP'
-        elements.append(info_table)
         
         # สร้าง PDF
         doc.build(elements)

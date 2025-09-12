@@ -2,74 +2,131 @@
 {% block title %}{{ 'แก้ไขโปรโมชัน' if promotion else 'เพิ่มโปรโมชัน' }}{% endblock %}
 {% block content %}
 <div class="container mx-auto px-4 py-4">
-    <h1 class="text-2xl font-bold mb-4" style="color: #0c5e28;">
-        {{ 'แก้ไขโปรโมชัน' if promotion else 'เพิ่มโปรโมชัน' }}
-    </h1>
-
-    <div class="bg-white rounded-lg shadow-md p-6">
-        {% if error %}
-            <div class="mb-4 px-4 py-2 bg-red-100 text-red-700 rounded">{{ error }}</div>
-        {% endif %}
-        
-        <form method="post" enctype="multipart/form-data" autocomplete="off" class="space-y-4">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            
-            <div>
-                <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">ชื่อโปรโมชัน</h3>
-                <input type="text" name="title" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required value="{{ promotion.title if promotion else '' }}">
-            </div>
-            
-            <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">ระยะเวลา</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-green-800 mb-1">วันที่เริ่ม <span class="text-red-600">*</span></label>
-                    <input type="date" name="start_date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required value="{{ promotion.start_date if promotion else '' }}">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-green-800 mb-1">วันที่สิ้นสุด <span class="text-red-600">*</span></label>
-                    <input type="date" name="end_date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required value="{{ promotion.end_date if promotion else '' }}">
-                </div>
-            </div>
-            
-            <div>
-              <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">รายละเอียด</h3>
-                <textarea name="description" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>{{ promotion.description if promotion else '' }}</textarea>
-            </div>
-            
-            <!-- รูปภาพ Section -->
-            <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">รูปภาพ</h3>
-            <div>
-                <h4 class="text-sm font-medium text-green-800 mb-2">อัปโหลดรูปภาพโปรโมชัน</h4>
-                <div class="border-2 border-dashed border-green-300 rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer" onclick="document.getElementById('promotion_image').click()">
-                    <input type="file" id="promotion_image" name="promotion_image" accept="image/*" class="hidden" onchange="previewImage(this)">
-                    
-                    {% if promotion and promotion.image_url %}
-                        <div class="flex flex-col items-center">
-                            <div class="bg-white rounded-lg p-4 shadow-sm border">
-                                <img src="{{ url_for('static', filename='uploads/promotions/' ~ promotion.image_url) }}" alt="รูปโปรโมชัน" class="max-h-40 rounded">
-                            </div>
-                            <p class="mt-2 text-sm text-gray-600">รูปภาพปัจจุบัน - คลิกเพื่อเปลี่ยน</p>
-                        </div>
-                    {% else %}
-                        <div class="flex flex-col items-center">
-                            <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            <p class="text-gray-600">คลิกเพื่ออัปโหลดรูปภาพ</p>
-                        </div>
-                    {% endif %}
-                    
-                    <p class="mt-2 text-xs text-gray-500">PNG, JPG, GIF ขนาดไม่เกิน 10MB</p>
-                </div>
-            </div>
-            
-            <div class="flex justify-end gap-2 pt-4">
-                <a href="{{ url_for('admin.promotion_list') }}" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">ยกเลิก</a>
-                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">บันทึก</button>
-            </div>
-        </form>
+  <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+    <div class="flex items-center gap-4">
+      <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-md">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+        </svg>
+      </div>
+      <h1 class="text-2xl font-bold text-green-900">{{ 'แก้ไขโปรโมชัน' if promotion else 'เพิ่มโปรโมชัน' }}</h1>
     </div>
+    <a href="{{ url_for('admin.promotion_list') }}" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl shadow-lg hover:from-green-600 hover:to-green-700 active:from-green-700 active:to-green-800 font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-3 transform hover:scale-105 hover:shadow-xl">
+      <div class="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+      </div>
+      กลับไปรายการโปรโมชัน
+    </a>
+  </div>
+
+  <!-- Error Message -->
+  {% if error %}
+    <div class="mb-6 p-4 rounded-xl shadow-sm border bg-gradient-to-r from-red-50 to-pink-50 text-red-800 border-red-200">
+      <div class="flex items-center gap-3">
+        <div class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </div>
+        <span class="font-medium">{{ error }}</span>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Main Form Card -->
+  <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+            
+    <form method="post" enctype="multipart/form-data" autocomplete="off" class="space-y-6">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      
+      <!-- ชื่อโปรโมชัน -->
+      <div class="space-y-3">
+        <label class="block text-sm font-semibold text-green-800">
+          ชื่อโปรโมชัน <span class="text-red-500">*</span>
+        </label>
+        <input type="text" name="title" 
+               class="w-full px-5 py-2 border-2 border-green-200 rounded-xl bg-white text-gray-700 font-medium focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 shadow-sm text-base" 
+               required value="{{ promotion.title if promotion else '' }}" 
+               placeholder="กรอกชื่อโปรโมชัน">
+      </div>
+                
+      <!-- ระยะเวลา -->
+      <div class="space-y-3">
+        <label class="block text-sm font-semibold text-green-800">
+          ระยะเวลา <span class="text-red-500">*</span>
+        </label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm text-gray-600 mb-2">วันที่เริ่ม</label>
+            <input type="date" name="start_date" 
+                   class="w-full px-5 py-2 border-2 border-green-200 rounded-xl bg-white text-gray-700 font-medium focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 shadow-sm text-base" 
+                   required value="{{ promotion.start_date if promotion else '' }}">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-600 mb-2">วันที่สิ้นสุด</label>
+            <input type="date" name="end_date" 
+                   class="w-full px-5 py-2 border-2 border-green-200 rounded-xl bg-white text-gray-700 font-medium focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 shadow-sm text-base" 
+                   required value="{{ promotion.end_date if promotion else '' }}">
+          </div>
+        </div>
+      </div>
+                
+      <!-- รายละเอียด -->
+      <div class="space-y-3">
+        <label class="block text-sm font-semibold text-green-800">
+          รายละเอียด <span class="text-red-500">*</span>
+        </label>
+        <textarea name="description" rows="4" 
+                  class="w-full px-5 py-2 border-2 border-green-200 rounded-xl bg-white text-gray-700 font-medium focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 shadow-sm text-base resize-none" 
+                  required placeholder="กรอกรายละเอียดโปรโมชัน">{{ promotion.description if promotion else '' }}</textarea>
+      </div>
+                
+      <!-- รูปภาพ -->
+      <div class="space-y-3">
+        <label class="block text-sm font-semibold text-green-800">
+          รูปภาพโปรโมชัน
+        </label>
+        <div class="border-2 border-dashed border-green-200 rounded-xl p-8 text-center hover:border-green-400 hover:bg-green-50 transition-all duration-200 cursor-pointer" 
+             onclick="document.getElementById('promotion_image').click()">
+          <input type="file" id="promotion_image" name="promotion_image" accept="image/*" class="hidden" onchange="previewImage(this)">
+          
+          {% if promotion and promotion.image_url %}
+            <div class="flex flex-col items-center">
+              <div class="bg-white rounded-lg p-4 shadow-sm border">
+                <img src="{{ url_for('static', filename='uploads/promotions/' ~ promotion.image_url) }}" 
+                     alt="รูปโปรโมชัน" class="max-h-40 rounded">
+              </div>
+              <p class="mt-3 text-sm text-green-600 font-medium">รูปภาพปัจจุบัน - คลิกเพื่อเปลี่ยน</p>
+            </div>
+          {% else %}
+            <div class="flex flex-col items-center">
+              <div class="w-12 h-12 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <p class="text-gray-600 font-medium">คลิกเพื่ออัปโหลดรูปภาพ</p>
+              <p class="text-xs text-gray-500 mt-2">PNG, JPG, GIF ขนาดไม่เกิน 10MB</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+                
+      <!-- Form Buttons -->
+      <div class="flex flex-col sm:flex-row justify-end gap-4 pt-6 border-t border-gray-200">
+        <a href="{{ url_for('admin.promotion_list') }}" 
+           class="px-8 py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl hover:from-gray-200 hover:to-gray-300 hover:scale-105 transition-all duration-200 font-semibold min-w-[100px] border border-gray-300 shadow-md text-center">
+          ยกเลิก
+        </a>
+        <button type="submit" 
+                class="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 hover:scale-105 transition-all duration-200 font-semibold min-w-[100px] shadow-lg">
+          บันทึกโปรโมชัน
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
@@ -88,9 +145,8 @@ function previewImage(input) {
                     <div class="bg-white rounded-lg p-4 shadow-sm border">
                         <img src="${e.target.result}" alt="รูปโปรโมชัน" class="max-h-40 rounded">
                     </div>
-                    <p class="mt-2 text-sm text-gray-600">รูปภาพใหม่ - คลิกเพื่อเปลี่ยน</p>
+                    <p class="mt-3 text-sm text-green-600 font-medium">รูปภาพใหม่ - คลิกเพื่อเปลี่ยน</p>
                 </div>
-                <p class="mt-2 text-xs text-gray-500">PNG, JPG, GIF ขนาดไม่เกิน 10MB</p>
             `;
             
             // ตั้งค่าไฟล์ที่เลือกไว้ใน input ใหม่

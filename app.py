@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, g
 from flask_wtf.csrf import CSRFProtect
+from werkzeug.exceptions import RequestEntityTooLarge
 from config import Config
 from database import get_db, close_db_connection, ensure_page_views_table
 from utils import allowed_file, get_device_type
@@ -18,6 +19,9 @@ from werkzeug.utils import secure_filename
 # สร้าง Flask app
 app = Flask(__name__)
 app.config.from_object(Config)
+
+# ตั้งค่า MAX_CONTENT_LENGTH สำหรับการอัปโหลดไฟล์
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB
 
 # ตั้งค่าการเชื่อมต่อฐานข้อมูล
 # NOTE: ใช้ port 3307 ห้ามแก้กลับเป็น 3306
@@ -323,6 +327,12 @@ def percent_format(value):
     if value is None:
         return '0%'
     return f"{value:.1f}%"
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_file_too_large(e):
+    """จัดการ error เมื่อไฟล์ใหญ่เกินไป"""
+    flash('ไฟล์ที่อัปโหลดมีขนาดใหญ่เกินไป กรุณาเลือกไฟล์ที่มีขนาดไม่เกิน 5MB', 'error')
+    return redirect(request.url)
 
 if __name__ == "__main__":
    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

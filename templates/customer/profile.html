@@ -9,10 +9,10 @@
 
 <!-- Page Header -->
 <h1 class="text-2xl font-bold mb-4" style="color: #0c5e28;">โปรไฟล์ของฉัน</h1>
-<nav class="text-gray-500 text-base mb-2 flex items-center flex-wrap" aria-label="Breadcrumb">
+<nav class="text-green-800 text-base mb-2 flex items-center flex-wrap" aria-label="Breadcrumb">
   <a href="/" class="font-bold text-[#0c5e28] hover:underline">หน้าแรก</a>
   <span class="mx-2">›</span>
-  <span class="text-black text-sm max-w-xs truncate">โปรไฟล์ของฉัน</span>
+  <span class="text-black text-sm text-green-800 max-w-xs truncate">โปรไฟล์ของฉัน</span>
 </nav>
 
 <!-- Profile Content -->
@@ -29,7 +29,7 @@
             <div class="flex flex-col items-center space-y-4">
                 {% if user.avatar_filename %}
                     <img id="profile-avatar"
-                         src="{{ user.avatar_filename | avatar_url }}?v={{ range(1, 10000) | random }}"
+                         src="{{ url_for('static', filename='uploads/profile/' + user.avatar_filename) }}?v={{ range(1, 10000) | random }}"
                          alt="Profile Avatar"
                          class="w-32 h-32 rounded-full object-cover border-4 border-green-200 shadow-lg"
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -93,32 +93,7 @@
 
             </div>
 
-            <!-- Gender -->
-            <div>
-                <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">
-                    เพศ
-                </label>
-                <select id="gender" 
-                        name="gender"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    <option value="ไม่ระบุ" {% if user.gender == 'ไม่ระบุ' or not user.gender %}selected{% endif %}>ไม่ระบุ</option>
-                    <option value="ชาย" {% if user.gender == 'ชาย' %}selected{% endif %}>ชาย</option>
-                    <option value="หญิง" {% if user.gender == 'หญิง' %}selected{% endif %}>หญิง</option>
-                </select>
 
-            </div>
-
-            <!-- Birthdate -->
-            <div>
-                <label for="birthdate" class="block text-sm font-medium text-gray-700 mb-2">
-                    วันเกิด
-                </label>
-                <input type="date" 
-                       id="birthdate" 
-                       name="birthdate"
-                       value="{% if user.birthdate %}{{ user.birthdate.strftime('%Y-%m-%d') }}{% endif %}"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-            </div>
 
             <!-- Phone -->
             <div>
@@ -167,7 +142,7 @@
                 <button type="button" 
                         id="save-profile-btn"
                         class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                    บันทึกการเปลี่ยนแปลง
+                    บันทึกข้อมูล
                 </button>
 
             </div>

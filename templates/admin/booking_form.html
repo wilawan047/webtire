@@ -47,9 +47,16 @@
 {% endblock %}
 {% block content %}
 <div class="container mx-auto px-4 py-4">
-  <h1 class="text-2xl font-bold mb-4" style="color: #0c5e28;">
-    {% if booking %}แก้ไขข้อมูลการจอง{% else %}เพิ่มการจอง{% endif %}
-  </h1>
+  <div class="flex items-center gap-4 mb-4">
+    <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-md">
+      <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+      </svg>
+    </div>
+    <h1 class="text-2xl font-bold" style="color: #0c5e28;">
+      {% if booking %}แก้ไขข้อมูลการจอง{% else %}เพิ่มการจอง{% endif %}
+    </h1>
+  </div>
 
   <div class="bg-white rounded-lg shadow-md p-6">
     <form method="post" class="space-y-4">
@@ -148,12 +155,12 @@
                 <label for="brand_id" class="block mb-1 text-sm font-medium text-green-800">
                   ยี่ห้อรถ
                 </label>
-                <select id="brand_id" name="brand_id" 
+                <select id="brand_name" name="brand_name" 
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                   <option value="">-- เลือกยี่ห้อ --</option>
                   {% for brand in vehicle_brands %}
                   <option value="{{ brand.car_brand_name }}" 
-                          {% if booking and booking.brand_name == brand.car_brand_name %}selected{% endif %}>
+                          {% if booking and booking.brand_name and booking.brand_name == brand.car_brand_name %}selected{% endif %}>
                     {{ brand.car_brand_name }}
                   </option>
                   {% endfor %}
@@ -165,9 +172,19 @@
           <!-- รุ่น -->
           <div>
             <label for="model_name" class="block text-sm font-medium text-green-800 mb-1">รุ่น</label>
+            <!-- Debug: booking.model_name = "{{ booking.model_name if booking else 'None' }}" -->
+            <!-- Debug: car_models count = {{ car_models|length }} -->
             <select id="model_name" name="model_name" 
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
               <option value="">-- เลือกรุ่น --</option>
+              {% for model in car_models %}
+              <!-- Debug: model.car_model_name = "{{ model.car_model_name }}" -->
+              <!-- Debug: booking.model_name = "{{ booking.model_name if booking else 'None' }}" -->
+              <option value="{{ model.car_model_name }}" 
+                      {% if booking and booking.model_name and booking.model_name|string|trim == model.car_model_name|string|trim %}selected{% endif %}>
+                {{ model.car_model_name }}
+              </option>
+              {% endfor %}
             </select>
           </div>
           
@@ -194,30 +211,6 @@
         <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">ข้อมูลลูกค้า</h3>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          <!-- เพศ -->
-          <div class="col-span-full">
-            <label class="block text-sm font-medium text-green-800 mb-2">เพศ</label>
-            <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
-              <label class="inline-flex items-center">
-                <input type="radio" name="gender" value="ชาย" 
-                       {% if booking and booking.gender == 'ชาย' %}checked{% endif %}
-                       class="mr-2">
-                <span class="text-sm">ชาย</span>
-              </label>
-              <label class="inline-flex items-center">
-                <input type="radio" name="gender" value="หญิง" 
-                       {% if booking and booking.gender == 'หญิง' %}checked{% endif %}
-                       class="mr-2">
-                <span class="text-sm">หญิง</span>
-              </label>
-              <label class="inline-flex items-center">
-                <input type="radio" name="gender" value="ไม่ระบุ" 
-                       {% if booking and booking.gender == 'ไม่ระบุ' %}checked{% endif %}
-                       class="mr-2">
-                <span class="text-sm">ไม่ระบุ</span>
-              </label>
-            </div>
-          </div>
           
           <!-- ชื่อ-นามสกุล -->
           <div>
@@ -234,13 +227,6 @@
                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
           </div>
           
-          <!-- วันเกิด -->
-          <div>
-            <label for="birthdate" class="block text-sm font-medium text-green-800 mb-1">วันเกิด</label>
-            <input type="date" id="birthdate" name="birthdate"
-                   value="{% if booking and booking.birthdate %}{{ booking.birthdate.strftime('%Y-%m-%d') if booking.birthdate.strftime else booking.birthdate }}{% else %}{% endif %}"
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-          </div>
           
           <!-- เบอร์โทรศัพท์ -->
           <div>
@@ -258,67 +244,6 @@
                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
           </div>
           
-          <!-- ที่อยู่ -->
-          <div class="col-span-full mt-4">
-            <h4 class="text-md font-bold text-green-900 mb-3">ที่อยู่</h4>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              <div>
-                <label for="address_no" class="block text-sm font-medium text-green-800 mb-1">เลขที่</label>
-                <input type="text" id="address_no" name="address_no"
-                       value="{{ booking.address_no if booking and booking.address_no and booking.address_no != 'None' else '' }}"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-              </div>
-              
-              <div>
-                <label for="village" class="block text-sm font-medium text-green-800 mb-1">หมู่</label>
-                <input type="text" id="village" name="village"
-                       value="{{ booking.village if booking and booking.village and booking.village != 'None' else '' }}"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-              </div>
-              
-              <div>
-                <label for="road" class="block text-sm font-medium text-green-800 mb-1">ถนน</label>
-                <input type="text" id="road" name="road"
-                       value="{{ booking.road if booking and booking.road and booking.road != 'None' else '' }}"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-              </div>
-              
-              <div>
-                <label for="province" class="block text-sm font-medium text-green-800 mb-1">จังหวัด</label>
-                <select id="province" name="province" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                  <option value="">-- เลือกจังหวัด --</option>
-                  {% for p in provinces %}
-                  <option value="{{ p }}" {% if booking and booking.province == p %}selected{% endif %}>{{ p }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              
-              <div>
-                <label for="district" class="block text-sm font-medium text-green-800 mb-1">อำเภอ/เขต</label>
-                <select id="district" name="district" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                  <option value="">-- เลือกอำเภอ/เขต --</option>
-                </select>
-              </div>
-              
-              <div>
-                <label for="subdistrict" class="block text-sm font-medium text-green-800 mb-1">ตำบล/แขวง</label>
-                <select id="subdistrict" name="subdistrict" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                  <option value="">-- เลือกตำบล/แขวง --</option>
-                </select>
-              </div>
-              
-              <div>
-                <label for="zipcode" class="block text-sm font-medium text-green-800 mb-1">รหัสไปรษณีย์</label>
-                <select id="zipcode" name="zipcode" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                  <option value="">-- เลือกรหัสไปรษณีย์ --</option>
-                </select>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -330,7 +255,7 @@
           <!-- วันที่เข้าใช้บริการร -->
           <div>
             <label class="block text-sm font-medium text-green-800 mb-1">วันที่เข้าใช้บริการ <span class="text-red-600">*</span></label>
-            <input type="date" name="service_date" 
+            <input type="date" name="service_date" id="service_date"
                    value="{% if booking and booking.service_date %}{{ booking.service_date.strftime('%Y-%m-%d') if booking.service_date.strftime else booking.service_date }}{% else %}{% endif %}"
                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
           </div>
@@ -338,9 +263,26 @@
           <!-- เวลาเข้ารับบริการ -->
           <div>
             <label class="block text-sm font-medium text-green-800 mb-1">เวลาเข้ารับบริการ <span class="text-red-600">*</span></label>
-            <input type="time" name="service_time" 
-                   value="{% if booking and booking.service_time %}{{ '%02d:%02d'|format(booking.service_time.seconds // 3600, (booking.service_time.seconds % 3600) // 60) if booking.service_time.seconds else booking.service_time.strftime('%H:%M') if booking.service_time.strftime else '' }}{% else %}{% endif %}"
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+            <select name="service_time" id="service_time_select"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+              <option value="">-- เลือกเวลา --</option>
+              <option value="09:00" {% if booking and booking.service_time and ('09:00' in (booking.service_time.strftime('%H:%M') if booking.service_time.strftime else '') or '09:00' in ('%02d:%02d'|format(booking.service_time.seconds // 3600, (booking.service_time.seconds % 3600) // 60) if booking.service_time.seconds else '')) %}selected{% endif %}>09.00</option>
+              <option value="10:00" {% if booking and booking.service_time and ('10:00' in (booking.service_time.strftime('%H:%M') if booking.service_time.strftime else '') or '10:00' in ('%02d:%02d'|format(booking.service_time.seconds // 3600, (booking.service_time.seconds % 3600) // 60) if booking.service_time.seconds else '')) %}selected{% endif %}>10.00</option>
+              <option value="11:00" {% if booking and booking.service_time and ('11:00' in (booking.service_time.strftime('%H:%M') if booking.service_time.strftime else '') or '11:00' in ('%02d:%02d'|format(booking.service_time.seconds // 3600, (booking.service_time.seconds % 3600) // 60) if booking.service_time.seconds else '')) %}selected{% endif %}>11.00</option>
+              <option value="13:00" {% if booking and booking.service_time and ('13:00' in (booking.service_time.strftime('%H:%M') if booking.service_time.strftime else '') or '13:00' in ('%02d:%02d'|format(booking.service_time.seconds // 3600, (booking.service_time.seconds % 3600) // 60) if booking.service_time.seconds else '')) %}selected{% endif %}>13.00</option>
+              <option value="14:00" {% if booking and booking.service_time and ('14:00' in (booking.service_time.strftime('%H:%M') if booking.service_time.strftime else '') or '14:00' in ('%02d:%02d'|format(booking.service_time.seconds // 3600, (booking.service_time.seconds % 3600) // 60) if booking.service_time.seconds else '')) %}selected{% endif %}>14.00</option>
+              <option value="15:00" {% if booking and booking.service_time and ('15:00' in (booking.service_time.strftime('%H:%M') if booking.service_time.strftime else '') or '15:00' in ('%02d:%02d'|format(booking.service_time.seconds // 3600, (booking.service_time.seconds % 3600) // 60) if booking.service_time.seconds else '')) %}selected{% endif %}>15.00</option>
+            </select>
+            <div id="time_availability_info" class="mt-2 text-sm text-gray-600 hidden">
+              <div class="flex items-center">
+                <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                <span class="text-green-600">ว่าง</span>
+                <div class="w-3 h-3 bg-yellow-500 rounded-full mr-2 ml-4"></div>
+                <span class="text-yellow-600">เกือบเต็ม</span>
+                <div class="w-3 h-3 bg-red-500 rounded-full mr-2 ml-4"></div>
+                <span class="text-red-600">เต็ม</span>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -503,18 +445,19 @@
               {% for s in services %}
               {% if s.service_name == 'เติมลม' %}
               <div>
-                <label class="inline-flex items-center gap-2 font-semibold">
-                  <input type="checkbox" name="service_id" value="{{ s.service_id }}" 
+                <label class="inline-flex items-center gap-2 font-semibold" for="service_{{ s.service_id }}">
+                  <input type="checkbox" name="service_id" value="{{ s.service_id }}" id="service_{{ s.service_id }}"
                          class="w-5 h-5 border-2 border-green-600 text-green-600 focus:ring-green-500"
                          {% if selected_service_ids and s.service_id in selected_service_ids %}checked{% endif %}>
                   {{ s.service_name }}
                 </label>
                 <div class="ml-8 mt-1 flex flex-row gap-4 flex-wrap">
                   {% for opt in s.options %}
-                  <label class="inline-flex items-center gap-2 text-sm font-normal">
-                    <input type="checkbox" name="service_option_{{ s.service_id }}" value="{{ opt.option_id }}"
+                  <label class="inline-flex items-center gap-2 text-sm font-normal" for="option_{{ s.service_id }}_{{ opt.option_id }}">
+                    <input type="checkbox" name="service_option_{{ s.service_id }}" value="{{ opt.option_id }}" id="option_{{ s.service_id }}_{{ opt.option_id }}"
                            class="w-4 h-4 rounded border-gray-400 text-blue-600 focus:ring-blue-500"
-                           {% if selected_option_ids and selected_option_ids.get(s.service_id) and (opt.option_id|string) in selected_option_ids.get(s.service_id) %}checked{% endif %}>
+                           {% if selected_option_ids and selected_option_ids.get(s.service_id) and (opt.option_id|string) in selected_option_ids.get(s.service_id) %}checked{% endif %}
+>
                     {{ opt.option_name }}{% if 'ไนโตรเจน' in opt.option_name %} (มีค่าใช้จ่าย){% endif %}
                   </label>
                   {% endfor %}
@@ -522,8 +465,8 @@
               </div>
               {% elif s.service_name == 'ยางเก่า' %}
               <div>
-                <label class="inline-flex items-center gap-2 font-semibold">
-                  <input type="checkbox" name="service_id" value="{{ s.service_id }}"
+                <label class="inline-flex items-center gap-2 font-semibold" for="service_{{ s.service_id }}">
+                  <input type="checkbox" name="service_id" value="{{ s.service_id }}" id="service_{{ s.service_id }}"
                          class="w-5 h-5 border-2 border-green-600 text-green-600 focus:ring-green-500"
                          {% if selected_service_ids and s.service_id in selected_service_ids %}checked{% endif %}>
                   {{ s.service_name }}
@@ -531,10 +474,11 @@
                 <div class="ml-8 mt-1 flex flex-row gap-4 flex-wrap">
                   {% for opt in s.options %}
                   {% if opt.option_name != 'ไนโตรเจน' %}
-                  <label class="inline-flex items-center gap-2 text-sm font-normal">
-                    <input type="checkbox" name="service_option_{{ s.service_id }}" value="{{ opt.option_id }}"
+                  <label class="inline-flex items-center gap-2 text-sm font-normal" for="option_{{ s.service_id }}_{{ opt.option_id }}">
+                    <input type="checkbox" name="service_option_{{ s.service_id }}" value="{{ opt.option_id }}" id="option_{{ s.service_id }}_{{ opt.option_id }}"
                            class="w-4 h-4 rounded border-gray-400 text-blue-600 focus:ring-blue-500"
-                           {% if selected_option_ids and selected_option_ids.get(s.service_id) and (opt.option_id|string) in selected_option_ids.get(s.service_id) %}checked{% endif %}>
+                           {% if selected_option_ids and selected_option_ids.get(s.service_id) and (opt.option_id|string) in selected_option_ids.get(s.service_id) %}checked{% endif %}
+>
                     {{ opt.option_name }}
                   </label>
                   {% endif %}
@@ -543,8 +487,8 @@
               </div>
               {% else %}
               <div style="margin-top: 8px;">
-                <label class="inline-flex items-center gap-2 font-semibold">
-                  <input type="checkbox" name="service_id" value="{{ s.service_id }}"
+                <label class="inline-flex items-center gap-2 font-semibold" for="service_{{ s.service_id }}">
+                  <input type="checkbox" name="service_id" value="{{ s.service_id }}" id="service_{{ s.service_id }}"
                          class="w-5 h-5 border-2 border-green-600 text-green-600 focus:ring-green-500"
                          {% if selected_service_ids and s.service_id in selected_service_ids %}checked{% endif %}>
                   {{ s.service_name }}
@@ -552,10 +496,11 @@
                 {% if s.options %}
                 <div class="ml-8 mt-1 flex flex-row gap-4 flex-wrap">
                   {% for opt in s.options %}
-                  <label class="inline-flex items-center gap-2 text-sm font-normal">
-                    <input type="checkbox" name="service_option_{{ s.service_id }}" value="{{ opt.option_id }}"
+                  <label class="inline-flex items-center gap-2 text-sm font-normal" for="option_{{ s.service_id }}_{{ opt.option_id }}">
+                    <input type="checkbox" name="service_option_{{ s.service_id }}" value="{{ opt.option_id }}" id="option_{{ s.service_id }}_{{ opt.option_id }}"
                            class="w-4 h-4 rounded border-gray-400 text-blue-600 focus:ring-blue-500"
-                           {% if selected_option_ids and selected_option_ids.get(s.service_id) and (opt.option_id|string) in selected_option_ids.get(s.service_id) %}checked{% endif %}>
+                           {% if selected_option_ids and selected_option_ids.get(s.service_id) and (opt.option_id|string) in selected_option_ids.get(s.service_id) %}checked{% endif %}
+>
                     {{ opt.option_name }}
                   </label>
                   {% endfor %}
@@ -706,7 +651,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // โหลดข้อมูลรุ่นรถที่มีอยู่แล้วเมื่อโหลดหน้า
     function loadExistingVehicleData() {
-        const brandSelect = document.getElementById('brand_id');
+        const brandSelect = document.getElementById('brand_name');
         const modelSelect = document.getElementById('model_name');
         
         if (brandSelect.value && brandSelect.value !== '') {
@@ -754,7 +699,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ===== ADDRESS DROPDOWN FUNCTIONALITY =====
     // Province change - load districts
-    document.getElementById('province').addEventListener('change', function() {
+    const provinceSelect = document.getElementById('province');
+    if (provinceSelect) {
+        provinceSelect.addEventListener('change', function() {
         var province = this.value;
         var districtSelect = document.getElementById('district');
         var subdistrictSelect = document.getElementById('subdistrict');
@@ -780,10 +727,13 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error loading districts:', error);
             });
-    });
+        });
+    }
     
     // District change - load subdistricts
-    document.getElementById('district').addEventListener('change', function() {
+    const districtSelect = document.getElementById('district');
+    if (districtSelect) {
+        districtSelect.addEventListener('change', function() {
         var province = document.getElementById('province').value;
         var district = this.value;
         var subdistrictSelect = document.getElementById('subdistrict');
@@ -808,10 +758,13 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error loading subdistricts:', error);
             });
-    });
+        });
+    }
     
     // Subdistrict change - load zipcodes
-    document.getElementById('subdistrict').addEventListener('change', function() {
+    const subdistrictSelect = document.getElementById('subdistrict');
+    if (subdistrictSelect) {
+        subdistrictSelect.addEventListener('change', function() {
         var province = document.getElementById('province').value;
         var district = document.getElementById('district').value;
         var subdistrict = this.value;
@@ -835,7 +788,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error loading zipcodes:', error);
             });
-    });
+        });
+    }
     
     // Load existing address data when page loads
     function loadExistingAddressData() {
@@ -951,7 +905,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Vehicle brand change
-    document.getElementById('brand_id').addEventListener('change', function() {
+    const brandNameSelect = document.getElementById('brand_name');
+    if (brandNameSelect) {
+        brandNameSelect.addEventListener('change', function() {
         var brandName = this.value;
         var modelSelect = document.getElementById('model_name');
         modelSelect.innerHTML = '<option value="">-- เลือกรุ่น --</option>';
@@ -985,7 +941,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error loading vehicle data:', error);
             });
-    });
+        });
+    }
 
     // ===== COPY FRONT TO REAR FUNCTIONALITY =====
     const copyFrontToRearBtn = document.getElementById('copyFrontToRear');
@@ -1087,5 +1044,194 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// ฟังก์ชันตรวจสอบวันอาทิตย์หรือวันที่ปัจจุบัน
+function isInvalidDate(dateString) {
+    var date = new Date(dateString);
+    var today = new Date();
+    today.setHours(0, 0, 0, 0); // รีเซ็ตเวลาเป็น 00:00:00
+    date.setHours(0, 0, 0, 0); // รีเซ็ตเวลาเป็น 00:00:00
+    
+    return date.getDay() === 0 || date <= today; // วันอาทิตย์หรือวันที่ปัจจุบันหรือก่อนหน้า
+}
+
+// ฟังก์ชันหาวันถัดไปที่เหมาะสม
+function getNextAvailableDate(dateString) {
+    var date = new Date(dateString);
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // ถ้าเป็นวันที่ปัจจุบันหรือก่อนหน้า ให้ไปวันพรุ่งนี้
+    if (date <= today) {
+        date = new Date(today);
+        date.setDate(today.getDate() + 1);
+    }
+    
+    // ถ้าเป็นวันอาทิตย์ ให้ไปวันถัดไป
+    while (date.getDay() === 0) {
+        date.setDate(date.getDate() + 1);
+    }
+    
+    return date.toISOString().split('T')[0];
+}
+
+    // ฟังก์ชันตรวจสอบความพร้อมของแต่ละชั่วโมง
+    function checkTimeAvailability(serviceDate) {
+        console.log('Checking time availability for date:', serviceDate);
+        fetch(`/api/booking-availability?service_date=${serviceDate}`)
+            .then(response => {
+                console.log('API response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('API response data:', data);
+                if (data.success) {
+                    updateTimeOptions(data.availability);
+                } else {
+                    console.error('API returned error:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking time availability:', error);
+            });
+    }
+
+    // ฟังก์ชันอัปเดตตัวเลือกเวลา
+    function updateTimeOptions(availability) {
+        console.log('Updating time options with availability:', availability);
+        const timeSelect = document.getElementById('service_time_select');
+        const availabilityInfo = document.getElementById('time_availability_info');
+        
+        if (!timeSelect) {
+            console.error('Time select element not found!');
+            return;
+        }
+        
+        if (!availabilityInfo) {
+            console.error('Availability info element not found!');
+            return;
+        }
+        
+        // แสดงข้อมูลความพร้อม
+        availabilityInfo.classList.remove('hidden');
+        console.log('Showing availability info');
+        
+        // อัปเดตแต่ละ option
+        for (let option of timeSelect.options) {
+            if (option.value && availability[option.value]) {
+                const timeData = availability[option.value];
+                const timeDisplay = option.value.replace(':', '.');
+                
+                console.log(`Updating option ${option.value}:`, timeData);
+                
+                if (timeData.available) {
+                    if (timeData.remaining === 3) {
+                        option.textContent = `${timeDisplay} (ว่าง)`;
+                        option.style.color = '#16a34a';
+                    } else if (timeData.remaining === 2) {
+                        option.textContent = `${timeDisplay} (ว่าง 2 คิว)`;
+                        option.style.color = '#16a34a';
+                    } else if (timeData.remaining === 1) {
+                        option.textContent = `${timeDisplay} (ว่าง 1 คิว)`;
+                        option.style.color = '#eab308';
+                    }
+                    option.disabled = false;
+                } else {
+                    option.textContent = `${timeDisplay} (เต็ม)`;
+                    option.style.color = '#dc2626';
+                    option.disabled = true;
+                }
+            }
+        }
+    }
+
+    // ตั้งค่าวันที่ต่ำสุด (วันพรุ่งนี้)
+    var today = new Date();
+    var tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    var minDateStr = tomorrow.toISOString().split('T')[0];
+    
+    var serviceDateInput = document.getElementById('service_date');
+    if (serviceDateInput) {
+        // ตั้งค่าวันที่ต่ำสุด
+        serviceDateInput.setAttribute('min', minDateStr);
+        
+        // ถ้าไม่มีวันที่เลือก (การเพิ่มการจองใหม่) ให้ตั้งเป็นวันพรุ่งนี้
+        if (!serviceDateInput.value) {
+            serviceDateInput.value = minDateStr;
+        }
+        
+        // ตรวจสอบความพร้อมของแต่ละชั่วโมงเมื่อโหลดหน้า (ถ้ามีวันที่เลือกอยู่แล้ว)
+        if (serviceDateInput.value) {
+            checkTimeAvailability(serviceDateInput.value);
+        }
+        
+        // ตรวจสอบวันที่ที่เลือก
+        serviceDateInput.addEventListener('change', function() {
+            var selectedDate = this.value;
+            if (selectedDate && isInvalidDate(selectedDate)) {
+                showInvalidDateAlert();
+                this.value = getNextAvailableDate(selectedDate);
+            } else if (selectedDate) {
+                // ตรวจสอบความพร้อมของแต่ละชั่วโมง
+                checkTimeAvailability(selectedDate);
+            }
+        });
+    }
+
+// ฟังก์ชันแสดงการแจ้งเตือนวันที่ไม่เหมาะสม
+function showInvalidDateAlert() {
+    // สร้าง modal overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    overlay.id = 'sunday-alert-overlay';
+    
+    // สร้าง modal content
+    const modal = document.createElement('div');
+    modal.className = 'bg-white rounded-xl shadow-2xl max-w-xs w-full mx-4 transform transition-all duration-300 scale-100';
+    modal.innerHTML = `
+        <div class="p-4 sm:p-6 text-center">
+            <!-- Icon -->
+            <div class="mx-auto flex items-center justify-center h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-gradient-to-r from-red-400 to-red-600 mb-3 sm:mb-4 shadow-lg">
+                <svg class="h-6 w-6 sm:h-8 sm:w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+            </div>
+            
+            <!-- Message -->
+            <h3 class="text-lg sm:text-xl font-bold text-red-700 mb-2 sm:mb-3">ไม่สามารถจองในวันนี้ได้</h3>
+            <p class="text-sm sm:text-base text-red-600 mb-4 sm:mb-6 leading-relaxed">กรุณาเลือกวันพรุ่งนี้เป็นต้นไป<br>(ยกเว้นวันอาทิตย์)</p>
+            
+            <!-- OK Button -->
+            <button onclick="closeSundayAlert()" 
+                    class="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-red-300">
+                <span class="flex items-center justify-center">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    ตกลง
+                </span>
+            </button>
+        </div>
+    `;
+    
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+    
+    // เพิ่ม animation effect
+    setTimeout(() => {
+        modal.style.transform = 'scale(1)';
+    }, 10);
+}
+
+// ฟังก์ชันปิดการแจ้งเตือน
+window.closeSundayAlert = function() {
+    const overlay = document.getElementById('sunday-alert-overlay');
+    if (overlay) {
+        overlay.remove();
+        document.body.style.overflow = 'auto';
+    }
+};
 </script>
 {% endblock %}

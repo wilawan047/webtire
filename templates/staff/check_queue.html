@@ -1,0 +1,278 @@
+{% extends 'staff/layout.html' %}
+{% block title %}เช็คคิว{% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 py-4">
+  <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+    <div class="flex items-center gap-4">
+      <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-md">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+        </svg>
+      </div>
+      <h1 class="text-2xl font-bold text-green-900">เช็คคิว</h1>
+    </div>
+    <a href="{{ url_for('staff.bookings') }}" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl shadow-lg hover:from-green-600 hover:to-green-700 active:from-green-700 active:to-green-800 font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-3 transform hover:scale-105 hover:shadow-xl">
+      <div class="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+      </div>
+      กลับ
+    </a>
+  </div>
+
+  <!-- ปฏิทินรายเดือน -->
+  <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6 mb-6">
+    <div class="flex justify-between items-center mb-6">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <h2 class="text-xl font-bold text-gray-800" id="calendar_title">ปฏิทินเช็คคิว</h2>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" id="prev_month" class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:scale-105 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+          เดือนก่อน
+        </button>
+        <button type="button" id="next_month" class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:scale-105 flex items-center gap-2">
+          เดือนถัดไป
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+    
+    <!-- หัวตารางวัน -->
+    <div class="grid grid-cols-7 gap-2 mb-4">
+      <div class="text-center text-sm font-bold text-gray-700 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg">อา</div>
+      <div class="text-center text-sm font-bold text-gray-700 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg">จ</div>
+      <div class="text-center text-sm font-bold text-gray-700 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg">อ</div>
+      <div class="text-center text-sm font-bold text-gray-700 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg">พ</div>
+      <div class="text-center text-sm font-bold text-gray-700 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg">พฤ</div>
+      <div class="text-center text-sm font-bold text-gray-700 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg">ศ</div>
+      <div class="text-center text-sm font-bold text-gray-700 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg">ส</div>
+    </div>
+    
+    <!-- ตารางปฏิทิน -->
+    <div id="calendar_grid" class="grid grid-cols-7 gap-1">
+      <!-- ข้อมูลจะถูกเพิ่มโดย JavaScript -->
+    </div>
+    
+    <!-- คำอธิบาย -->
+    <div class="mt-6 p-5 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+      <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        วิธีใช้งาน
+      </h3>
+      <div class="flex flex-wrap gap-6 text-sm">
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 bg-gradient-to-r from-green-400 to-green-500 rounded-full shadow-sm"></div>
+          <span class="font-medium text-green-700">ว่าง</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 bg-gradient-to-r from-red-400 to-red-500 rounded-full shadow-sm"></div>
+          <span class="font-medium text-red-700">เต็ม </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const prevMonthBtn = document.getElementById('prev_month');
+    const nextMonthBtn = document.getElementById('next_month');
+    const calendarTitle = document.getElementById('calendar_title');
+    const calendarGrid = document.getElementById('calendar_grid');
+    
+
+    let currentMonth = new Date();
+
+    // ปุ่มเดือนก่อน
+    prevMonthBtn.addEventListener('click', function() {
+        currentMonth.setMonth(currentMonth.getMonth() - 1);
+        generateCalendar();
+    });
+
+    // ปุ่มเดือนถัดไป
+    nextMonthBtn.addEventListener('click', function() {
+        currentMonth.setMonth(currentMonth.getMonth() + 1);
+        generateCalendar();
+    });
+
+    // Event delegation สำหรับปฏิทิน
+    calendarGrid.addEventListener('click', function(e) {
+        const clickedElement = e.target.closest('.clickable-date');
+        if (clickedElement) {
+            const dateStr = clickedElement.getAttribute('data-date');
+            console.log('Calendar clicked, date:', dateStr);
+            if (dateStr) {
+                const date = new Date(dateStr);
+                selectDate(date);
+            }
+        }
+    });
+
+    // ฟังก์ชันเลือกวันที่
+    function selectDate(date) {
+        const dateStr = date.toISOString().split('T')[0];
+        checkQueueForDate(dateStr);
+    }
+
+    // ฟังก์ชันสร้างปฏิทิน
+    function generateCalendar() {
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth();
+        
+        // ตั้งชื่อเดือน
+        const monthNames = [
+            'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+            'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+        ];
+        
+        calendarTitle.textContent = `${monthNames[month]} ${year}`;
+        
+        // หาวันแรกของเดือนและวันสุดท้าย
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - firstDay.getDay()); // เริ่มจากวันอาทิตย์
+        
+        calendarGrid.innerHTML = '';
+        
+        // สร้าง 42 วัน (6 สัปดาห์)
+        for (let i = 0; i < 42; i++) {
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + i);
+            
+            const dayElement = document.createElement('div');
+            dayElement.className = 'aspect-square flex flex-col items-center justify-center p-1 border border-gray-200 rounded cursor-pointer hover:bg-gray-50 transition';
+            
+            const dayNumber = date.getDate();
+            const isCurrentMonth = date.getMonth() === month;
+            const isToday = date.toDateString() === new Date().toDateString();
+            const isPast = date < new Date().setHours(0, 0, 0, 0);
+            const isSunday = date.getDay() === 0;
+            
+            // ตั้งค่าสีและสไตล์
+            if (!isCurrentMonth) {
+                dayElement.classList.add('text-gray-300', 'bg-gray-50');
+            } else if (isToday) {
+                dayElement.classList.add('bg-blue-100', 'text-blue-800', 'font-bold');
+            } else if (isPast || isSunday) {
+                dayElement.classList.add('text-gray-400', 'bg-gray-50', 'cursor-not-allowed');
+            } else {
+                dayElement.classList.add('text-gray-700', 'hover:bg-green-50');
+            }
+            
+            // เพิ่ม data attribute สำหรับวันที่
+            const dateStr = date.toISOString().split('T')[0];
+            dayElement.setAttribute('data-date', dateStr);
+            
+            // เพิ่ม event listener ก่อนสร้าง HTML
+            if (isCurrentMonth && !isPast && !isSunday) {
+                console.log('Adding click listener for date:', dateStr);
+                dayElement.style.cursor = 'pointer';
+                dayElement.classList.add('clickable-date');
+            } else {
+                console.log('Date not clickable:', dateStr, 'isCurrentMonth:', isCurrentMonth, 'isPast:', isPast, 'isSunday:', isSunday);
+            }
+            
+            dayElement.innerHTML = `
+                <div class="text-sm font-medium">${dayNumber}</div>
+                <div class="text-xs text-gray-500 mt-1" id="status_${dateStr}">-</div>
+            `;
+            
+            calendarGrid.appendChild(dayElement);
+        }
+        
+        // โหลดข้อมูลสถานะคิวสำหรับเดือนนี้
+        loadMonthAvailability();
+    }
+
+    // ฟังก์ชันเลือกวันที่
+    function selectDate(date) {
+        console.log('Date clicked:', date);
+        const dateStr = date.toISOString().split('T')[0];
+        console.log('Date string:', dateStr);
+        checkQueueForDate(dateStr);
+    }
+
+    // ฟังก์ชันเช็คคิวสำหรับวันที่เฉพาะ
+    function checkQueueForDate(dateStr) {
+        console.log('checkQueueForDate called with:', dateStr);
+        if (!dateStr) {
+            return;
+        }
+
+        // เปลี่ยนไปหน้าใหม่แทนการแสดงผลด้านล่าง
+        window.location.href = `/staff/check-queue-detail?date=${dateStr}`;
+    }
+
+    // ฟังก์ชันโหลดข้อมูลสถานะคิวสำหรับเดือน
+    function loadMonthAvailability() {
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        
+        // โหลดข้อมูลสำหรับแต่ละวันในเดือน
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month, day);
+            const dateStr = date.toISOString().split('T')[0];
+            
+            // ข้ามวันอาทิตย์และวันที่ผ่านมาแล้ว
+            if (date.getDay() === 0 || date < new Date().setHours(0, 0, 0, 0)) {
+                continue;
+            }
+            
+            fetch(`/api/booking-availability?service_date=${dateStr}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateDayStatus(dateStr, data.availability);
+                    }
+                })
+                .catch(error => {
+                    console.log(`Error loading data for ${dateStr}:`, error);
+                });
+        }
+    }
+
+    // ฟังก์ชันอัปเดตสถานะวัน
+    function updateDayStatus(dateStr, availability) {
+        const statusElement = document.getElementById(`status_${dateStr}`);
+        if (statusElement) {
+            // นับจำนวนคิวทั้งหมด
+            let totalBookings = 0;
+            let totalSlots = 0;
+            
+            Object.values(availability).forEach(slot => {
+                totalBookings += slot.current_bookings;
+                totalSlots += slot.max_bookings;
+            });
+            
+            // กำหนดสถานะ
+            if (totalBookings < totalSlots) {
+                statusElement.textContent = 'ว่าง';
+                statusElement.className = 'text-xs text-green-600 mt-1';
+            } else {
+                statusElement.textContent = 'เต็ม';
+                statusElement.className = 'text-xs text-red-600 mt-1';
+            }
+        }
+    }
+
+    // โหลดปฏิทินอัตโนมัติเมื่อโหลดหน้า
+    generateCalendar();
+});
+</script>
+{% endblock %}

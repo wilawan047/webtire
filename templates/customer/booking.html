@@ -2,10 +2,10 @@
 {% block title %}จองบริการ | TireWeb{% endblock %}
 {% block content %}
 <h1 class="text-2xl font-bold mb-4" style="color: #0c5e28;">จองบริการ</h1>
-<nav class="text-gray-500 text-base mb-2 flex items-center flex-wrap" aria-label="Breadcrumb">
+<nav class="text-green-800  text-base mb-2 flex items-center flex-wrap" aria-label="Breadcrumb">
   <a href="/" class="font-bold text-[#0c5e28] hover:underline">หน้าแรก</a>
   <span class="mx-2">›</span>
-  <span class="text-black text-sm max-w-xs truncate">จองบริการ</span>
+  <span class="text-black text-sm text-green-800  max-w-xs truncate">จองบริการ</span>
 </nav>
 <div class="container mx-auto px-2 sm:px-4 py-4">
     {% if user_name %}
@@ -14,7 +14,32 @@
         <p class="text-green-700 text-sm">คุณเข้าสู่ระบบแล้ว สามารถจองบริการได้เลย</p>
     </div>
     {% endif %}
-    <p class="mb-6" style="color: #0c5e28;">กรุณากรอกข้อมูลเพื่อจองบริการ</p>
+    <p class="mb-4" style="color: #0c5e28;">กรุณากรอกข้อมูลเพื่อจองบริการ</p>
+    
+    <!-- ข้อความแจ้งเตือน -->
+    <div class="mb-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <svg class="h-4 w-4 sm:h-5 sm:w-5 text-blue-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <div class="ml-2 sm:ml-3">
+                <h3 class="text-xs sm:text-sm font-medium text-blue-800">ข้อมูลที่จำเป็น</h3>
+                <div class="mt-1 sm:mt-2 text-xs sm:text-sm text-blue-700">
+                    <p class="mb-1 sm:mb-2">กรุณากรอกข้อมูลต่อไปนี้:</p>
+                    <ul class="list-disc list-inside space-y-0.5 sm:space-y-1">
+                        <li>เลือกบริการอย่างน้อย 1 อย่าง</li>
+                        <li>ทะเบียนรถ</li>
+                        <li>ชื่อ-นามสกุล</li>
+                        <li>เบอร์โทรศัพท์</li>
+                        <li>วันที่และเวลาที่ต้องการจอง</li>
+                    </ul>
+                    <p class="mt-1 sm:mt-2 text-xs text-blue-600">ข้อมูลอื่นๆ เป็นข้อมูลเสริม สามารถกรอกหรือไม่กรอกก็ได้</p>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <div class="bg-white rounded-lg shadow-md p-3 sm:p-6">
         <form method="POST" action="{{ url_for('customer.booking') }}">
@@ -185,30 +210,6 @@
                 <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">ข้อมูลลูกค้า</h3>
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                    <!-- เพศ -->
-                    <div class="col-span-full">
-                        <label class="block text-sm font-medium text-green-800 mb-2">เพศ</label>
-                        <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="gender" value="ชาย" 
-                                       {% if customer_data and customer_data.gender == 'ชาย' %}checked{% endif %}
-                                       class="mr-2">
-                                <span class="text-sm">ชาย</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="gender" value="หญิง" 
-                                       {% if customer_data and customer_data.gender == 'หญิง' %}checked{% endif %}
-                                       class="mr-2">
-                                <span class="text-sm">หญิง</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="gender" value="ไม่ระบุ" 
-                                       {% if customer_data and customer_data.gender == 'ไม่ระบุ' %}checked{% endif %}
-                                       class="mr-2">
-                                <span class="text-sm">ไม่ระบุ</span>
-                            </label>
-                        </div>
-                    </div>
                     
                     <!-- ชื่อ-นามสกุล -->
                     <div>
@@ -225,13 +226,6 @@
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                     </div>
                     
-                    <!-- วันเกิด -->
-                    <div>
-                        <label for="booking_birthdate" class="block text-sm font-medium text-green-800 mb-1">วันเกิด</label>
-                        <input type="date" id="booking_birthdate" name="birthdate"
-                               value="{{ customer_data.birthdate.strftime('%Y-%m-%d') if customer_data and customer_data.birthdate else '' }}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                    </div>
                     
                     <!-- เบอร์โทรศัพท์ -->
                     <div>
@@ -249,67 +243,6 @@
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                     </div>
                     
-                    <!-- ที่อยู่ -->
-                    <div class="col-span-full mt-4">
-                        <h4 class="text-md font-bold text-green-900 mb-3">ที่อยู่</h4>
-                        <!-- Debug: customer_data = {{ customer_data }} -->
-                        <!-- Debug: customer_data type = {{ customer_data.__class__.__name__ if customer_data else 'None' }} -->
-                        <!-- Debug: customer_data keys = {{ customer_data.keys() if customer_data else 'None' }} -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                            <div>
-                                <label for="address_no" class="block text-sm font-medium text-green-800 mb-1">เลขที่</label>
-                                <input type="text" id="address_no" name="address_no"
-                                       value="{{ customer_data.address_no if customer_data else '' }}"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                            </div>
-                            
-                            <div>
-                                <label for="village" class="block text-sm font-medium text-green-800 mb-1">หมู่</label>
-                                <input type="text" id="village" name="village"
-                                       value="{{ customer_data.village if customer_data else '' }}"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                            </div>
-                            
-                            <div>
-                                <label for="road" class="block text-sm font-medium text-green-800 mb-1">ถนน</label>
-                                <input type="text" id="road" name="road"
-                                       value="{{ customer_data.road if customer_data else '' }}"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                            </div>
-                            
-                            <div>
-                                <label for="subdistrict" class="block text-sm font-medium text-green-800 mb-1">ตำบล/แขวง</label>
-                                <input type="text" id="subdistrict" name="subdistrict"
-                                       value="{{ customer_data.subdistrict if customer_data else '' }}"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                            </div>
-                            
-                            <div>
-                                <label for="district" class="block text-sm font-medium text-green-800 mb-1">อำเภอ/เขต</label>
-                                <input type="text" id="district" name="district"
-                                       value="{{ customer_data.district if customer_data else '' }}"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                            </div>
-                            
-                            <div>
-                                <label for="province" class="block text-sm font-medium text-green-800 mb-1">จังหวัด</label>
-                                <select id="province" name="province" 
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                                    <option value="">-- เลือกจังหวัด --</option>
-                                    {% for p in provinces %}
-                                    <option value="{{ p }}" {% if customer_data and customer_data.province == p %}selected{% endif %}>{{ p }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label for="zipcode" class="block text-sm font-medium text-green-800 mb-1">รหัสไปรษณีย์</label>
-                                <input type="text" id="zipcode" name="zipcode"
-                                       value="{{ customer_data.zipcode if customer_data else '' }}"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
             
@@ -499,11 +432,36 @@
                         <label for="preferred_date" class="block text-sm font-medium text-green-800 mb-1">วันที่เข้าใช้บริการ <span class="text-red-600">*</span></label>
                         <input type="date" id="preferred_date" name="preferred_date"
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <p class="text-xs text-gray-500 mt-1">สามารถเลือกได้ตั้งแต่วันพรุ่งนี้เป็นต้นไป (ยกเว้นวันอาทิตย์)</p>
                     </div>
                     <div>
                         <label for="preferred_time" class="block text-sm font-medium text-green-800 mb-1">เวลาเข้ารับบริการ <span class="text-red-600">*</span></label>
-                        <input type="time" id="preferred_time" name="preferred_time"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <select id="preferred_time" name="preferred_time"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <option value="">-- เลือกเวลา --</option>
+                            <option value="09:00">09.00</option>
+                            <option value="10:00">10.00</option>
+                            <option value="11:00">11.00</option>
+                            <option value="13:00">13.00</option>
+                            <option value="14:00">14.00</option>
+                            <option value="15:00">15.00</option>
+                        </select>
+                        <div id="time_availability_info" class="mt-2 text-sm text-gray-600 hidden">
+                            <div class="flex items-center flex-wrap gap-2">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full mr-1"></div>
+                                    <span class="text-green-600 text-xs">ว่าง</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-yellow-500 rounded-full mr-1"></div>
+                                    <span class="text-yellow-600 text-xs">เกือบเต็ม</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-red-500 rounded-full mr-1"></div>
+                                    <span class="text-red-600 text-xs">เต็ม</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -516,11 +474,12 @@
                           placeholder="กรุณาระบุรายละเอียดเพิ่มเติม (ถ้ามี)"></textarea>
             </div>
             
+
             <!-- ปุ่มส่งฟอร์ม -->
             <div class="mt-8 flex justify-center">
-                <button type="submit" 
+                <button type="submit" id="submitBtn"
                 class="w-32 px-4 py-3 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200">
-                    ส่งคำจอง
+                    จองบริการ
                 </button>
             </div>
         </form>
@@ -677,11 +636,186 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
+    // ตั้งค่าวันที่เริ่มต้นและจำกัดการเลือกวันที่
+    var today = new Date();
+    var preferredDateInput = document.getElementById('preferred_date');
+    
     // ตั้งค่าวันที่เริ่มต้นเป็นวันพรุ่งนี้
-    var tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    var tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
     var tomorrowStr = tomorrow.toISOString().split('T')[0];
-    document.getElementById('preferred_date').value = tomorrowStr;
+    preferredDateInput.value = tomorrowStr;
+    
+    // ตั้งค่าวันที่ต่ำสุด (วันพรุ่งนี้)
+    var minDateStr = tomorrow.toISOString().split('T')[0];
+    preferredDateInput.setAttribute('min', minDateStr);
+    
+    // ฟังก์ชันตรวจสอบวันอาทิตย์หรือวันที่ปัจจุบัน
+    function isInvalidDate(dateString) {
+        var date = new Date(dateString);
+        var today = new Date();
+        today.setHours(0, 0, 0, 0); // รีเซ็ตเวลาเป็น 00:00:00
+        date.setHours(0, 0, 0, 0); // รีเซ็ตเวลาเป็น 00:00:00
+        
+        return date.getDay() === 0 || date <= today; // วันอาทิตย์หรือวันที่ปัจจุบันหรือก่อนหน้า
+    }
+    
+    // ฟังก์ชันหาวันถัดไปที่เหมาะสม
+    function getNextAvailableDate(dateString) {
+        var date = new Date(dateString);
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // ถ้าเป็นวันที่ปัจจุบันหรือก่อนหน้า ให้ไปวันพรุ่งนี้
+        if (date <= today) {
+            date = new Date(today);
+            date.setDate(today.getDate() + 1);
+        }
+        
+        // ถ้าเป็นวันอาทิตย์ ให้ไปวันถัดไป
+        while (date.getDay() === 0) {
+            date.setDate(date.getDate() + 1);
+        }
+        
+        return date.toISOString().split('T')[0];
+    }
+    
+    // ฟังก์ชันตรวจสอบความพร้อมของแต่ละชั่วโมง
+    function checkTimeAvailability(serviceDate) {
+        console.log('Checking time availability for date:', serviceDate);
+        fetch(`/api/booking-availability?service_date=${serviceDate}`)
+            .then(response => {
+                console.log('API response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('API response data:', data);
+                if (data.success) {
+                    updateTimeOptions(data.availability);
+                } else {
+                    console.error('API returned error:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking time availability:', error);
+            });
+    }
+
+    // ฟังก์ชันอัปเดตตัวเลือกเวลา
+    function updateTimeOptions(availability) {
+        console.log('Updating time options with availability:', availability);
+        const timeSelect = document.getElementById('preferred_time');
+        const availabilityInfo = document.getElementById('time_availability_info');
+        
+        if (!timeSelect) {
+            console.error('Time select element not found!');
+            return;
+        }
+        
+        if (!availabilityInfo) {
+            console.error('Availability info element not found!');
+            return;
+        }
+        
+        // แสดงข้อมูลความพร้อม
+        availabilityInfo.classList.remove('hidden');
+        console.log('Showing availability info');
+        
+        // อัปเดตแต่ละ option
+        for (let option of timeSelect.options) {
+            if (option.value && availability[option.value]) {
+                const timeData = availability[option.value];
+                const timeDisplay = option.value.replace(':', '.');
+                
+                console.log(`Updating option ${option.value}:`, timeData);
+                
+                if (timeData.available) {
+                    if (timeData.remaining === 3) {
+                        option.textContent = `${timeDisplay} (ว่าง)`;
+                        option.style.color = '#16a34a';
+                    } else if (timeData.remaining === 2) {
+                        option.textContent = `${timeDisplay} (ว่าง 2 คิว)`;
+                        option.style.color = '#16a34a';
+                    } else if (timeData.remaining === 1) {
+                        option.textContent = `${timeDisplay} (ว่าง 1 คิว)`;
+                        option.style.color = '#eab308';
+                    }
+                    option.disabled = false;
+                } else {
+                    option.textContent = `${timeDisplay} (เต็ม)`;
+                    option.style.color = '#dc2626';
+                    option.disabled = true;
+                }
+            }
+        }
+    }
+
+    // ตรวจสอบวันที่ที่เลือก
+    preferredDateInput.addEventListener('change', function() {
+        var selectedDate = this.value;
+        if (selectedDate && isInvalidDate(selectedDate)) {
+            showInvalidDateAlert();
+            this.value = getNextAvailableDate(selectedDate);
+        } else if (selectedDate) {
+            // ตรวจสอบความพร้อมของแต่ละชั่วโมง
+            checkTimeAvailability(selectedDate);
+        }
+    });
+    
+    // ฟังก์ชันแสดงการแจ้งเตือนวันที่ไม่เหมาะสม
+    function showInvalidDateAlert() {
+        // สร้าง modal overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        overlay.id = 'sunday-alert-overlay';
+        
+        // สร้าง modal content
+        const modal = document.createElement('div');
+        modal.className = 'bg-white rounded-xl shadow-2xl max-w-xs w-full mx-4 transform transition-all duration-300 scale-100';
+        modal.innerHTML = `
+            <div class="p-4 sm:p-6 text-center">
+                <!-- Icon -->
+                <div class="mx-auto flex items-center justify-center h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-gradient-to-r from-red-400 to-red-600 mb-3 sm:mb-4 shadow-lg">
+                    <svg class="h-6 w-6 sm:h-8 sm:w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+                
+            <!-- Message -->
+            <h3 class="text-lg sm:text-xl font-bold text-red-700 mb-2 sm:mb-3">ไม่สามารถจองในวันนี้ได้</h3>
+            <p class="text-sm sm:text-base text-red-600 mb-4 sm:mb-6 leading-relaxed">กรุณาเลือกวันพรุ่งนี้เป็นต้นไป<br>(ยกเว้นวันอาทิตย์)</p>
+                
+                <!-- OK Button -->
+                <button onclick="closeSundayAlert()" 
+                        class="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-red-300">
+                    <span class="flex items-center justify-center">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        ตกลง
+                    </span>
+                </button>
+            </div>
+        `;
+        
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+        
+        // เพิ่ม animation effect
+        setTimeout(() => {
+            modal.style.transform = 'scale(1)';
+        }, 10);
+    }
+    
+    // ฟังก์ชันปิดการแจ้งเตือน
+    window.closeSundayAlert = function() {
+        const overlay = document.getElementById('sunday-alert-overlay');
+        if (overlay) {
+            overlay.remove();
+            document.body.style.overflow = 'auto';
+        }
+    };
 
     // Dropdown จังหวัดที่สามารถค้นหาได้
     const provinceSearch = document.getElementById('license_province_search');
@@ -854,6 +988,123 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 2000);
         });
     }
+
+    // ===== FORM VALIDATION =====
+    const form = document.querySelector('form');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    form.addEventListener('submit', function(e) {
+        // ตรวจสอบข้อมูลที่จำเป็น
+        const errors = [];
+        
+        // ตรวจสอบการเลือกบริการ
+        const serviceCheckboxes = document.querySelectorAll('input[name="service_id"]:checked');
+        if (serviceCheckboxes.length === 0) {
+            errors.push('กรุณาเลือกบริการอย่างน้อย 1 อย่าง');
+        }
+        
+        // ตรวจสอบทะเบียนรถ
+        const licensePlate = document.getElementById('license_plate').value.trim();
+        if (!licensePlate) {
+            errors.push('กรุณากรอกทะเบียนรถ');
+        }
+        
+        // ตรวจสอบชื่อ
+        const firstName = document.getElementById('booking_first_name').value.trim();
+        if (!firstName) {
+            errors.push('กรุณากรอกชื่อ');
+        }
+        
+        // ตรวจสอบนามสกุล
+        const lastName = document.getElementById('booking_last_name').value.trim();
+        if (!lastName) {
+            errors.push('กรุณากรอกนามสกุล');
+        }
+        
+        // ตรวจสอบเบอร์โทรศัพท์
+        const phone = document.getElementById('booking_phone').value.trim();
+        if (!phone) {
+            errors.push('กรุณากรอกเบอร์โทรศัพท์');
+        }
+        
+        // ตรวจสอบวันที่
+        const preferredDate = document.getElementById('preferred_date').value;
+        if (!preferredDate) {
+            errors.push('กรุณาเลือกวันที่ที่ต้องการจอง');
+        }
+        
+        // ตรวจสอบเวลา
+        const preferredTime = document.getElementById('preferred_time').value;
+        if (!preferredTime) {
+            errors.push('กรุณาเลือกเวลาที่ต้องการจอง');
+        }
+        
+        // แสดงข้อผิดพลาดหรือส่งฟอร์ม
+        if (errors.length > 0) {
+            e.preventDefault();
+            showValidationErrors(errors);
+        }
+        // ถ้าไม่มี error ให้ส่งฟอร์มแบบปกติ (ไม่ต้อง preventDefault)
+    });
+    
+    function showValidationErrors(errors) {
+        // สร้าง modal สำหรับแสดงข้อผิดพลาด
+        const overlay = document.createElement('div');
+        overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        overlay.id = 'validation-error-overlay';
+        
+        const modal = document.createElement('div');
+        modal.className = 'bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100';
+        modal.innerHTML = `
+            <div class="p-6 text-center">
+                <!-- Icon -->
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gradient-to-r from-red-400 to-red-600 mb-4 shadow-lg">
+                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+                
+                <!-- Title -->
+                <h3 class="text-lg font-bold text-red-700 mb-3">กรุณากรอกข้อมูลให้ครบถ้วน</h3>
+                
+                <!-- Error List -->
+                <div class="text-left mb-6">
+                    <ul class="text-sm text-red-600 space-y-1">
+                        ${errors.map(error => `<li>• ${error}</li>`).join('')}
+                    </ul>
+                </div>
+                
+                <!-- OK Button -->
+                <button onclick="closeValidationErrors()" 
+                        class="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-red-300">
+                    <span class="flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        ตกลง
+                    </span>
+                </button>
+            </div>
+        `;
+        
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+        
+        // เพิ่ม animation effect
+        setTimeout(() => {
+            modal.style.transform = 'scale(1)';
+        }, 10);
+    }
+    
+    // ฟังก์ชันปิดการแจ้งเตือน
+    window.closeValidationErrors = function() {
+        const overlay = document.getElementById('validation-error-overlay');
+        if (overlay) {
+            overlay.remove();
+            document.body.style.overflow = 'auto';
+        }
+    };
 
     // ===== VEHICLE SELECTOR FUNCTIONALITY =====
     const vehicleButtons = document.querySelectorAll('.vehicle-btn');

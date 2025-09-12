@@ -30,17 +30,15 @@ def dashboard():
         cursor.execute('SELECT COUNT(*) as today FROM bookings WHERE DATE(booking_date) = CURDATE()')
         today_bookings = cursor.fetchone()['today']
         
-        # การจองล่าสุด
+        # การจองล่าสุด - ดึงข้อมูลเหมือนกับหน้า admin/booking-report
         cursor.execute('''
-            SELECT b.booking_id, b.booking_date, b.status,
-                   CONCAT(c.first_name, ' ', c.last_name) as customer_name,
-                   c.phone,
-                   CONCAT(v.brand_name, ' ', v.model_name) as vehicle_info,
-                   v.license_plate
+            SELECT b.*, 
+                   c.first_name, c.last_name, c.phone,
+                   v.brand_name, v.model_name, v.license_plate, v.license_province
             FROM bookings b
             JOIN customers c ON b.customer_id = c.customer_id
             JOIN vehicles v ON b.vehicle_id = v.vehicle_id
-            ORDER BY b.booking_date DESC
+            ORDER BY b.service_date DESC, b.booking_id DESC
             LIMIT 10
         ''')
         recent_bookings = cursor.fetchall()
@@ -186,6 +184,24 @@ def add_booking():
     # ดึงรายการจังหวัด
     provinces = ['กรุงเทพมหานคร', 'กระบี่', 'กาญจนบุรี', 'กาฬสินธุ์', 'กำแพงเพชร', 'ขอนแก่น', 'จันทบุรี', 'ฉะเชิงเทรา', 'ชลบุรี', 'ชัยนาท', 'ชัยภูมิ', 'ชุมพร', 'เชียงราย', 'เชียงใหม่', 'ตรัง', 'ตราด', 'ตาก', 'นครนายก', 'นครปฐม', 'นครพนม', 'นครราชสีมา', 'นครศรีธรรมราช', 'นครสวรรค์', 'นนทบุรี', 'นราธิวาส', 'น่าน', 'บึงกาฬ', 'บุรีรัมย์', 'ปทุมธานี', 'ประจวบคีรีขันธ์', 'ปราจีนบุรี', 'ปัตตานี', 'พระนครศรีอยุธยา', 'พังงา', 'พัทลุง', 'พิจิตร', 'พิษณุโลก', 'เพชรบุรี', 'เพชรบูรณ์', 'แพร่', 'พะเยา', 'ภูเก็ต', 'มหาสารคาม', 'มุกดาหาร', 'แม่ฮ่องสอน', 'ยะลา', 'ยโสธร', 'ร้อยเอ็ด', 'ระนอง', 'ระยอง', 'ราชบุรี', 'ลพบุรี', 'ลำปาง', 'ลำพูน', 'เลย', 'ศรีสะเกษ', 'สกลนคร', 'สงขลา', 'สตูล', 'สมุทรปราการ', 'สมุทรสงคราม', 'สมุทรสาคร', 'สระแก้ว', 'สระบุรี', 'สิงห์บุรี', 'สุโขทัย', 'สุพรรณบุรี', 'สุราษฎร์ธานี', 'สุรินทร์', 'หนองคาย', 'หนองบัวลำภู', 'อ่างทอง', 'อุดรธานี', 'อุทัยธานี', 'อุตรดิตถ์', 'อุบลราชธานี', 'อำนาจเจริญ']
     
+    # ดึงข้อมูล vehicle models
+    with open('static/data/vehicle_brands_models.json', encoding='utf-8') as f:
+        vehicle_data = json.load(f)
+    
+    # สร้าง dictionary สำหรับ map brand_id ไปยัง brand_name
+    brand_id_to_name = {brand['brand_id']: brand['brand_name'] for brand in vehicle_data['brands']}
+    
+    # สร้าง list ของ vehicle models
+    vehicle_models = []
+    for model in vehicle_data['models']:
+        vehicle_models.append({
+            'model_name': model['model_name'],
+            'brand_name': brand_id_to_name.get(model['brand_id'], 'Unknown')
+        })
+    
+    print(f"Debug: Created {len(vehicle_models)} vehicle models")
+    print(f"Debug: Sample vehicle models: {vehicle_models[:3]}")
+    
     return render_template('staff/booking_form.html', 
                          booking=None,
                          customers=customers,
@@ -195,7 +211,13 @@ def add_booking():
                          brands=brands,
                          tire_models=tire_models,
                          vehicle_brands=vehicle_brands,
-                         provinces=provinces)
+                         vehicle_models=vehicle_models,
+                         provinces=provinces,
+                         selected_services=[],
+                         selected_service_ids=[],
+                         selected_options={},
+                         selected_option_ids={},
+                         tire_data={})
 
 @staff.route('/bookings')
 @staff_required
@@ -207,9 +229,12 @@ def bookings():
         # รับพารามิเตอร์
         search = request.args.get('search', '').strip()
         status_filter = request.args.get('status', '').strip()
+        page = int(request.args.get('page', 1))
+        per_page = 10
+        offset = (page - 1) * per_page
         
         # สร้าง query สำหรับการจองปัจจุบัน - แสดงการจองทั้งหมด
-        query = '''SELECT b.booking_id, b.booking_date, b.status, c.first_name, c.last_name, v.license_plate, v.license_province
+        query = '''SELECT b.booking_id, b.booking_date, b.service_date, b.service_time, b.status, c.first_name, c.last_name, v.license_plate, v.license_province
                    FROM bookings b
                    JOIN customers c ON b.customer_id = c.customer_id
                    JOIN vehicles v ON b.vehicle_id = v.vehicle_id'''
@@ -230,7 +255,22 @@ def bookings():
         if where_conditions:
             query += ' WHERE ' + ' AND '.join(where_conditions)
         
-        query += ' ORDER BY b.booking_date DESC'
+        # สร้าง query สำหรับนับจำนวนทั้งหมด
+        count_query = '''SELECT COUNT(*) as total
+                         FROM bookings b
+                         JOIN customers c ON b.customer_id = c.customer_id
+                         JOIN vehicles v ON b.vehicle_id = v.vehicle_id'''
+        count_params = []
+        
+        if where_conditions:
+            count_query += ' WHERE ' + ' AND '.join(where_conditions)
+        
+        cursor.execute(count_query, params)
+        total = cursor.fetchone()['total']
+        total_pages = (total + per_page - 1) // per_page
+        
+        query += ' ORDER BY b.booking_date DESC LIMIT %s OFFSET %s'
+        params.extend([per_page, offset])
         
         # ดึงข้อมูลการจอง
         cursor.execute(query, params)
@@ -268,7 +308,9 @@ def bookings():
                              page_title=page_title,
                              show_history=False,
                              search=search,
-                             status_filter=status_filter)
+                             status_filter=status_filter,
+                             page=page,
+                             total_pages=total_pages)
         
     except Exception as e:
         print(f"Error in bookings: {e}")
@@ -289,6 +331,9 @@ def booking_history():
         status_filter = request.args.get('status', '').strip()
         start_date = request.args.get('start_date', '').strip()
         end_date = request.args.get('end_date', '').strip()
+        page = int(request.args.get('page', 1))
+        per_page = 10
+        offset = (page - 1) * per_page
         
         # สร้าง query สำหรับประวัติการจอง - แสดงการจองทั้งหมด
         query = '''SELECT b.booking_id, b.booking_date, b.status, c.first_name, c.last_name, v.license_plate, v.license_province
@@ -482,20 +527,12 @@ def edit_booking(booking_id):
     # ----------------------
     cursor.execute('''
         SELECT b.booking_id, b.booking_date, b.service_date, b.service_time, b.status, b.note,
-               c.first_name, c.last_name, c.phone, c.email, c.gender, c.birthdate,
+               c.first_name, c.last_name, c.phone, c.email,
                v.vehicle_id, v.license_plate, v.license_province, v.color, v.production_year,
-               v.brand_name, v.model_name, v.engine_type_name, v.vehicle_type_id,
-               COALESCE(a.address_no, '') as address_no, 
-               COALESCE(a.village, '') as village, 
-               COALESCE(a.road, '') as road, 
-               COALESCE(a.subdistrict, '') as subdistrict, 
-               COALESCE(a.district, '') as district, 
-               COALESCE(a.province, '') as province, 
-               COALESCE(a.zipcode, '') as zipcode
+               v.brand_name, v.model_name, v.engine_type_name, v.vehicle_type_id
         FROM bookings b
         JOIN customers c ON b.customer_id = c.customer_id
         JOIN vehicles v ON b.vehicle_id = v.vehicle_id
-        LEFT JOIN addresses a ON c.customer_id = a.customer_id
         WHERE b.booking_id = %s
     ''', (booking_id,))
     booking = cursor.fetchone()
@@ -820,7 +857,7 @@ def edit_booking(booking_id):
     # ดึงรายการจังหวัด
     provinces = ['กรุงเทพมหานคร', 'กระบี่', 'กาญจนบุรี', 'กาฬสินธุ์', 'กำแพงเพชร', 'ขอนแก่น', 'จันทบุรี', 'ฉะเชิงเทรา', 'ชลบุรี', 'ชัยนาท', 'ชัยภูมิ', 'ชุมพร', 'เชียงราย', 'เชียงใหม่', 'ตรัง', 'ตราด', 'ตาก', 'นครนายก', 'นครปฐม', 'นครพนม', 'นครราชสีมา', 'นครศรีธรรมราช', 'นครสวรรค์', 'นนทบุรี', 'นราธิวาส', 'น่าน', 'บึงกาฬ', 'บุรีรัมย์', 'ปทุมธานี', 'ประจวบคีรีขันธ์', 'ปราจีนบุรี', 'ปัตตานี', 'พระนครศรีอยุธยา', 'พังงา', 'พัทลุง', 'พิจิตร', 'พิษณุโลก', 'เพชรบุรี', 'เพชรบูรณ์', 'แพร่', 'พะเยา', 'ภูเก็ต', 'มหาสารคาม', 'มุกดาหาร', 'แม่ฮ่องสอน', 'ยะลา', 'ยโสธร', 'ร้อยเอ็ด', 'ระนอง', 'ระยอง', 'ราชบุรี', 'ลพบุรี', 'ลำปาง', 'ลำพูน', 'เลย', 'ศรีสะเกษ', 'สกลนคร', 'สงขลา', 'สตูล', 'สมุทรปราการ', 'สมุทรสงคราม', 'สมุทรสาคร', 'สระแก้ว', 'สระบุรี', 'สิงห์บุรี', 'สุโขทัย', 'สุพรรณบุรี', 'สุราษฎร์ธานี', 'สุรินทร์', 'หนองคาย', 'หนองบัวลำภู', 'อ่างทอง', 'อุดรธานี', 'อุทัยธานี', 'อุตรดิตถ์', 'อุบลราชธานี', 'อำนาจเจริญ']
     
-    return render_template('staff/edit_booking.html', 
+    return render_template('staff/booking_form.html', 
                          booking=booking,
                          vehicle_types=vehicle_types,
                          services=services,
@@ -878,6 +915,61 @@ def delete_booking(booking_id):
     except Exception as e:
         print(f"Error deleting booking: {e}")
         return jsonify({'success': False, 'error': 'เกิดข้อผิดพลาดในการลบการจอง'}), 500
+
+@staff.route('/check-queue')
+@staff_required
+def check_queue():
+    """หน้าเช็คคิวสำหรับพนักงาน"""
+    return render_template('staff/check_queue.html')
+
+@staff.route('/check-queue-detail')
+@staff_required
+def check_queue_detail():
+    """หน้าแสดงรายละเอียดคิวสำหรับพนักงาน"""
+    date = request.args.get('date')
+    if not date:
+        flash('ไม่พบวันที่ที่ระบุ', 'error')
+        return redirect(url_for('staff.check_queue'))
+    
+    try:
+        cursor = get_cursor()
+        
+        # ดึงข้อมูลการจองสำหรับวันที่ที่ระบุ
+        cursor.execute('''
+            SELECT b.booking_id, b.service_time, b.status, b.note,
+                   c.first_name, c.last_name, c.phone,
+                   v.license_plate, v.license_province, v.brand_name, v.model_name
+            FROM bookings b
+            JOIN customers c ON b.customer_id = c.customer_id
+            JOIN vehicles v ON b.vehicle_id = v.vehicle_id
+            WHERE DATE(b.service_date) = %s
+            ORDER BY b.service_time ASC
+        ''', (date,))
+        bookings = cursor.fetchall()
+        
+        # ดึงข้อมูลบริการสำหรับแต่ละการจอง
+        for booking in bookings:
+            cursor.execute('''
+                SELECT bi.item_id, bi.service_id, bi.quantity, 
+                       s.service_name, s.category,
+                       GROUP_CONCAT(so.option_name SEPARATOR ', ') as options
+                FROM booking_items bi
+                JOIN services s ON bi.service_id = s.service_id
+                LEFT JOIN booking_item_options bio ON bi.item_id = bio.item_id
+                LEFT JOIN service_options so ON bio.option_id = so.option_id
+                WHERE bi.booking_id = %s
+                GROUP BY bi.item_id, bi.service_id, bi.quantity, s.service_name, s.category
+            ''', (booking['booking_id'],))
+            booking['services'] = cursor.fetchall()
+        
+        return render_template('staff/check_queue_detail.html', 
+                             date=date, 
+                             bookings=bookings)
+        
+    except Exception as e:
+        print(f"Error in check_queue_detail: {e}")
+        flash('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error')
+        return redirect(url_for('staff.check_queue'))
 
 @staff.route('/logout', methods=['POST', 'GET'])
 @staff_required

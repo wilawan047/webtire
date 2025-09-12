@@ -3,156 +3,205 @@
 {% block title %}สถิติการเข้าชม - TireWeb{% endblock %}
 
 {% block content %}
-<!-- Page Header -->
-<div class="mb-8">
-    <div>
-        <h2 class="text-2xl font-bold text-green-900 mb-2">สถิติการเข้าชมหน้าเว็บ</h2>
-        
-        <!-- Date Selection Form -->
-        <div class="flex justify-center mt-4">
-            <form method="GET" action="{{ url_for('owner.page_views_report_pdf') }}" class="flex items-center space-x-4">
-                <div class="flex items-center space-x-2">
-                    <label for="start_date" class="text-sm font-medium text-gray-700">ตั้งแต่:</label>
-                    <input type="date" id="start_date" name="start_date" 
-                           class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+<div class="container mx-auto px-2 py-4 max-w-none">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex items-center gap-4 mb-6">
+            <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-md">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-green-900">สถิติการเข้าชมหน้าเว็บ</h2>
+        </div>
+
+            
+            <form method="GET" action="{{ url_for('owner.page_views_report_pdf') }}" class="flex flex-col lg:flex-row items-start lg:items-center gap-3 flex-wrap">
+                <div class="flex flex-row items-center gap-3 flex-wrap">
+                    <label for="report_type" class="text-sm font-medium text-green-800 whitespace-nowrap">ประเภทรายงาน:</label>
+                    <select id="report_type" name="report_type" 
+                            class="px-3 py-2 border-2 border-green-200 rounded-xl text-sm bg-white text-gray-700 font-medium focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 cursor-pointer hover:border-green-400 min-w-0 flex-shrink">
+                        <option value="device">อุปกรณ์ที่ใช้เข้าชม</option>
+                        <option value="daily">การเข้าชมรายวัน</option>
+                        <option value="pages">หน้าที่เข้าชมมากที่สุด</option>
+                    </select>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <label for="end_date" class="text-sm font-medium text-gray-700">ถึง:</label>
+                <div class="flex items-center space-x-2 min-w-0">
+                    <label for="start_date" class="text-sm font-medium text-green-800 whitespace-nowrap">ตั้งแต่:</label>
+                    <input type="date" id="start_date" name="start_date" 
+                           class="px-3 py-2 border-2 border-green-200 rounded-xl text-sm bg-white text-gray-700 font-medium focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 cursor-pointer hover:border-green-400 min-w-0 flex-shrink">
+                </div>
+                <div class="flex items-center space-x-2 min-w-0">
+                    <label for="end_date" class="text-sm font-medium text-green-800 whitespace-nowrap">ถึง:</label>
                     <input type="date" id="end_date" name="end_date" 
-                           class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                           class="px-3 py-2 border-2 border-green-200 rounded-xl text-sm bg-white text-gray-700 font-medium focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 cursor-pointer hover:border-green-400 min-w-0 flex-shrink">
                 </div>
                 <button type="submit" 
-                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    ดาวน์โหลดรายงาน PDF
+                        class="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 lg:px-6 lg:py-3 rounded-xl shadow-lg hover:from-green-600 hover:to-green-700 active:from-green-700 active:to-green-800 font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 lg:gap-3 transform hover:scale-105 hover:shadow-xl text-sm lg:text-base">
+                    <div class="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    รายงาน PDF
                 </button>
             </form>
-        </div>
-        <p class="text-xs text-gray-500 mt-2 text-center">เลือกช่วงวันที่ที่ต้องการออกรายงาน (สูงสุด 1 ปี)</p>
-    </div>
-</div>
-
-<!-- Summary Cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-    <!-- Total Page Views -->
-    <div class="bg-white rounded-xl shadow-sm border p-6">
-        <div class="flex items-center">
-            <div class="p-3 bg-blue-100 rounded-lg">
-                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-            </div>
-            <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">หน้าเว็บทั้งหมด</p>
-                <p class="text-2xl font-bold text-gray-900">{{ total_page_views | comma }}</p>
-            </div>
-        </div>
+            <p class="text-xs text-green-600 mt-3 text-center">เลือกช่วงวันที่ที่ต้องการออกรายงาน (สูงสุด 1 ปี)</p>
     </div>
 
-    <!-- Total Visits -->
-    <div class="bg-white rounded-xl shadow-sm border p-6">
-        <div class="flex items-center">
-            <div class="p-3 bg-green-100 rounded-lg">
-                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                </svg>
-            </div>
-            <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">การเข้าชมทั้งหมด</p>
-                <p class="text-2xl font-bold text-gray-900">{{ total_visits | comma }}</p>
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <!-- Total Page Views -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">หน้าเว็บทั้งหมด</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ total_page_views | comma }}</p>
+                </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Charts Section -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-    <!-- Device Stats Chart -->
-    <div class="bg-white rounded-xl shadow-sm border p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">อุปกรณ์ที่ใช้เข้าชม</h3>
-        <div class="h-80">
-            <canvas id="deviceStatsChart" class="w-full h-full"></canvas>
+        <!-- Total Visits -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-md">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">การเข้าชมทั้งหมด</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ total_visits | comma }}</p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Daily Visits Chart -->
-    <div class="bg-white rounded-xl shadow-sm border p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">การเข้าชมรายวัน (7 วันล่าสุด)</h3>
-        <div class="h-80">
-            <canvas id="dailyVisitsChart" class="w-full h-full"></canvas>
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+        <!-- Device Stats Chart -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-8 h-8 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800">อุปกรณ์ที่ใช้เข้าชม</h3>
+            </div>
+            <div class="h-80">
+                <canvas id="deviceStatsChart" class="w-full h-full"></canvas>
+            </div>
+        </div>
+
+        <!-- Daily Visits Chart -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800">การเข้าชมรายวัน (7 วันล่าสุด)</h3>
+            </div>
+            <div class="h-80">
+                <canvas id="dailyVisitsChart" class="w-full h-full"></canvas>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Top Pages Table -->
-<div class="bg-white rounded-xl shadow-sm border">
-    <div class="px-6 py-4 border-b border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900">หน้าที่เข้าชมมากที่สุด</h3>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หน้าเว็บ</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนการเข้าชม</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เข้าชมล่าสุด</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                {% for page in top_pages %}
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {{ loop.index }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900">
-                            {% if page.page_id == 'customer/home.html' or page.page_id == 'customer_home' %}
-                                หน้าหลัก
-                            {% elif page.page_id == 'customer/booking.html' or page.page_id == 'customer_booking' %}
-                                หน้าการจอง
-                            {% elif page.page_id == 'customer/contact.html' or page.page_id == 'customer_contact' %}
-                                หน้าติดต่อ
-                            {% elif page.page_id == 'customer/guide.html' or page.page_id == 'customer_guide' %}
-                                หน้าคู่มือ
-                            {% elif page.page_id == 'customer/promotions.html' or page.page_id == 'customer_promotions' %}
-                                หน้าโปรโมชัน
-                            {% elif page.page_id == 'customer/profile.html' or page.page_id == 'customer_profile' %}
-                                หน้าโปรไฟล์
-                            {% elif page.page_id == 'customer/tires_michelin.html' or page.page_id == 'customer_tires_michelin' %}
-                                หน้ายาง Michelin
-                            {% elif page.page_id == 'customer/tires_maxxis.html' or page.page_id == 'customer_tires_maxxis' %}
-                                หน้ายาง Maxxis
-                            {% elif page.page_id == 'customer/tires_bfgoodrich.html' or page.page_id == 'customer_tires_bfgoodrich' %}
-                                หน้ายาง BFGoodrich
-                            {% elif page.page_id == 'customer/tires.html' or page.page_id == 'customer_tires' %}
-                                หน้ายางทั้งหมด
-                            {% elif page.page_id == 'customer/recommend.html' or page.page_id == 'customer_recommend' %}
-                                หน้าแนะนำยาง
-                            {% elif page.page_id == 'customer/compare.html' or page.page_id == 'customer_compare' %}
-                                หน้าเปรียบเทียบยาง
+    <!-- Top Pages Table -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-100">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800">หน้าที่เข้าชมมากที่สุด</h3>
+            </div>
+        </div>
+        <div class="overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+            <table class="min-w-full table-auto">
+                <thead class="bg-gradient-to-r from-green-50 to-emerald-50">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-sm font-bold text-green-800 border-b border-green-200">ลำดับ</th>
+                        <th class="px-6 py-4 text-left text-sm font-bold text-green-800 border-b border-green-200">หน้าเว็บ</th>
+                        <th class="px-6 py-4 text-left text-sm font-bold text-green-800 border-b border-green-200">จำนวนการเข้าชม</th>
+                        <th class="px-6 py-4 text-left text-sm font-bold text-green-800 border-b border-green-200">เข้าชมล่าสุด</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-100">
+                    {% for page in top_pages %}
+                    <tr class="hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 transition-all duration-200">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {{ loop.index }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">
+                                {% if page.page_id == 'customer/home.html' or page.page_id == 'customer_home' %}
+                                    หน้าหลัก
+                                {% elif page.page_id == 'customer/booking.html' or page.page_id == 'customer_booking' %}
+                                    หน้าการจอง
+                                {% elif page.page_id == 'customer/contact.html' or page.page_id == 'customer_contact' %}
+                                    หน้าติดต่อ
+                                {% elif page.page_id == 'customer/guide.html' or page.page_id == 'customer_guide' %}
+                                    หน้าคู่มือ
+                                {% elif page.page_id == 'customer/promotions.html' or page.page_id == 'customer_promotions' %}
+                                    หน้าโปรโมชัน
+                                {% elif page.page_id == 'customer/profile.html' or page.page_id == 'customer_profile' %}
+                                    หน้าโปรไฟล์
+                                {% elif page.page_id == 'customer/tires_michelin.html' or page.page_id == 'customer_tires_michelin' %}
+                                    หน้ายางมิชลิน
+                                {% elif page.page_id == 'customer/tires_maxxis.html' or page.page_id == 'customer_tires_maxxis' %}
+                                    หน้ายางแม็กซิส
+                                {% elif page.page_id == 'customer/tires_bfgoodrich.html' or page.page_id == 'customer_tires_bfgoodrich' %}
+                                    หน้ายางบีเอฟกู๊ดริช
+                                {% elif page.page_id == 'customer/tires.html' or page.page_id == 'customer_tires' %}
+                                    หน้ายางทั้งหมด
+                                {% elif page.page_id == 'customer/recommend.html' or page.page_id == 'customer_recommend' %}
+                                    หน้าแนะนำยาง
+                                {% elif page.page_id == 'customer/compare.html' or page.page_id == 'customer_compare' %}
+                                    หน้าเปรียบเทียบยาง
+                                {% elif page.page_id == 'customer/booking_history.html' or page.page_id == 'customer_booking_history' %}
+                                    ประวัติการจอง
+                                {% elif page.page_id == 'customer/change_password.html' or page.page_id == 'customer_change_password' %}
+                                    เปลี่ยนรหัสผ่าน
+                                {% elif page.page_id == 'customer/forgot_password_modal.html' or page.page_id == 'customer_forgot_password' %}
+                                    ลืมรหัสผ่าน
+                                {% elif page.page_id == 'customer/login_modal.html' or page.page_id == 'customer_login' %}
+                                    เข้าสู่ระบบ
+                                {% elif page.page_id == 'customer/register_modal.html' or page.page_id == 'customer_register' %}
+                                    สมัครสมาชิก
+                                {% elif page.page_id == 'customer/promotion_detail.html' or page.page_id == 'customer_promotion_detail' %}
+                                    รายละเอียดโปรโมชัน
+                                {% else %}
+                                    {{ page.page_id }}
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ page.views | comma }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if page.last_viewed_at %}
+                                {{ page.last_viewed_at | date_thai }}
                             {% else %}
-                                {{ page.page_id }}
+                                -
                             {% endif %}
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {{ page.views | comma }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {% if page.last_viewed_at %}
-                            {{ page.last_viewed_at | date_thai }}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -177,6 +226,7 @@
           
           const startDate = document.getElementById('start_date');
           const endDate = document.getElementById('end_date');
+          const reportType = document.getElementById('report_type');
           const form = document.querySelector('form[action*="page_views_report_pdf"]');
           
           form.addEventListener('submit', function(e) {
@@ -197,6 +247,7 @@
                   alert('ช่วงวันที่ต้องไม่เกิน 1 ปี');
                   return false;
               }
+              
           });
       });
   
@@ -212,7 +263,7 @@
           return deviceMap[item.device_type] || item.device_type;
       });
       const deviceCounts = deviceStats.map(item => item.count);
-      const deviceColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
+      const deviceColors = ['#10B981', '#3B82F6', '#EAB308', '#6B7280'];
   
       new Chart(deviceStatsCtx, {
           type: 'doughnut',
@@ -260,12 +311,12 @@
               datasets: [{
                   label: 'จำนวนการเข้าชม',
                   data: dailyCounts,
-                  borderColor: '#EAB308',
-                  backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                  borderColor: '#10B981',
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
                   borderWidth: 3,
                   fill: true,
                   tension: 0.4,
-                  pointBackgroundColor: '#EAB308',
+                  pointBackgroundColor: '#10B981',
                   pointBorderColor: '#ffffff',
                   pointBorderWidth: 2,
                   pointRadius: 6
