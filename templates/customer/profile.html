@@ -226,30 +226,37 @@
             
             reader.readAsDataURL(input.files[0]);
             
-                                // ส่งฟอร์มอัปโหลดรูปอัตโนมัติ
-                    setTimeout(() => {
-                        const avatarForm = document.getElementById('avatar-upload-form');
-                        if (avatarForm) {
-                            // สร้าง FormData และส่งด้วย fetch เพื่อไม่ให้หน้าโหลดใหม่
-                            const formData = new FormData();
+                                // ดึง CSRF token ใหม่ก่อนส่ง
+                    fetch('/get-csrf-token')
+                        .then(response => response.json())
+                        .then(tokenData => {
+                            // อัปเดต CSRF token
+                            document.getElementById('avatar-csrf-token').value = tokenData.csrf_token;
                             
-                            // เพิ่มไฟล์รูปภาพ
-                            const fileInput = document.getElementById('avatar-input');
-                            if (fileInput.files[0]) {
-                                formData.append('avatar', fileInput.files[0]);
-                            }
-                            
-                            // เพิ่ม CSRF token
-                            const csrfToken = document.getElementById('avatar-csrf-token').value;
-                            formData.append('csrf_token', csrfToken);
-                            
-                            fetch('/update-avatar', {
-                                method: 'POST',
-                                body: formData,
-                                headers: {
-                                    'X-Requested-With': 'XMLHttpRequest'
+                            // ส่งฟอร์มอัปโหลดรูปอัตโนมัติ
+                            const avatarForm = document.getElementById('avatar-upload-form');
+                            if (avatarForm) {
+                                // สร้าง FormData และส่งด้วย fetch เพื่อไม่ให้หน้าโหลดใหม่
+                                const formData = new FormData();
+                                
+                                // เพิ่มไฟล์รูปภาพ
+                                const fileInput = document.getElementById('avatar-input');
+                                if (fileInput.files[0]) {
+                                    formData.append('avatar', fileInput.files[0]);
                                 }
-                            })
+                                
+                                // ใช้ CSRF token ใหม่
+                                formData.append('csrf_token', tokenData.csrf_token);
+                                
+                                return fetch('/update-avatar', {
+                                    method: 'POST',
+                                    body: formData,
+                                    headers: {
+                                        'X-Requested-With': 'XMLHttpRequest'
+                                    }
+                                });
+                            }
+                        })
                             .then(response => response.json())
                             .then(data => {
                                 if (data.success) {
@@ -322,9 +329,19 @@
                                 console.error('Upload error:', error);
                                 const messageBox = document.getElementById('message-box');
                                 if (messageBox) {
-                                    messageBox.textContent = 'เกิดข้อผิดพลาดในการอัปโหลดรูป: ' + error.message;
+                                    // ตรวจสอบว่าเป็น CSRF error หรือไม่
+                                    if (error.message && error.message.includes('CSRF')) {
+                                        messageBox.textContent = 'กรุณาโหลดหน้าใหม่แล้วลองอีกครั้ง (CSRF token หมดอายุ)';
+                                    } else {
+                                        messageBox.textContent = 'เกิดข้อผิดพลาดในการอัปโหลดรูป: ' + error.message;
+                                    }
                                     messageBox.className = 'p-3 my-2 rounded-lg bg-red-100 text-red-700';
                                     messageBox.classList.remove('hidden');
+                                    
+                                    // ซ่อนข้อความหลังจาก 5 วินาที
+                                    setTimeout(() => {
+                                        messageBox.classList.add('hidden');
+                                    }, 5000);
                                 }
                             });
                         }
@@ -334,6 +351,16 @@
 
     // อัปเดตภาพใหม่หลังอัปโหลด
     document.addEventListener('DOMContentLoaded', function() {
+        // Refresh CSRF token เมื่อโหลดหน้า
+        fetch('/get-csrf-token')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('avatar-csrf-token').value = data.csrf_token;
+            })
+            .catch(error => {
+                console.error('Error refreshing CSRF token:', error);
+            });
+        
         const urlParams = new URLSearchParams(window.location.search);
         const avatarUpdated = urlParams.get('avatar_updated');
         const newFilename = urlParams.get('filename');
@@ -374,6 +401,19 @@
                 previewImage(this);
             });
         }
+        
+        // Refresh CSRF token ทุก 5 นาที
+        setInterval(() => {
+            fetch('/get-csrf-token')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('avatar-csrf-token').value = data.csrf_token;
+                    console.log('CSRF token refreshed');
+                })
+                .catch(error => {
+                    console.error('Error refreshing CSRF token:', error);
+                });
+        }, 5 * 60 * 1000); // 5 นาที
     });
 </script>
 {% endblock %}
