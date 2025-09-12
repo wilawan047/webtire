@@ -49,10 +49,10 @@
             <div>
                 <label class="block text-sm font-medium text-green-800 mb-1">บทบาท</label>
                 <select name="role" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
-                    <option value="admin" {% if user and user.role == 'admin' %}selected{% endif %}>admin</option>
-                    <option value="staff" {% if user and user.role == 'staff' %}selected{% endif %}>staff</option>
-                    <option value="owner" {% if user and user.role == 'owner' %}selected{% endif %}>owner</option>
-                    <option value="customer" {% if user and user.role == 'customer' %}selected{% endif %}>customer</option>
+                    <option value="admin" {% if user and user.role_name == 'admin' %}selected{% endif %}>admin</option>
+                    <option value="staff" {% if user and user.role_name == 'staff' %}selected{% endif %}>staff</option>
+                    <option value="owner" {% if user and user.role_name == 'owner' %}selected{% endif %}>owner</option>
+                    <option value="customer" {% if user and user.role_name == 'customer' %}selected{% endif %}>customer</option>
                 </select>
             </div>
         </div>

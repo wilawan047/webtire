@@ -222,7 +222,7 @@ def add_tire():
             model_id = request.form.get('model_id', '')
             width = request.form.get('width', '')
             aspect_ratio = request.form.get('aspect_ratio', '')
-            construction = request.form.get('construction', '')
+            construction = request.form.get('construction', '') or 'R'
             rim_diameter = request.form.get('rim_diameter', '')
             load_index = request.form.get('load_index', '')
             speed_symbol = request.form.get('speed_symbol', '')
@@ -233,7 +233,7 @@ def add_tire():
             product_date = request.form.get('product_date', '')
             
             # ตรวจสอบข้อมูล
-            if not all([model_id, width, aspect_ratio, rim_diameter, price_each]):
+            if not all([model_id, width, aspect_ratio, construction, rim_diameter, price_each]):
                 flash('กรุณากรอกข้อมูลให้ครบถ้วน', 'error')
                 # ดึงข้อมูล models สำหรับแสดงในฟอร์ม
                 cursor.execute('''
@@ -356,6 +356,9 @@ def add_tire():
             
         except Exception as e:
             print(f"Error adding tire: {e}")
+            # แปลง error object ให้เป็น string เพื่อหลีกเลี่ยงปัญหา JSON serialization
+            error_msg = str(e) if hasattr(e, '__str__') else 'Unknown error'
+            print(f"Error details: {error_msg}")
             flash('เกิดข้อผิดพลาดในการเพิ่มยาง', 'error')
             # ดึงข้อมูล models และ brands สำหรับแสดงในฟอร์ม
             cursor.execute('''
@@ -427,7 +430,7 @@ def edit_tire(tire_id):
             model_id = request.form.get('model_id', '')
             width = request.form.get('width', '')
             aspect_ratio = request.form.get('aspect_ratio', '')
-            construction = request.form.get('construction', '') or None
+            construction = request.form.get('construction', '') or 'R'
             rim_diameter = request.form.get('rim_diameter', '')
             load_index = request.form.get('load_index', '') or None
             speed_symbol = request.form.get('speed_symbol', '') or None
@@ -441,7 +444,7 @@ def edit_tire(tire_id):
             tire_load_type = request.form.get('tire_load_type', '') or None
             
             # ตรวจสอบข้อมูล
-            if not all([model_id, width, aspect_ratio, rim_diameter, price_each]):
+            if not all([model_id, width, aspect_ratio, construction, rim_diameter, price_each]):
                 flash('กรุณากรอกข้อมูลให้ครบถ้วน', 'error')
                 # ดึงข้อมูล tire และ models สำหรับแสดงในฟอร์ม
                 cursor.execute('''
@@ -1773,6 +1776,8 @@ def add_user():
         # ตรวจสอบข้อมูล
         if not all([username, password, first_name, last_name, role]):
             error = 'กรุณากรอกข้อมูลให้ครบถ้วน'
+        elif not email or '@' not in email:
+            error = 'กรุณากรอกอีเมลที่ถูกต้อง'
             return render_template('admin/user_form.html', 
                                  user=None, 
                                  error=error,
@@ -1786,7 +1791,7 @@ def add_user():
         
         cursor.execute('SELECT * FROM users WHERE username=%s', (username,))
         if cursor.fetchone():
-            error = 'Username already exists.'
+            error = 'ชื่อผู้ใช้นี้มีอยู่แล้ว'
             return render_template('admin/user_form.html', 
                                  user=None, 
                                  error=error,
@@ -1871,51 +1876,57 @@ def edit_user(user_id):
     
     error = None
     if request.method == 'POST':
-        username = request.form['username']
-        first_name = request.form['first_name']
-        last_name = request.form['last_name']
-        email = request.form['email']
-        role = request.form['role']
+        username = request.form.get('username', '').strip()
+        first_name = request.form.get('first_name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
+        email = request.form.get('email', '').strip()
+        role = request.form.get('role', '').strip()
         password = request.form.get('password', '').strip()
         
-        # Check for username conflict
-        cursor.execute('SELECT * FROM users WHERE username=%s AND user_id!=%s', (username, user_id))
-        if cursor.fetchone():
-            error = 'Username already exists.'
+        # ตรวจสอบข้อมูลที่จำเป็น
+        if not all([username, first_name, last_name, role]):
+            error = 'กรุณากรอกข้อมูลให้ครบถ้วน'
+        elif not email or '@' not in email:
+            error = 'กรุณากรอกอีเมลที่ถูกต้อง'
         else:
-            try:
-                # สร้างชื่อเต็มสำหรับตาราง users
-                full_name = f"{first_name} {last_name}"
-                
-                if password:
-                    from werkzeug.security import generate_password_hash
-                    password_hash = generate_password_hash(password, method='scrypt')
-                    cursor.execute('UPDATE users SET username=%s, name=%s, role_name=%s, password_hash=%s WHERE user_id=%s', 
-                                 (username, full_name, role, password_hash, user_id))
-                else:
-                    cursor.execute('UPDATE users SET username=%s, name=%s, role_name=%s WHERE user_id=%s', 
-                                 (username, full_name, role, user_id))
-                
-                # อัปเดตข้อมูล customer ถ้าเป็น customer
-                if role == 'customer':
-                    cursor.execute('SELECT customer_id FROM customers WHERE user_id=%s', (user_id,))
-                    existing_customer = cursor.fetchone()
+            # Check for username conflict
+            cursor.execute('SELECT * FROM users WHERE username=%s AND user_id!=%s', (username, user_id))
+            if cursor.fetchone():
+                error = 'ชื่อผู้ใช้นี้มีอยู่แล้ว'
+            else:
+                try:
+                    # สร้างชื่อเต็มสำหรับตาราง users
+                    full_name = f"{first_name} {last_name}"
                     
-                    if existing_customer:
-                        # อัปเดตข้อมูลที่มีอยู่
-                        cursor.execute('UPDATE customers SET first_name=%s, last_name=%s, email=%s WHERE user_id=%s', 
-                                     (first_name, last_name, email, user_id))
+                    if password:
+                        from werkzeug.security import generate_password_hash
+                        password_hash = generate_password_hash(password, method='scrypt')
+                        cursor.execute('UPDATE users SET username=%s, name=%s, role_name=%s, password_hash=%s WHERE user_id=%s', 
+                                     (username, full_name, role, password_hash, user_id))
                     else:
-                        # เพิ่มข้อมูลใหม่
-                        cursor.execute('INSERT INTO customers (user_id, first_name, last_name, email) VALUES (%s, %s, %s, %s)', 
-                                     (user_id, first_name, last_name, email))
-                
-                get_db().commit()
-                flash('อัปเดตผู้ใช้สำเร็จ')
-                return redirect(url_for('admin.user_list'))
-            except Exception as e:
-                print(f"Error updating user: {e}")
-                error = 'เกิดข้อผิดพลาดในการอัปเดตผู้ใช้'
+                        cursor.execute('UPDATE users SET username=%s, name=%s, role_name=%s WHERE user_id=%s', 
+                                     (username, full_name, role, user_id))
+                    
+                    # อัปเดตข้อมูล customer ถ้าเป็น customer
+                    if role == 'customer':
+                        cursor.execute('SELECT customer_id FROM customers WHERE user_id=%s', (user_id,))
+                        existing_customer = cursor.fetchone()
+                        
+                        if existing_customer:
+                            # อัปเดตข้อมูลที่มีอยู่
+                            cursor.execute('UPDATE customers SET first_name=%s, last_name=%s, email=%s WHERE user_id=%s', 
+                                         (first_name, last_name, email, user_id))
+                        else:
+                            # เพิ่มข้อมูลใหม่
+                            cursor.execute('INSERT INTO customers (user_id, first_name, last_name, email) VALUES (%s, %s, %s, %s)', 
+                                         (user_id, first_name, last_name, email))
+                    
+                    get_db().commit()
+                    flash('อัปเดตผู้ใช้สำเร็จ')
+                    return redirect(url_for('admin.user_list'))
+                except Exception as e:
+                    print(f"Error updating user: {e}")
+                    error = 'เกิดข้อผิดพลาดในการอัปเดตผู้ใช้'
     
     return render_template('admin/user_form.html', user=user, error=error)
 

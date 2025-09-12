@@ -43,9 +43,9 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-green-800 mb-1">โครงสร้าง</label>
-                    <select id="constructionSelect" name="construction" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                        <option value="">ไม่ระบุ</option>
+                    <label class="block text-sm font-medium text-green-800 mb-1">โครงสร้าง <span class="text-red-500">*</span></label>
+                    <select id="constructionSelect" name="construction" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="">เลือกโครงสร้าง</option>
                         <option value="R" {% if (tire and tire.construction == 'R') or (form_data and form_data.construction == 'R') %}selected{% endif %}>R</option>
                         <option value="D" {% if (tire and tire.construction == 'D') or (form_data and form_data.construction == 'D') %}selected{% endif %}>D</option>
                         <option value="B" {% if (tire and tire.construction == 'B') or (form_data and form_data.construction == 'B') %}selected{% endif %}>B</option>

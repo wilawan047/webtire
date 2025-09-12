@@ -483,6 +483,10 @@ def tires_by_brand(brand):
         tires = cursor.fetchall()
         print(f"Found {len(tires)} tires for {brand_name}")
         
+        # แปลงข้อมูลให้เป็น JSON serializable
+        from utils import make_json_serializable
+        serializable_tires = make_json_serializable(tires)
+        
         cursor.close()
         
         # เลือก template ตามแบรนด์
@@ -495,7 +499,7 @@ def tires_by_brand(brand):
         else:
             template_name = 'customer/tires.html'
         
-        return render_customer_template(template_name, tires=tires, brand=brand_name)
+        return render_customer_template(template_name, tires=serializable_tires, brand=brand_name)
         
     except Exception as e:
         print(f"Error loading {brand} tires: {e}")

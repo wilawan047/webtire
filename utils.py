@@ -150,3 +150,20 @@ def get_upload_folder_path(upload_folder_name):
         print(f"❌ Error getting upload folder: {e}")
         return None
 
+def make_json_serializable(data):
+    """แปลงข้อมูลให้เป็น JSON serializable"""
+    if data is None:
+        return None
+    elif isinstance(data, (str, int, float, bool)):
+        return data
+    elif isinstance(data, (list, tuple)):
+        return [make_json_serializable(item) for item in data]
+    elif isinstance(data, dict):
+        return {key: make_json_serializable(value) for key, value in data.items()}
+    elif hasattr(data, '__dict__'):
+        # สำหรับ object ที่มี attributes
+        return str(data)
+    else:
+        # สำหรับ object อื่นๆ เช่น Decimal, datetime, etc.
+        return str(data)
+

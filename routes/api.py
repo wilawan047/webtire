@@ -253,9 +253,13 @@ def api_tires():
         cursor.execute(base_query, params)
         tires = cursor.fetchall()
         
+        # แปลงข้อมูลให้เป็น JSON serializable
+        from utils import make_json_serializable
+        serializable_tires = make_json_serializable(tires)
+        
         return jsonify({
             'success': True,
-            'data': tires,
+            'data': serializable_tires,
             'pagination': {
                 'page': page,
                 'per_page': per_page,
