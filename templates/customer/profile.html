@@ -226,126 +226,124 @@
             
             reader.readAsDataURL(input.files[0]);
             
-                                // ดึง CSRF token ใหม่ก่อนส่ง
-                    fetch('/get-csrf-token')
-                        .then(response => response.json())
-                        .then(tokenData => {
-                            // อัปเดต CSRF token
-                            document.getElementById('avatar-csrf-token').value = tokenData.csrf_token;
-                            
-                            // ส่งฟอร์มอัปโหลดรูปอัตโนมัติ
-                            const avatarForm = document.getElementById('avatar-upload-form');
-                            if (avatarForm) {
-                                // สร้าง FormData และส่งด้วย fetch เพื่อไม่ให้หน้าโหลดใหม่
-                                const formData = new FormData();
-                                
-                                // เพิ่มไฟล์รูปภาพ
-                                const fileInput = document.getElementById('avatar-input');
-                                if (fileInput.files[0]) {
-                                    formData.append('avatar', fileInput.files[0]);
-                                }
-                                
-                                // ใช้ CSRF token ใหม่
-                                formData.append('csrf_token', tokenData.csrf_token);
-                                
-                                return fetch('/update-avatar', {
-                                    method: 'POST',
-                                    body: formData,
-                                    headers: {
-                                        'X-Requested-With': 'XMLHttpRequest'
-                                    }
-                                });
-                            }
-                        })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    // แสดงข้อความสำเร็จ
-                                    const messageBox = document.getElementById('message-box');
-                                    if (messageBox) {
-                                        messageBox.textContent = 'อัปเดตรูปโปรไฟล์สำเร็จ';
-                                        messageBox.className = 'p-3 my-2 rounded-lg bg-green-100 text-green-700';
-                                        messageBox.classList.remove('hidden');
-                                        
-                                        // ซ่อนข้อความหลังจาก 3 วินาที
-                                        setTimeout(() => {
-                                            messageBox.classList.add('hidden');
-                                        }, 3000);
-                                    }
-                                    
-                                        // อัปเดตรูปภาพโดยไม่ต้อง reload หน้า
-                                    setTimeout(() => {
-                                        // ใช้ filename ที่ส่งกลับมาจาก server
-                                        const newFilename = data.filename || '{{ user.avatar_filename if user.avatar_filename else "" }}';
-                                        const timestamp = new Date().getTime();
-                                        
-                                        // อัปเดต src ของรูปภาพด้วย cache busting
-                                        const avatarImg = document.querySelector('#profile-avatar');
-                                        if (avatarImg && newFilename) {
-                                            avatarImg.src = `/static/uploads/profile/${newFilename}?v=${timestamp}`;
-                                        }
-                                        
-                                        // อัปเดตรูปภาพใน header ด้วย
-                                        const headerAvatar = document.querySelector('#header-avatar');
-                                        if (headerAvatar && newFilename) {
-                                            headerAvatar.src = `/static/uploads/profile/${newFilename}?v=${timestamp}`;
-                                        }
-                                        
-                                        // อัปเดต session ในหน้าโปรไฟล์ (สำหรับการแสดงผลทันที)
-                                        if (newFilename) {
-                                            // สร้างรูปภาพใหม่ในหน้าโปรไฟล์
-                                            const avatarContainer = document.querySelector('.flex.flex-col.items-center.space-y-4');
-                                            const existingImg = avatarContainer.querySelector('img');
-                                            const existingDiv = avatarContainer.querySelector('div.w-32.h-32.rounded-full.bg-green-200');
-                                            
-                                            // ลบรูปเก่า
-                                            if (existingImg) {
-                                                existingImg.remove();
-                                            }
-                                            if (existingDiv) {
-                                                existingDiv.remove();
-                                            }
-                                            
-                                            // สร้างรูปใหม่
-                                            const newImg = document.createElement('img');
-                                            newImg.id = 'profile-avatar';
-                                            newImg.src = `/static/uploads/profile/${newFilename}?v=${timestamp}`;
-                                            newImg.alt = 'Profile Avatar';
-                                            newImg.className = 'w-32 h-32 rounded-full object-cover border-4 border-green-200 shadow-lg';
-                                            newImg.onerror = function() {
-                                                this.style.display = 'none';
-                                                this.nextElementSibling.style.display = 'flex';
-                                            };
-                                            
-                                            // เพิ่มรูปใหม่
-                                            avatarContainer.insertBefore(newImg, avatarContainer.firstChild);
-                                        }
-                                    }, 1000);
-                                } else {
-                                    throw new Error(data.message || 'Upload failed');
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Upload error:', error);
-                                const messageBox = document.getElementById('message-box');
-                                if (messageBox) {
-                                    // ตรวจสอบว่าเป็น CSRF error หรือไม่
-                                    if (error.message && error.message.includes('CSRF')) {
-                                        messageBox.textContent = 'กรุณาโหลดหน้าใหม่แล้วลองอีกครั้ง (CSRF token หมดอายุ)';
-                                    } else {
-                                        messageBox.textContent = 'เกิดข้อผิดพลาดในการอัปโหลดรูป: ' + error.message;
-                                    }
-                                    messageBox.className = 'p-3 my-2 rounded-lg bg-red-100 text-red-700';
-                                    messageBox.classList.remove('hidden');
-                                    
-                                    // ซ่อนข้อความหลังจาก 5 วินาที
-                                    setTimeout(() => {
-                                        messageBox.classList.add('hidden');
-                                    }, 5000);
-                                }
-                            });
+            // ดึง CSRF token ใหม่ก่อนส่ง
+            fetch('/get-csrf-token')
+                .then(response => response.json())
+                .then(tokenData => {
+                    // อัปเดต CSRF token
+                    document.getElementById('avatar-csrf-token').value = tokenData.csrf_token;
+                    
+                    // ส่งฟอร์มอัปโหลดรูปอัตโนมัติ
+                    const avatarForm = document.getElementById('avatar-upload-form');
+                    if (avatarForm) {
+                        // สร้าง FormData และส่งด้วย fetch เพื่อไม่ให้หน้าโหลดใหม่
+                        const formData = new FormData();
+                        
+                        // เพิ่มไฟล์รูปภาพ
+                        const fileInput = document.getElementById('avatar-input');
+                        if (fileInput.files[0]) {
+                            formData.append('avatar', fileInput.files[0]);
                         }
-            }, 1000);
+                        
+                        // ใช้ CSRF token ใหม่
+                        formData.append('csrf_token', tokenData.csrf_token);
+                        
+                        return fetch('/update-avatar', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // แสดงข้อความสำเร็จ
+                        const messageBox = document.getElementById('message-box');
+                        if (messageBox) {
+                            messageBox.textContent = 'อัปเดตรูปโปรไฟล์สำเร็จ';
+                            messageBox.className = 'p-3 my-2 rounded-lg bg-green-100 text-green-700';
+                            messageBox.classList.remove('hidden');
+                            
+                            // ซ่อนข้อความหลังจาก 3 วินาที
+                            setTimeout(() => {
+                                messageBox.classList.add('hidden');
+                            }, 3000);
+                        }
+                        
+                        // อัปเดตรูปภาพโดยไม่ต้อง reload หน้า
+                        setTimeout(() => {
+                            // ใช้ filename ที่ส่งกลับมาจาก server
+                            const newFilename = data.filename || '{{ user.avatar_filename if user.avatar_filename else "" }}';
+                            const timestamp = new Date().getTime();
+                            
+                            // อัปเดต src ของรูปภาพด้วย cache busting
+                            const avatarImg = document.querySelector('#profile-avatar');
+                            if (avatarImg && newFilename) {
+                                avatarImg.src = `/static/uploads/profile/${newFilename}?v=${timestamp}`;
+                            }
+                            
+                            // อัปเดตรูปภาพใน header ด้วย
+                            const headerAvatar = document.querySelector('#header-avatar');
+                            if (headerAvatar && newFilename) {
+                                headerAvatar.src = `/static/uploads/profile/${newFilename}?v=${timestamp}`;
+                            }
+                            
+                            // อัปเดต session ในหน้าโปรไฟล์ (สำหรับการแสดงผลทันที)
+                            if (newFilename) {
+                                // สร้างรูปภาพใหม่ในหน้าโปรไฟล์
+                                const avatarContainer = document.querySelector('.flex.flex-col.items-center.space-y-4');
+                                const existingImg = avatarContainer.querySelector('img');
+                                const existingDiv = avatarContainer.querySelector('div.w-32.h-32.rounded-full.bg-green-200');
+                                
+                                // ลบรูปเก่า
+                                if (existingImg) {
+                                    existingImg.remove();
+                                }
+                                if (existingDiv) {
+                                    existingDiv.remove();
+                                }
+                                
+                                // สร้างรูปใหม่
+                                const newImg = document.createElement('img');
+                                newImg.id = 'profile-avatar';
+                                newImg.src = `/static/uploads/profile/${newFilename}?v=${timestamp}`;
+                                newImg.alt = 'Profile Avatar';
+                                newImg.className = 'w-32 h-32 rounded-full object-cover border-4 border-green-200 shadow-lg';
+                                newImg.onerror = function() {
+                                    this.style.display = 'none';
+                                    this.nextElementSibling.style.display = 'flex';
+                                };
+                                
+                                // เพิ่มรูปใหม่
+                                avatarContainer.insertBefore(newImg, avatarContainer.firstChild);
+                            }
+                        }, 1000);
+                    } else {
+                        throw new Error(data.message || 'Upload failed');
+                    }
+                })
+                .catch(error => {
+                    console.error('Upload error:', error);
+                    const messageBox = document.getElementById('message-box');
+                    if (messageBox) {
+                        // ตรวจสอบว่าเป็น CSRF error หรือไม่
+                        if (error.message && error.message.includes('CSRF')) {
+                            messageBox.textContent = 'กรุณาโหลดหน้าใหม่แล้วลองอีกครั้ง (CSRF token หมดอายุ)';
+                        } else {
+                            messageBox.textContent = 'เกิดข้อผิดพลาดในการอัปโหลดรูป: ' + error.message;
+                        }
+                        messageBox.className = 'p-3 my-2 rounded-lg bg-red-100 text-red-700';
+                        messageBox.classList.remove('hidden');
+                        
+                        // ซ่อนข้อความหลังจาก 5 วินาที
+                        setTimeout(() => {
+                            messageBox.classList.add('hidden');
+                        }, 5000);
+                    }
+                });
         }
     }
 
