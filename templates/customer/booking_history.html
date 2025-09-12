@@ -3,78 +3,154 @@
 {% block title %}ประวัติการจอง - {{ super() }}{% endblock %}
 
 {% block content %}
+<h1 class="text-2xl font-bold mb-4 text-green-700">ประวัติการจอง</h1>
+<nav class="text-green-800  text-base mb-2 flex items-center flex-wrap" aria-label="Breadcrumb">
+    <a href="/" class="font-bold text-[#0c5e28] hover:underline">หน้าแรก</a>
+    <span class="mx-2">›</span>
+    <span class="text-black text-sm text-green-800  max-w-xs truncate">ประวัติการจอง</span>
+  </nav>
+
+
 <div class="container mx-auto px-4 py-8">
-    <!-- Page Header -->
-    <div>
-        <h1 class="text-2xl font-bold mb-4 text-green-800">ประวัติการจอง</h1>
-    </div>
 
     <!-- Bookings List -->
-    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-xl border border-green-100/50 overflow-hidden">
         {% if bookings %}
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-100">
+                <table class="min-w-full divide-y divide-green-100/30">
+                    <thead class="bg-gradient-to-r from-green-50 to-yellow-50/30">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-green-800 uppercase tracking-wider">วันที่จอง</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-green-800 uppercase tracking-wider">วันที่เข้าใช้บริการ</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-green-800 uppercase tracking-wider">เวลา</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-green-800 uppercase tracking-wider">รถ</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-green-800 uppercase tracking-wider">สถานะ</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-green-800 uppercase tracking-wider"></th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-green-800 uppercase tracking-wider">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                    วันที่จอง
+                                </div>
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-green-800 uppercase tracking-wider">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                    </svg>
+                                    วันที่เข้าใช้บริการ
+                                </div>
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-green-800 uppercase tracking-wider">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    เวลา
+                                </div>
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-green-800 uppercase tracking-wider">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                    </svg>
+                                    รถ
+                                </div>
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-green-800 uppercase tracking-wider">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    สถานะ
+                                </div>
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-green-800 uppercase tracking-wider">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    </svg>
+                                    การดำเนินการ
+                                </div>
+                            </th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="bg-white divide-y divide-green-100/30">
                         {% for booking in bookings %}
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ booking.booking_date.strftime('%d/%m/%Y') if booking.booking_date else '-' }}
+                        <tr class="hover:bg-gradient-to-r hover:from-green-50/50 hover:to-yellow-50/30 transition-all duration-200 group">
+                            <td class="px-6 py-5 whitespace-nowrap">
+                                <div class="text-sm font-semibold text-gray-900">{{ booking.booking_date.strftime('%d/%m/%Y') if booking.booking_date else '-' }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ booking.service_date.strftime('%d/%m/%Y') if booking.service_date else '-' }}
+                            <td class="px-6 py-5 whitespace-nowrap">
+                                <div class="text-sm font-semibold text-gray-900">{{ booking.service_date.strftime('%d/%m/%Y') if booking.service_date else '-' }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ booking.service_time if booking.service_time else '-' }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <div>
-                                    <div class="font-medium">{{ booking.license_plate or '-' }}</div>
-                                    <div class="text-gray-500">{{ booking.brand_name or '' }} {{ booking.model_name or '' }}</div>
+                            <td class="px-6 py-5 whitespace-nowrap">
+                                <div class="text-sm font-semibold text-gray-900">
+                                    {% if booking.service_time %}
+                                        {% if booking.service_time is string %}
+                                            {% set time_parts = booking.service_time.split(':') %}
+                                            {% set minutes = time_parts[1] if time_parts[1]|length == 2 else '0' + time_parts[1] %}
+                                            {{ time_parts[0] + '.' + minutes + ' น.' }}
+                                        {% else %}
+                                            {% set hours = (booking.service_time.total_seconds() // 3600)|int %}
+                                            {% set minutes = ((booking.service_time.total_seconds() % 3600) // 60)|int %}
+                                            {% set minutes_str = minutes|string %}
+                                            {% set minutes_formatted = minutes_str if minutes_str|length == 2 else '0' + minutes_str %}
+                                            {{ hours }}.{{ minutes_formatted }} น.
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-5 whitespace-nowrap">
+                                <div>
+                                    <div class="text-sm font-semibold text-gray-900">{{ booking.license_plate or '-' }}</div>
+                                    <div class="text-xs text-gray-500">{{ booking.brand_name or '' }} {{ booking.model_name or '' }}</div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-5 whitespace-nowrap">
                                 {% if booking.status == 'รอดำเนินการ' %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border border-yellow-300 shadow-sm animate-pulse">
+                                        <div class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
                                         รอดำเนินการ
                                     </span>
                                 {% elif booking.status == 'สำเร็จ' %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300 shadow-sm">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
                                         สำเร็จ
                                     </span>
                                 {% elif booking.status == 'ยกเลิก' %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-gradient-to-r from-red-100 to-red-200 text-red-800 border border-red-300 shadow-sm">
+                                        <div class="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
                                         ยกเลิก
                                     </span>
                                 {% else %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border border-gray-300 shadow-sm">
+                                        <div class="w-2 h-2 bg-gray-500 rounded-full mr-2"></div>
                                         {{ booking.status or 'ไม่ระบุ' }}
                                     </span>
                                 {% endif %}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
-                                <!-- ปุ่มข้อมูลการจอง -->
-                                <button data-booking-id="{{ booking.booking_id }}" 
-                                class="view-booking-btn inline-flex justify-center items-center px-3 py-1.5 border border-blue-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 w-[120px]">
-                                    ข้อมูลการจอง
-                                </button>
-                                
-                                <!-- ปุ่มยกเลิกการจอง (แสดงเฉพาะเมื่อสถานะเป็น "รอดำเนินการ") -->
-                                {% if booking.status == 'รอดำเนินการ' %}
+                            <td class="px-6 py-5 whitespace-nowrap text-sm font-medium">
+                                <div class="flex gap-3">
+                                    <!-- ปุ่มข้อมูลการจอง -->
                                     <button data-booking-id="{{ booking.booking_id }}" 
-                                    class="cancel-booking-btn inline-flex justify-center items-center px-3 py-1.5 border border-red-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 w-[120px]">
-                                    ยกเลิก
+                                    class="view-booking-btn inline-flex justify-center items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 w-[120px]">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                        ข้อมูลการจอง
                                     </button>
-                                {% endif %}
+                                    
+                                    <!-- ปุ่มยกเลิกการจอง (แสดงเฉพาะเมื่อสถานะเป็น "รอดำเนินการ") -->
+                                    {% if booking.status == 'รอดำเนินการ' %}
+                                        <button data-booking-id="{{ booking.booking_id }}" 
+                                        class="cancel-booking-btn inline-flex justify-center items-center px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 w-[120px]">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                            ยกเลิก
+                                        </button>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}

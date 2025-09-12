@@ -13,16 +13,16 @@
   {% endif %}
 {% endwith %}
 <h1 class="text-2xl font-bold mb-4" style="color: #0c5e28;">แนะนำยาง</h1>
-<nav class="text-gray-500 text-base mb-2 flex items-center" aria-label="Breadcrumb">
+<nav class="text-green-800 text-base mb-2 flex items-center" aria-label="Breadcrumb">
     <a href="/" class="font-bold text-[#0c5e28] hover:underline">หน้าแรก</a>
     <span class="mx-2">›</span>
-    <span class="text-black">แนะนำยาง</span>
+    <span class="text-green-800 text-black">แนะนำยาง</span>
 </nav>
 
 <form method="post" class="bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto space-y-6">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div>
-    <label class="block font-semibold mb-2">ลักษณะการใช้งาน<span class="text-red-500">*</span></label>
+    <label class="block text-green-800 font-semibold mb-2">ลักษณะการใช้งาน<span class="text-red-500">*</span></label>
     <select name="usage_type_id" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-400 focus:border-transparent" required>
       <option value="">ลักษณะการใช้งาน</option>
       {% for usage in usage_types %}
@@ -31,13 +31,13 @@
     </select>
   </div>
   <div>
-    <label class="block font-semibold mb-2">ยี่ห้อรถ<span class="text-red-500">*</span></label>
+    <label class="block text-green-800 font-semibold mb-2">ยี่ห้อรถ<span class="text-red-500">*</span></label>
     <select name="car_brand_id" id="brandSelect" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-400 focus:border-transparent" required>
       <option value="">เลือกยี่ห้อ</option>
     </select>
   </div>
   <div>
-    <label class="block font-semibold mb-2">รุ่นรถ<span class="text-red-500">*</span></label>
+    <label class="block text-green-800 font-semibold mb-2">รุ่นรถ<span class="text-red-500">*</span></label>
     <select name="car_model_id" id="modelSelect" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-400 focus:border-transparent" required>
       <option value="">เลือกรุ่นรถ</option>
     </select>
@@ -45,7 +45,7 @@
    
    <div class="flex justify-center mt-6">
      <button type="submit" 
-       class="flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-700 
+       class="flex items-center gap-2 bg-green-600 
               text-white px-6 py-3 rounded-2xl font-medium text-lg 
               shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300">
        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -126,7 +126,3 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 {% endblock %} 
-
-
-
-

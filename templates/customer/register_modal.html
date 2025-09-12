@@ -45,31 +45,7 @@
               <div id="register_email-error" class="text-red-600 text-xs mt-1 hidden"></div>
             </div>
             
-            <div>
-              <label class="block text-sm font-medium text-green-800 mb-1">เพศ</label>
-              <div class="flex gap-4">
-                <label class="inline-flex items-center">
-                  <input type="radio" name="gender" value="ชาย" class="mr-2" {% if form_data and form_data.gender == 'ชาย' %}checked{% endif %}>
-                  <span class="text-sm">ชาย</span>
-                </label>
-                <label class="inline-flex items-center">
-                  <input type="radio" name="gender" value="หญิง" class="mr-2" {% if form_data and form_data.gender == 'หญิง' %}checked{% endif %}>
-                  <span class="text-sm">หญิง</span>
-                </label>
-                <label class="inline-flex items-center">
-                  <input type="radio" name="gender" value="" class="mr-2" {% if form_data and form_data.gender == '' %}checked{% endif %}>
-                  <span class="text-sm">ไม่ระบุ</span>
-                </label>
-              </div>
-            </div>
             
-            <div>
-              <label for="register_birthdate" class="block text-sm font-medium text-green-800 mb-1">วันเกิด</label>
-              <input id="register_birthdate" name="birthdate" type="date" 
-                     class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#0c5e28] focus:border-[#0c5e28] focus:z-10 sm:text-sm"
-                     value="{{ form_data.birthdate if form_data else '' }}">
-              <div id="register_birthdate-error" class="text-red-600 text-xs mt-1 hidden"></div>
-            </div>
             
             <div>
               <label for="register_password" class="block text-sm font-medium text-green-800 mb-1">รหัสผ่าน <span class="text-red-700">*</span></label>
@@ -165,7 +141,6 @@ document.addEventListener('DOMContentLoaded', function() {
         first_name: 'register_first_name',
         last_name: 'register_last_name',
         phone: 'register_phone',
-        birthdate: 'register_birthdate'
     };
     
     // Function to show error message
@@ -200,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to clear all errors
     function clearAllErrors() {
-        const fields = ['username', 'email', 'password', 'confirm_password', 'first_name', 'last_name', 'phone', 'birthdate'];
+        const fields = ['username', 'email', 'password', 'confirm_password', 'first_name', 'last_name', 'phone'];
         fields.forEach(field => clearError(field));
     }
     
@@ -245,16 +220,11 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             credentials: 'same-origin'
         })
-            .then(res => {
-                console.log('Response status:', res.status);
-                return res.json();
-            })
+            .then(res => res.json())
             .then(data => {
-                console.log('Response data:', data);
                 hideLoading();
                 if (data.success) {
                     // แสดง custom success modal
-                    console.log('Registration successful, showing success modal');
                     showSuccessModal();
                     registerForm.reset();
                 } else if (data && data.errors) {
@@ -262,13 +232,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         showError(field, data.errors[field]);
                     });
                 } else {
-                    alert('เกิดข้อผิดพลาดในการลงทะเบียน');
+                    // แสดง error modal แทน alert
+                    showErrorModal('เกิดข้อผิดพลาดในการลงทะเบียน');
                 }
             })
             .catch(err => {
                 hideLoading();
                 console.error(err);
-                alert('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
+                // แสดง error modal แทน alert
+                showErrorModal('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
             });
     }
 
@@ -277,37 +249,33 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to show success modal
     function showSuccessModal() {
-        console.log('showSuccessModal function called');
-        
-        // ตรวจสอบว่า DOM พร้อมหรือไม่
-        if (document.readyState !== 'complete') {
-            console.log('DOM not ready, waiting...');
-            setTimeout(showSuccessModal, 100);
-            return;
-        }
-        
-        // สร้าง success modal
+        // สร้าง success modal ที่สวยงาม
         const successModal = document.createElement('div');
         successModal.id = 'successModal';
-        successModal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50';
+        successModal.className = 'fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center';
         successModal.innerHTML = `
-            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                <div class="mt-3 text-center">
-                    <!-- Success Icon -->
-                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                        <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
+                <div class="p-8 text-center">
+                    <!-- Success Icon with Animation -->
+                    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-r from-green-400 to-green-600 mb-6 animate-pulse">
+                        <svg class="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
                         </svg>
                     </div>
                     
                     <!-- Success Message -->
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">ลงทะเบียนสำเร็จ</h3>
-                    <p class="text-sm text-gray-500 mb-6">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-3">ลงทะเบียนสำเร็จ!</h3>
+                    <p class="text-gray-600 mb-8 leading-relaxed">กรุณาเข้าสู่ระบบเพื่อใช้งานบริการของเรา</p>
                     
-                    <!-- OK Button -->
+                    <!-- OK Button with Gradient -->
                     <button onclick="closeSuccessModal()" 
-                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm transition-colors duration-200">
-                        ตกลง
+                            class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-green-300">
+                        <span class="flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            ตกลง
+                        </span>
                     </button>
                 </div>
             </div>
@@ -316,15 +284,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // เพิ่ม modal ลงใน body
         document.body.appendChild(successModal);
         document.body.style.overflow = 'hidden';
-        console.log('Success modal added to DOM');
         
-        // ตรวจสอบว่า modal ถูกสร้างขึ้นจริงหรือไม่
-        const checkModal = document.getElementById('successModal');
-        if (checkModal) {
-            console.log('Success modal confirmed in DOM');
-        } else {
-            console.log('ERROR: Success modal not found in DOM');
-        }
+        // เพิ่ม animation effect
+        setTimeout(() => {
+            const modalContent = successModal.querySelector('.relative');
+            modalContent.style.transform = 'scale(1)';
+        }, 10);
     }
     
     // Function to close success modal
@@ -348,6 +313,54 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Fallback: redirect to home with login hash
                 window.location.href = '/#login';
             }
+        }
+    };
+    
+    // Function to show error modal
+    function showErrorModal(message) {
+        // สร้าง error modal
+        const errorModal = document.createElement('div');
+        errorModal.id = 'errorModal';
+        errorModal.className = 'fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center';
+        errorModal.innerHTML = `
+            <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
+                <div class="p-8 text-center">
+                    <!-- Error Icon -->
+                    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-r from-red-400 to-red-600 mb-6">
+                        <svg class="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </div>
+                    
+                    <!-- Error Message -->
+                    <h3 class="text-2xl font-bold text-gray-900 mb-3">เกิดข้อผิดพลาด</h3>
+                    <p class="text-gray-600 mb-8 leading-relaxed">${message}</p>
+                    
+                    <!-- OK Button -->
+                    <button onclick="closeErrorModal()" 
+                            class="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-red-300">
+                        <span class="flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            ตกลง
+                        </span>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // เพิ่ม modal ลงใน body
+        document.body.appendChild(errorModal);
+        document.body.style.overflow = 'hidden';
+    }
+    
+    // Function to close error modal
+    window.closeErrorModal = function() {
+        const errorModal = document.getElementById('errorModal');
+        if (errorModal) {
+            errorModal.remove();
+            document.body.style.overflow = 'auto';
         }
     };
 });
