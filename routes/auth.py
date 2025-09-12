@@ -6,6 +6,9 @@ import secrets
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import json
+import urllib.request
+import urllib.error
 from werkzeug.security import generate_password_hash
 from flask_wtf.csrf import generate_csrf
 
@@ -287,6 +290,12 @@ def register():
 def forgot_password():
     """ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมล"""
     try:
+        from config import Config
+        
+        # ตรวจสอบการตั้งค่าอีเมลก่อนดำเนินการ
+        if not Config.MAIL_USERNAME or not Config.MAIL_PASSWORD:
+            return jsonify({'success': False, 'message': 'ระบบส่งอีเมลยังไม่ได้ตั้งค่า กรุณาติดต่อผู้ดูแลระบบ'}), 500
+        
         email = request.form.get('email', '').strip()
         
         if not email:
@@ -416,14 +425,18 @@ def reset_password(token):
 def send_reset_email(email, first_name, token):
     """ส่งอีเมลรีเซ็ตรหัสผ่าน"""
     try:
-        # ตั้งค่าอีเมล (ใช้ Gmail SMTP)
-        smtp_server = "smtp.gmail.com"
-        smtp_port = 587
-        sender_email = "computersci65@gmail.com"  # อีเมลจาก .env
-        sender_password = "xmkw jdpk aaof fsrs"  # App Password จาก .env
+        from config import Config
         
-        # สร้างลิงก์รีเซ็ต
-        reset_link = f"http://localhost:5000/reset-password/{token}"
+        # ตรวจสอบการตั้งค่าอีเมล
+        if not Config.MAIL_USERNAME or not Config.MAIL_PASSWORD:
+            raise Exception("Email configuration missing. Please set MAIL_USERNAME and MAIL_PASSWORD environment variables.")
+        
+        # ตั้งค่าอีเมลจาก config
+        sender_email = Config.MAIL_USERNAME
+        sendgrid_api_key = Config.SENDGRID_API_KEY
+        
+        # สร้างลิงก์รีเซ็ตจาก APP_URL
+        reset_link = f"{Config.APP_URL}/reset-password/{token}"
         
         # สร้างเนื้อหาอีเมล
         subject = "รีเซ็ตรหัสผ่าน - ไทร์พลัส บุรีรัมย์แสงเจริญการยาง"
@@ -466,24 +479,43 @@ def send_reset_email(email, first_name, token):
         </html>
         """
         
-        # สร้างอีเมล
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = subject
-        msg['From'] = sender_email
-        msg['To'] = email
-        
-        # เพิ่มเนื้อหา HTML
-        html_part = MIMEText(html_content, 'html', 'utf-8')
-        msg.attach(html_part)
-        
-        # ส่งอีเมล
-        server = smtplib.SMTP(smtp_server, smtp_port)
-        server.starttls()
-        server.login(sender_email, sender_password)
-        server.send_message(msg)
-        server.quit()
-        
-        print(f"Reset email sent to {email}")
+        # ใช้ SendGrid API
+        if sendgrid_api_key and sendgrid_api_key.strip():
+            try:
+                print("📮 Sending email via SendGrid API")
+                req = urllib.request.Request(
+                    url="https://api.sendgrid.com/v3/mail/send",
+                    method="POST",
+                    data=json.dumps({
+                        "personalizations": [{
+                            "to": [{"email": email}],
+                            "subject": subject
+                        }],
+                        "from": {"email": sender_email, "name": "ไทร์พลัส บุรีรัมย์"},
+                        "content": [{
+                            "type": "text/html",
+                            "value": html_content
+                        }]
+                    }).encode("utf-8"),
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {sendgrid_api_key}"
+                    }
+                )
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    status = resp.getcode()
+                    body = resp.read().decode("utf-8")
+                    print(f"✅ SendGrid response {status}: {body}")
+                    return 200 <= status < 300
+            except urllib.error.HTTPError as he:
+                error_body = he.read().decode('utf-8', 'ignore')
+                print(f"❌ SendGrid HTTPError {he.code}: {error_body}")
+                raise Exception(f"SendGrid error: {error_body}")
+            except Exception as e_api:
+                print(f"❌ SendGrid send failed: {e_api}")
+                raise e_api
+        else:
+            raise Exception("SendGrid API key not configured")
         
     except Exception as e:
         print(f"Error sending reset email: {e}")
