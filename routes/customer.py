@@ -1585,7 +1585,7 @@ def update_avatar():
                 print(f"Customer ID: {customer_id}")
                 
                 # อัปเดต session ให้ตรงกับฐานข้อมูล
-                session['customer_avatar'] = f"/static/uploads/profile/{filename}"
+                session['customer_avatar'] = filename  # เก็บแค่ filename
                 session.permanent = True  # ทำให้ session อยู่ถาวร
                 
                 print(f"Updated session with avatar: {filename}")
