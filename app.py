@@ -95,6 +95,7 @@ try:
     csrf.exempt(api.view_functions['page_views_summary'])
     csrf.exempt(api.view_functions['get_tire_models'])
     csrf.exempt(api.view_functions['get_vehicle_models'])
+    csrf.exempt(api.view_functions['cancel_booking'])
     csrf.exempt(customer.view_functions['api_car_brands'])
     csrf.exempt(customer.view_functions['api_car_models'])
     csrf.exempt(customer.view_functions['api_car_years'])

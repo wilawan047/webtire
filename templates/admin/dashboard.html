@@ -13,6 +13,19 @@
       </svg>
     </div>
     <h1 class="text-2xl font-bold text-green-900">แดชบอร์ด</h1>
+    
+    <!-- การแจ้งเตือนการจองใหม่ -->
+    <div id="newBookingAlert" class="hidden bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-pulse">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+      </svg>
+      <span class="font-semibold">มีการจองใหม่!</span>
+      <button onclick="hideNewBookingAlert()" class="ml-2 text-white hover:text-gray-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
   </div>
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <!-- Card: ลูกค้าทั้งหมด -->
@@ -249,5 +262,43 @@
         console.error('Error loading chart data:', error);
       });
   });
+
+  // ตรวจสอบการจองใหม่ทุก 30 วินาที
+  let lastBookingCount = parseInt('{{ total_bookings }}');
+  
+  function checkForNewBookings() {
+    fetch('/api/bookings?per_page=1')
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.total > lastBookingCount) {
+          showNewBookingAlert();
+          lastBookingCount = data.total;
+        }
+      })
+      .catch(error => {
+        console.error('Error checking for new bookings:', error);
+      });
+  }
+  
+  function showNewBookingAlert() {
+    const alert = document.getElementById('newBookingAlert');
+    if (alert) {
+      alert.classList.remove('hidden');
+      // ซ่อนอัตโนมัติหลังจาก 10 วินาที
+      setTimeout(() => {
+        hideNewBookingAlert();
+      }, 10000);
+    }
+  }
+  
+  function hideNewBookingAlert() {
+    const alert = document.getElementById('newBookingAlert');
+    if (alert) {
+      alert.classList.add('hidden');
+    }
+  }
+  
+  // เริ่มตรวจสอบการจองใหม่
+  setInterval(checkForNewBookings, 30000); // ทุก 30 วินาที
 </script>
 {% endblock %} 

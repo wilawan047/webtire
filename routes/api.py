@@ -981,3 +981,39 @@ def get_booking_customers():
             'success': False,
             'error': str(e)
         }), 500
+
+@api.route('/api/cancel-booking/<int:booking_id>', methods=['POST'])
+def cancel_booking(booking_id):
+    """ยกเลิกการจอง"""
+    try:
+        cursor = get_cursor()
+        
+        # ตรวจสอบว่าการจองมีอยู่และสถานะเป็น "รอดำเนินการ"
+        cursor.execute('''
+            SELECT booking_id, status, customer_id 
+            FROM bookings 
+            WHERE booking_id = %s
+        ''', (booking_id,))
+        
+        booking = cursor.fetchone()
+        
+        if not booking:
+            return jsonify({'success': False, 'message': 'ไม่พบการจองนี้'}), 404
+        
+        if booking['status'] != 'รอดำเนินการ':
+            return jsonify({'success': False, 'message': 'ไม่สามารถยกเลิกการจองที่สถานะนี้ได้'}), 400
+        
+        # อัปเดตสถานะเป็น "ยกเลิก"
+        cursor.execute('''
+            UPDATE bookings 
+            SET status = 'ยกเลิก' 
+            WHERE booking_id = %s
+        ''', (booking_id,))
+        
+        get_db().commit()
+        
+        return jsonify({'success': True, 'message': 'ยกเลิกการจองเรียบร้อยแล้ว'})
+        
+    except Exception as e:
+        print(f"Error canceling booking: {e}")
+        return jsonify({'success': False, 'message': 'เกิดข้อผิดพลาดในการยกเลิกการจอง'}), 500
