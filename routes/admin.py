@@ -1,13 +1,14 @@
+# Import libraries ที่จำเป็นสำหรับการทำงานของระบบ admin
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, g, current_app, send_file
-from flask_wtf.csrf import CSRFError
-from database import get_cursor, get_db
-from utils import allowed_file
-from decorators import login_required, admin_required
-import os
-from werkzeug.utils import secure_filename
-from datetime import datetime, timedelta
-import json
-import io
+from database import get_cursor, get_db  # ฟังก์ชันสำหรับเชื่อมต่อฐานข้อมูล
+from utils import allowed_file  # ฟังก์ชันตรวจสอบไฟล์ที่อนุญาต
+from decorators import login_required, admin_required  # decorators สำหรับตรวจสอบสิทธิ์
+import os  # สำหรับจัดการไฟล์และโฟลเดอร์
+from werkzeug.utils import secure_filename  # สำหรับสร้างชื่อไฟล์ที่ปลอดภัย
+from datetime import datetime, timedelta  # สำหรับจัดการวันที่และเวลา
+import json  # สำหรับจัดการข้อมูล JSON
+import io  # สำหรับจัดการข้อมูลในหน่วยความจำ
+# Libraries สำหรับสร้าง PDF reports
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.colors import black, white, HexColor
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
@@ -16,42 +17,46 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
+# สร้าง Blueprint สำหรับ admin module
 admin = Blueprint('admin', __name__, url_prefix='/admin')
-
-# CSRF Error Handler
-@admin.errorhandler(CSRFError)
-def handle_csrf_error(e):
-    flash('CSRF token หมดอายุ กรุณาลองใหม่อีกครั้ง', 'error')
-    return redirect(request.url)
 
 @admin.route('/tires')
 @admin_required
 def tire_list():
+    """หน้าแสดงรายการยางทั้งหมด พร้อมระบบค้นหา กรอง และเรียงลำดับ"""
     cursor = get_cursor()
-    search = request.args.get('search', '').strip()
-    filter_by = request.args.get('filter', 'brand')
-    page = int(request.args.get('page', 1))
-    per_page = 10
-    offset = (page - 1) * per_page
-    sort = request.args.get('sort', 'tire_id')
-    direction = request.args.get('direction', 'desc')
+    
+    # รับพารามิเตอร์จาก URL
+    search = request.args.get('search', '').strip()  # คำค้นหา
+    filter_by = request.args.get('filter', 'brand')  # ประเภทการกรอง
+    page = int(request.args.get('page', 1))  # หน้าปัจจุบัน
+    per_page = 10  # จำนวนรายการต่อหน้า
+    offset = (page - 1) * per_page  # คำนวณ offset สำหรับ pagination
+    sort = request.args.get('sort', 'tire_id')  # คอลัมน์ที่ใช้เรียงลำดับ
+    direction = request.args.get('direction', 'desc')  # ทิศทางการเรียงลำดับ
+    
+    # ตรวจสอบความถูกต้องของพารามิเตอร์การเรียงลำดับ
     valid_sorts = {'tire_id', 'brand_name', 'model_name', 'full_size', 'price_each', 'product_date'}
     if sort not in valid_sorts:
         sort = 'tire_id'
     if direction not in {'asc', 'desc'}:
         direction = 'desc'
+    
+    # กำหนดตัวแปรสำหรับ SQL query
     params = []
     where = ''
+    
+    # แผนที่การกรองข้อมูล
     filter_map = {
-        'brand': 'b.brand_name LIKE %s',
-        'model': 'm.model_name LIKE %s',
-        'width': 't.width = %s',
-        'aspect_ratio': 't.aspect_ratio = %s',
-        'rim_diameter': 't.rim_diameter = %s',
-        'full_size': 't.full_size LIKE %s',
-        'price_each': 't.price_each = %s',
+        'brand': 'b.brand_name LIKE %s',  # กรองตามยี่ห้อ
+        'model': 'm.model_name LIKE %s',  # กรองตามรุ่น
+        'width': 't.width = %s',  # กรองตามความกว้าง
+        'aspect_ratio': 't.aspect_ratio = %s',  # กรองตามอัตราส่วน
+        'rim_diameter': 't.rim_diameter = %s',  # กรองตามขนาดขอบล้อ
+        'full_size': 't.full_size LIKE %s',  # กรองตามขนาดเต็ม
+        'price_each': 't.price_each = %s',  # กรองตามราคา
     }
-    # --- Custom search and sort logic ---
+    # --- ระบบค้นหาแบบพิเศษ ---
     if search:
         # ใช้ search_term จาก request.args เพื่อให้ตรงกันทุกที่
         search_term = request.args.get('search', '')
@@ -222,6 +227,7 @@ def tire_list():
 @admin.route('/tires/add', methods=['GET', 'POST'])
 @admin_required
 def add_tire():
+    """หน้าเพิ่มข้อมูลยางใหม่"""
     cursor = get_cursor()
     if request.method == 'POST':
         try:
@@ -345,12 +351,11 @@ def add_tire():
             file = request.files.get('tire_image')
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
-                # ใช้ temp directory สำหรับ Railway
-                upload_folder = current_app.config['TIRE_UPLOAD_FOLDER']
+                # สร้างโฟลเดอร์ถ้ายังไม่มี
+                upload_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'tires')
                 os.makedirs(upload_folder, exist_ok=True)
                 # บันทึกไฟล์
-                file_path = os.path.join(upload_folder, filename)
-                file.save(file_path)
+                file.save(os.path.join(upload_folder, filename))
                 tire_image_url = filename
             
             query = """
@@ -415,6 +420,7 @@ def add_tire():
 @admin.route('/tires/edit/<int:tire_id>', methods=['GET', 'POST'])
 @admin_required
 def edit_tire(tire_id):
+    """หน้าแก้ไขข้อมูลยาง"""
     cursor = get_cursor()
     if request.method == 'POST':
         # --- ลบรูปภาพ ---
@@ -482,20 +488,31 @@ def edit_tire(tire_id):
             # จัดการไฟล์รูปภาพ
             tire_image_url = None
             file = request.files.get('tire_image')
+            print(f"Debug - File received: {file}")
+            print(f"Debug - File filename: {file.filename if file else 'None'}")
+            
             if file and file.filename and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
+                print(f"Debug - Secure filename: {filename}")
                 
-                # ใช้ temp directory สำหรับ Railway
-                upload_folder = current_app.config['TIRE_UPLOAD_FOLDER']
+                # สร้างโฟลเดอร์ถ้ายังไม่มี
+                upload_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'tires')
                 os.makedirs(upload_folder, exist_ok=True)
+                print(f"Debug - Upload folder: {upload_folder}")
                 
                 # บันทึกไฟล์
                 file_path = os.path.join(upload_folder, filename)
                 file.save(file_path)
+                print(f"Debug - File saved to: {file_path}")
                 
                 # ตรวจสอบว่าไฟล์ถูกบันทึกจริงหรือไม่
                 if os.path.exists(file_path):
                     tire_image_url = filename
+                    print(f"Debug - File successfully saved, tire_image_url: {tire_image_url}")
+                else:
+                    print(f"Debug - File was not saved successfully")
+            else:
+                print(f"Debug - File validation failed: file={file}, filename={file.filename if file else 'None'}, allowed={allowed_file(file.filename) if file and file.filename else 'False'}")
             
             # ประกอบ full_size
             full_size = ''
@@ -626,6 +643,7 @@ def edit_tire(tire_id):
 @admin.route('/tires/delete/<int:tire_id>', methods=['POST'])
 @admin_required
 def delete_tire(tire_id):
+    """ลบข้อมูลยาง"""
     cursor = get_cursor()
     query = "DELETE FROM tires WHERE tire_id=%s"
     cursor.execute(query, (tire_id,))
@@ -636,6 +654,7 @@ def delete_tire(tire_id):
 @admin.route('/customers')
 @admin_required
 def customer_list():
+    """หน้าแสดงรายการลูกค้าทั้งหมด"""
     cursor = get_cursor()
     search = request.args.get('search', '').strip()
     filter_by = request.args.get('filter', 'first_name')
@@ -856,6 +875,7 @@ def check_queue_detail():
 @admin.route('/bookings')
 @admin_required
 def booking_list():
+    """หน้าแสดงรายการการจองทั้งหมด"""
     cursor = get_cursor()
     search = request.args.get('search', '').strip()
     status_filter = request.args.get('status', '').strip()
@@ -1040,10 +1060,6 @@ def add_booking():
             # ดึงรายการจังหวัด
             provinces = ['กรุงเทพมหานคร', 'กระบี่', 'กาญจนบุรี', 'กาฬสินธุ์', 'กำแพงเพชร', 'ขอนแก่น', 'จันทบุรี', 'ฉะเชิงเทรา', 'ชลบุรี', 'ชัยนาท', 'ชัยภูมิ', 'ชุมพร', 'เชียงราย', 'เชียงใหม่', 'ตรัง', 'ตราด', 'ตาก', 'นครนายก', 'นครปฐม', 'นครพนม', 'นครราชสีมา', 'นครศรีธรรมราช', 'นครสวรรค์', 'นนทบุรี', 'นราธิวาส', 'น่าน', 'บึงกาฬ', 'บุรีรัมย์', 'ปทุมธานี', 'ประจวบคีรีขันธ์', 'ปราจีนบุรี', 'ปัตตานี', 'พระนครศรีอยุธยา', 'พังงา', 'พัทลุง', 'พิจิตร', 'พิษณุโลก', 'เพชรบุรี', 'เพชรบูรณ์', 'แพร่', 'พะเยา', 'ภูเก็ต', 'มหาสารคาม', 'มุกดาหาร', 'แม่ฮ่องสอน', 'ยะลา', 'ยโสธร', 'ร้อยเอ็ด', 'ระนอง', 'ระยอง', 'ราชบุรี', 'ลพบุรี', 'ลำปาง', 'ลำพูน', 'เลย', 'ศรีสะเกษ', 'สกลนคร', 'สงขลา', 'สตูล', 'สมุทรปราการ', 'สมุทรสงคราม', 'สมุทรสาคร', 'สระแก้ว', 'สระบุรี', 'สิงห์บุรี', 'สุโขทัย', 'สุพรรณบุรี', 'สุราษฎร์ธานี', 'สุรินทร์', 'หนองคาย', 'หนองบัวลำภู', 'อ่างทอง', 'อุดรธานี', 'อุทัยธานี', 'อุตรดิตถ์', 'อุบลราชธานี', 'อำนาจเจริญ']
             
-            # เพิ่มตัวแปร tomorrow สำหรับการตั้งค่าวันที่เริ่มต้น
-            from datetime import datetime, timedelta
-            tomorrow = datetime.now() + timedelta(days=1)
-            
             return render_template('admin/booking_form.html', 
                                  booking=None,
                                  customers=customers,
@@ -1054,8 +1070,7 @@ def add_booking():
                                  tire_models=tire_models,
                                  vehicle_types=vehicle_types,
                                  vehicle_brands=vehicle_brands,
-                                 provinces=provinces,
-                                 tomorrow=tomorrow)
+                                 provinces=provinces)
     
     # GET request - แสดงฟอร์มเพิ่มการจอง
     # ดึงข้อมูลสำหรับฟอร์ม
@@ -1098,10 +1113,6 @@ def add_booking():
     # ดึงรายการจังหวัด
     provinces = ['กรุงเทพมหานคร', 'กระบี่', 'กาญจนบุรี', 'กาฬสินธุ์', 'กำแพงเพชร', 'ขอนแก่น', 'จันทบุรี', 'ฉะเชิงเทรา', 'ชลบุรี', 'ชัยนาท', 'ชัยภูมิ', 'ชุมพร', 'เชียงราย', 'เชียงใหม่', 'ตรัง', 'ตราด', 'ตาก', 'นครนายก', 'นครปฐม', 'นครพนม', 'นครราชสีมา', 'นครศรีธรรมราช', 'นครสวรรค์', 'นนทบุรี', 'นราธิวาส', 'น่าน', 'บึงกาฬ', 'บุรีรัมย์', 'ปทุมธานี', 'ประจวบคีรีขันธ์', 'ปราจีนบุรี', 'ปัตตานี', 'พระนครศรีอยุธยา', 'พังงา', 'พัทลุง', 'พิจิตร', 'พิษณุโลก', 'เพชรบุรี', 'เพชรบูรณ์', 'แพร่', 'พะเยา', 'ภูเก็ต', 'มหาสารคาม', 'มุกดาหาร', 'แม่ฮ่องสอน', 'ยะลา', 'ยโสธร', 'ร้อยเอ็ด', 'ระนอง', 'ระยอง', 'ราชบุรี', 'ลพบุรี', 'ลำปาง', 'ลำพูน', 'เลย', 'ศรีสะเกษ', 'สกลนคร', 'สงขลา', 'สตูล', 'สมุทรปราการ', 'สมุทรสงคราม', 'สมุทรสาคร', 'สระแก้ว', 'สระบุรี', 'สิงห์บุรี', 'สุโขทัย', 'สุพรรณบุรี', 'สุราษฎร์ธานี', 'สุรินทร์', 'หนองคาย', 'หนองบัวลำภู', 'อ่างทอง', 'อุดรธานี', 'อุทัยธานี', 'อุตรดิตถ์', 'อุบลราชธานี', 'อำนาจเจริญ']
     
-    # เพิ่มตัวแปร tomorrow สำหรับการตั้งค่าวันที่เริ่มต้น
-    from datetime import datetime, timedelta
-    tomorrow = datetime.now() + timedelta(days=1)
-    
     return render_template('admin/booking_form.html', 
                          booking=None,
                          customers=customers,
@@ -1112,8 +1123,7 @@ def add_booking():
                          tire_models=tire_models,
                          vehicle_types=vehicle_types,
                          vehicle_brands=vehicle_brands,
-                         provinces=provinces,
-                         tomorrow=tomorrow)
+                         provinces=provinces)
 
 @admin.route('/bookings/edit/<int:booking_id>', methods=['GET', 'POST'])
 @admin_required
@@ -1476,10 +1486,6 @@ def edit_booking(booking_id):
     # ดึงรายการจังหวัด
     provinces = ['กรุงเทพมหานคร', 'กระบี่', 'กาญจนบุรี', 'กาฬสินธุ์', 'กำแพงเพชร', 'ขอนแก่น', 'จันทบุรี', 'ฉะเชิงเทรา', 'ชลบุรี', 'ชัยนาท', 'ชัยภูมิ', 'ชุมพร', 'เชียงราย', 'เชียงใหม่', 'ตรัง', 'ตราด', 'ตาก', 'นครนายก', 'นครปฐม', 'นครพนม', 'นครราชสีมา', 'นครศรีธรรมราช', 'นครสวรรค์', 'นนทบุรี', 'นราธิวาส', 'น่าน', 'บึงกาฬ', 'บุรีรัมย์', 'ปทุมธานี', 'ประจวบคีรีขันธ์', 'ปราจีนบุรี', 'ปัตตานี', 'พระนครศรีอยุธยา', 'พังงา', 'พัทลุง', 'พิจิตร', 'พิษณุโลก', 'เพชรบุรี', 'เพชรบูรณ์', 'แพร่', 'พะเยา', 'ภูเก็ต', 'มหาสารคาม', 'มุกดาหาร', 'แม่ฮ่องสอน', 'ยะลา', 'ยโสธร', 'ร้อยเอ็ด', 'ระนอง', 'ระยอง', 'ราชบุรี', 'ลพบุรี', 'ลำปาง', 'ลำพูน', 'เลย', 'ศรีสะเกษ', 'สกลนคร', 'สงขลา', 'สตูล', 'สมุทรปราการ', 'สมุทรสงคราม', 'สมุทรสาคร', 'สระแก้ว', 'สระบุรี', 'สิงห์บุรี', 'สุโขทัย', 'สุพรรณบุรี', 'สุราษฎร์ธานี', 'สุรินทร์', 'หนองคาย', 'หนองบัวลำภู', 'อ่างทอง', 'อุดรธานี', 'อุทัยธานี', 'อุตรดิตถ์', 'อุบลราชธานี', 'อำนาจเจริญ']
     
-    # เพิ่มตัวแปร tomorrow สำหรับการตั้งค่าวันที่เริ่มต้น
-    from datetime import datetime, timedelta
-    tomorrow = datetime.now() + timedelta(days=1)
-    
     return render_template('admin/booking_form.html', 
                          booking=booking,
                          vehicle_types=vehicle_types,
@@ -1494,8 +1500,7 @@ def edit_booking(booking_id):
                          selected_service_ids=selected_service_ids,
                          selected_options=selected_options,
                          selected_option_ids=selected_option_ids,
-                         tire_data=tire_data,
-                         tomorrow=tomorrow)
+                         tire_data=tire_data)
 
 @admin.route('/bookings/delete/<int:booking_id>', methods=['POST'])
 @admin_required
@@ -1720,6 +1725,7 @@ def admin_edit_profile():
 @admin.route('/users')
 @admin_required
 def user_list():
+    """หน้าแสดงรายการผู้ใช้ทั้งหมด"""
     # รับพารามิเตอร์การค้นหา
     search = request.args.get('search', '').strip()
     filter_by = request.args.get('filter_by', 'all')
@@ -1975,6 +1981,7 @@ def delete_user(user_id):
 @admin.route('/dashboard')
 @admin_required
 def admin_dashboard():
+    """หน้าแดชบอร์ดหลักของระบบ admin"""
     try:
         cursor = get_cursor()
         cursor.execute('SELECT COUNT(*) AS count FROM customers')
@@ -1998,6 +2005,7 @@ def admin_dashboard():
 @admin.route('/promotions')
 @admin_required
 def promotion_list():
+    """หน้าแสดงรายการโปรโมชั่นทั้งหมด"""
     cursor = get_cursor()
     cursor.execute('SELECT * FROM promotions ORDER BY promotion_id DESC')
     promotions = cursor.fetchall()
@@ -2018,11 +2026,10 @@ def add_promotion():
         file = request.files.get('promotion_image')
         if file and file.filename and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            # ใช้ temp directory สำหรับ Railway
+            # สร้างโฟลเดอร์ promotions ถ้ายังไม่มี
             promotions_folder = current_app.config['PROMOTION_UPLOAD_FOLDER']
             os.makedirs(promotions_folder, exist_ok=True)
-            file_path = os.path.join(promotions_folder, filename)
-            file.save(file_path)
+            file.save(os.path.join(promotions_folder, filename))
             image_url = filename
         try:
             cursor.execute('''INSERT INTO promotions (title, description, start_date, end_date, image_url) VALUES (%s, %s, %s, %s, %s)''',
@@ -2179,8 +2186,8 @@ def dashboard_chart_data():
 @admin.route('/home-slider')
 @admin_required
 def home_slider():
-    # ใช้ temp directory สำหรับ Railway
-    slider_folder = current_app.config['SLIDER_UPLOAD_FOLDER']
+    # สร้างโฟลเดอร์ถ้ายังไม่มี
+    slider_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'home_slider')
     os.makedirs(slider_folder, exist_ok=True)
     
     # ดึงรายการไฟล์รูปภาพ
@@ -2201,12 +2208,10 @@ def upload_slider_image():
     file = request.files.get('slider_image')
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        # ใช้ temp directory สำหรับ Railway
-        slider_folder = current_app.config['SLIDER_UPLOAD_FOLDER']
+        slider_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'home_slider')
         os.makedirs(slider_folder, exist_ok=True)
         
-        file_path = os.path.join(slider_folder, filename)
-        file.save(file_path)
+        file.save(os.path.join(slider_folder, filename))
         flash('อัปโหลดรูปภาพสำเร็จ')
     else:
         flash('ไฟล์ไม่ถูกต้อง')
@@ -2216,8 +2221,7 @@ def upload_slider_image():
 @admin.route('/home-slider/delete/<filename>', methods=['POST'])
 @admin_required
 def delete_slider_image(filename):
-    # ใช้ temp directory สำหรับ Railway
-    slider_folder = current_app.config['SLIDER_UPLOAD_FOLDER']
+    slider_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'home_slider')
     file_path = os.path.join(slider_folder, filename)
     
     if os.path.exists(file_path):
@@ -2231,6 +2235,7 @@ def delete_slider_image(filename):
 @admin.route('/website-stats')
 @admin_required
 def website_stats():
+    """หน้าแสดงสถิติการใช้งานเว็บไซต์"""
     """หน้ารายงานสถิติการเข้าชมสำหรับผู้ดูแลระบบ"""
     try:
         cursor = get_cursor()
@@ -2305,6 +2310,7 @@ def website_stats():
 @admin.route('/booking-report')
 # @admin_required  # ชั่วคราวปิด decorator เพื่อทดสอบ
 def booking_report():
+
     """หน้ารายงานการจองสำหรับผู้ดูแลระบบ"""
     try:
         cursor = get_cursor()
@@ -3259,7 +3265,8 @@ def website_stats_pdf():
 @admin.route('/brands')
 @admin_required
 def brand_list():
-    """หน้ารายการยี่ห้อยาง"""
+    """หน้าแสดงรายการยี่ห้อยางทั้งหมด"""
+ 
     cursor = get_cursor()
     search = request.args.get('search', '').strip()
     page = int(request.args.get('page', 1))
@@ -3303,7 +3310,8 @@ def brand_list():
 @admin.route('/brands/add', methods=['GET', 'POST'])
 @admin_required
 def add_brand():
-    """เพิ่มยี่ห้อยาง"""
+    """หน้าเพิ่มยี่ห้อยางใหม่"""
+ 
     cursor = get_cursor()
     
     if request.method == 'POST':
@@ -3335,7 +3343,8 @@ def add_brand():
 @admin.route('/brands/edit/<int:brand_id>', methods=['GET', 'POST'])
 @admin_required
 def edit_brand(brand_id):
-    """แก้ไขยี่ห้อยาง"""
+    """หน้าแก้ไขยี่ห้อยาง"""
+    
     cursor = get_cursor()
     
     if request.method == 'POST':
@@ -3375,6 +3384,7 @@ def edit_brand(brand_id):
 @admin_required
 def delete_brand(brand_id):
     """ลบยี่ห้อยาง"""
+ 
     cursor = get_cursor()
     
     try:
@@ -3403,7 +3413,8 @@ def delete_brand(brand_id):
 @admin.route('/tire-models')
 @admin_required
 def tire_model_list():
-    """หน้ารายการรุ่นยาง"""
+    """หน้าแสดงรายการรุ่นยางทั้งหมด"""
+   
     cursor = get_cursor()
     search = request.args.get('search', '').strip()
     brand_filter = request.args.get('brand', '').strip()
@@ -3463,7 +3474,8 @@ def tire_model_list():
 @admin.route('/tire-models/add', methods=['GET', 'POST'])
 @admin_required
 def add_tire_model():
-    """เพิ่มรุ่นยาง"""
+    """หน้าเพิ่มรุ่นยางใหม่"""
+
     cursor = get_cursor()
     
     if request.method == 'POST':
@@ -3498,7 +3510,8 @@ def add_tire_model():
 @admin.route('/tire-models/edit/<int:model_id>', methods=['GET', 'POST'])
 @admin_required
 def edit_tire_model(model_id):
-    """แก้ไขรุ่นยาง"""
+    """หน้าแก้ไขรุ่นยาง"""
+    
     cursor = get_cursor()
     
     if request.method == 'POST':
@@ -3548,6 +3561,7 @@ def edit_tire_model(model_id):
 @admin_required
 def delete_tire_model(model_id):
     """ลบรุ่นยาง"""
+
     cursor = get_cursor()
     
     try:
@@ -3577,6 +3591,7 @@ def get_brands():
 @admin.route('/logout', methods=['POST', 'GET'])
 @admin_required
 def admin_logout():
-    session.clear()
+    """ออกจากระบบผู้ดูแลระบบ"""
+    session.clear()  # ล้างข้อมูล session ทั้งหมด
     flash('ออกจากระบบผู้ดูแลระบบเรียบร้อย', 'success')
     return redirect(url_for('auth.login'))  # กลับไปหน้า /login ที่มีอยู่แล้ว

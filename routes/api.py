@@ -1,4 +1,5 @@
-from flask import Blueprint, request, jsonify
+# Import modules ที่จำเป็นสำหรับ API routes
+from flask import Blueprint, request, jsonify, session
 from database import get_cursor, get_db
 from utils import validate_pagination_params, validate_sort_params
 from datetime import datetime
@@ -6,50 +7,46 @@ from utils import get_device_type
 import json
 from functools import wraps
 
+# สร้าง Blueprint สำหรับ API routes
 api = Blueprint('api', __name__)
-
-# ปิด CSRF protection สำหรับ API blueprint ทั้งหมด
-from flask_wtf.csrf import CSRFProtect
-csrf = CSRFProtect()
-
-@api.before_request
-def disable_csrf():
-    """ปิด CSRF protection สำหรับ API routes"""
-    pass
 
 @api.route('/log-page-view', methods=['POST'])
 def log_page_view():
     """บันทึกการเข้าชมหน้าเว็บ"""
     try:
-        # Debug: แสดงข้อมูลที่ได้รับ
+        # Debug: แสดงข้อมูลที่ได้รับจาก request
         print(f"Request method: {request.method}")
         print(f"Request headers: {dict(request.headers)}")
         print(f"Request data: {request.get_data()}")
         
+        # แปลง JSON data ที่ได้รับ
         data = request.get_json()
         print(f"Parsed JSON data: {data}")
         
+        # ดึง page_id จากข้อมูลที่ส่งมา
         page_id = data.get('page_id') if data else None
         
+        # ตรวจสอบว่ามี page_id หรือไม่
         if not page_id:
             return jsonify({'success': False, 'error': 'page_id is required'}), 400
         
+        # เชื่อมต่อฐานข้อมูล
         cursor = get_cursor()
         
-        # ตรวจสอบ device_type จาก User-Agent
+        # ตรวจสอบ device_type จาก User-Agent header
         user_agent = request.headers.get('User-Agent', '')
         device_type = get_device_type(user_agent)
         
         print(f"Page ID: {page_id}")
         print(f"Device Type: {device_type}")
         
-        # บันทึกข้อมูลลงใน page_view_logs
+        # บันทึกข้อมูลการเข้าชมลงในตาราง page_view_logs
         cursor.execute('''
             INSERT INTO page_view_logs (page_id, device_type, viewed_at)
             VALUES (%s, %s, %s)
         ''', (page_id, device_type, datetime.now()))
         
-        # อัปเดตหรือเพิ่มข้อมูลใน page_views
+        # อัปเดตหรือเพิ่มข้อมูลสถิติการเข้าชมในตาราง page_views
         cursor.execute('''
             INSERT INTO page_views (page_id, views, last_viewed_at)
             VALUES (%s, 1, %s)
@@ -58,7 +55,7 @@ def log_page_view():
             last_viewed_at = %s
         ''', (page_id, datetime.now(), datetime.now()))
         
-        # Commit การเปลี่ยนแปลง
+        # บันทึกการเปลี่ยนแปลงลงฐานข้อมูล
         cursor.connection.commit()
         
         print(f"Successfully logged page view for: {page_id}")
@@ -71,6 +68,7 @@ def log_page_view():
         })
         
     except Exception as e:
+        # จัดการ error และแสดงข้อมูล debug
         print(f"Error in log_page_view: {e}")
         import traceback
         traceback.print_exc()
@@ -83,29 +81,31 @@ def log_page_view():
 def api_log_page_view():
     """API สำหรับบันทึกการเข้าชมหน้าเว็บ (ไม่มี CSRF protection)"""
     try:
-        # รับ page_id จาก GET parameter หรือ JSON body
+        # รับ page_id จาก GET parameter หรือ JSON body ตาม HTTP method
         if request.method == 'GET':
             page_id = request.args.get('page_id')
         else:
             data = request.get_json()
             page_id = data.get('page_id') if data else None
         
+        # ตรวจสอบว่ามี page_id หรือไม่
         if not page_id:
             return jsonify({'success': False, 'error': 'page_id is required'}), 400
         
+        # เชื่อมต่อฐานข้อมูล
         cursor = get_cursor()
         
-        # ตรวจสอบ device_type จาก User-Agent
+        # ตรวจสอบ device_type จาก User-Agent header
         user_agent = request.headers.get('User-Agent', '')
         device_type = get_device_type(user_agent)
         
-        # บันทึกข้อมูลลงใน page_view_logs
+        # บันทึกข้อมูลการเข้าชมลงในตาราง page_view_logs
         cursor.execute('''
             INSERT INTO page_view_logs (page_id, device_type, viewed_at)
             VALUES (%s, %s, %s)
         ''', (page_id, device_type, datetime.now()))
         
-        # อัปเดตหรือเพิ่มข้อมูลใน page_views
+        # อัปเดตหรือเพิ่มข้อมูลสถิติการเข้าชมในตาราง page_views
         cursor.execute('''
             INSERT INTO page_views (page_id, views, last_viewed_at)
             VALUES (%s, 1, %s)
@@ -114,7 +114,7 @@ def api_log_page_view():
             last_viewed_at = %s
         ''', (page_id, datetime.now(), datetime.now()))
         
-        # Commit การเปลี่ยนแปลง
+        # บันทึกการเปลี่ยนแปลงลงฐานข้อมูล
         from database import get_db
         get_db().commit()
         
@@ -126,6 +126,7 @@ def api_log_page_view():
         })
         
     except Exception as e:
+        # จัดการ error และแสดงข้อมูล debug
         print(f"Error in api_log_page_view: {e}")
         return jsonify({
             'success': False,
@@ -136,9 +137,10 @@ def api_log_page_view():
 def page_views_summary():
     """ดึงข้อมูลสรุปการเข้าชมหน้าเว็บ"""
     try:
+        # เชื่อมต่อฐานข้อมูล
         cursor = get_cursor()
         
-        # ดึงข้อมูลสถิติการเข้าชม
+        # ดึงข้อมูลสถิติการเข้าชมหน้าเว็บ 10 อันดับแรก
         cursor.execute('''
             SELECT page_id, views, last_viewed_at
             FROM page_views
@@ -147,7 +149,7 @@ def page_views_summary():
         ''')
         top_pages = cursor.fetchall()
         
-        # ดึงข้อมูลสถิติตามอุปกรณ์
+        # ดึงข้อมูลสถิติการเข้าชมแยกตามประเภทอุปกรณ์
         cursor.execute('''
             SELECT 
                 CASE 
@@ -165,7 +167,7 @@ def page_views_summary():
         ''')
         device_stats = cursor.fetchall()
         
-        # ดึงข้อมูลการเข้าชมรายวัน (7 วันล่าสุด)
+        # ดึงข้อมูลการเข้าชมรายวันในช่วง 7 วันล่าสุด
         cursor.execute('''
             SELECT DATE(viewed_at) as date, COUNT(*) as count
             FROM page_view_logs
@@ -183,6 +185,7 @@ def page_views_summary():
         })
         
     except Exception as e:
+        # จัดการ error และแสดงข้อมูล debug
         print(f"Error in page_views_summary: {e}")
         return jsonify({
             'success': False,
@@ -193,18 +196,19 @@ def page_views_summary():
 def api_tires():
     """API สำหรับดึงข้อมูลยาง"""
     try:
-        # รับพารามิเตอร์
+        # รับพารามิเตอร์ pagination และ filter
         page, per_page = validate_pagination_params(
             request.args.get('page'), 
             request.args.get('per_page')
         )
         
+        # รับพารามิเตอร์สำหรับการกรองข้อมูลยาง
         brand_id = request.args.get('brand_id')
         width = request.args.get('width')
         aspect_ratio = request.args.get('aspect_ratio')
         rim_diameter = request.args.get('rim_diameter')
         
-        # สร้าง query
+        # สร้าง SQL query หลักสำหรับดึงข้อมูลยาง
         base_query = """
             SELECT t.tire_id, t.name, t.width, t.aspect_ratio, t.rim_diameter, 
                    t.load_index, t.speed_rating, t.price, t.stock_quantity,
@@ -217,7 +221,7 @@ def api_tires():
         
         params = []
         
-        # เพิ่มเงื่อนไขการกรอง
+        # เพิ่มเงื่อนไขการกรองตามพารามิเตอร์ที่ส่งมา
         if brand_id:
             base_query += " AND t.brand_id = %s"
             params.append(brand_id)
@@ -234,22 +238,22 @@ def api_tires():
             base_query += " AND t.rim_diameter = %s"
             params.append(rim_diameter)
         
-        # นับจำนวนทั้งหมด
+        # นับจำนวนรายการทั้งหมดสำหรับ pagination
         count_query = f"SELECT COUNT(*) as total FROM ({base_query}) as subquery"
         cursor = get_cursor()
         cursor.execute(count_query, params)
         total = cursor.fetchone()['total']
         
-        # คำนวณ pagination
+        # คำนวณค่า offset และจำนวนหน้าทั้งหมด
         offset = (page - 1) * per_page
         total_pages = (total + per_page - 1) // per_page
         
-        # เพิ่ม ORDER BY และ LIMIT
+        # เพิ่ม ORDER BY และ LIMIT สำหรับ pagination
         base_query += " ORDER BY t.created_at DESC"
         base_query += " LIMIT %s OFFSET %s"
         params.extend([per_page, offset])
         
-        # ดึงข้อมูล
+        # ดึงข้อมูลยางตามเงื่อนไขที่กำหนด
         cursor.execute(base_query, params)
         tires = cursor.fetchall()
         
@@ -265,6 +269,7 @@ def api_tires():
         })
         
     except Exception as e:
+        # จัดการ error และแสดงข้อมูล debug
         print(f"Error in api_tires: {e}")
         return jsonify({
             'success': False,
@@ -275,6 +280,7 @@ def api_tires():
 def api_tire_widths():
     """API สำหรับดึงรายการ width ทั้งหมดที่มีในตาราง tires"""
     try:
+        # เชื่อมต่อฐานข้อมูล
         cursor = get_cursor()
         
         # ดึง width ที่ไม่ซ้ำและเรียงลำดับแบบตัวเลข
@@ -285,6 +291,7 @@ def api_tire_widths():
             ORDER BY width ASC
         """)
         
+        # แปลงผลลัพธ์เป็น list ของ width
         widths = [row['width'] for row in cursor.fetchall()]
         
         return jsonify({
@@ -293,6 +300,7 @@ def api_tire_widths():
         })
         
     except Exception as e:
+        # จัดการ error และแสดงข้อมูล debug
         print(f"Error in api_tire_widths: {e}")
         return jsonify({
             'success': False,
@@ -303,6 +311,7 @@ def api_tire_widths():
 def api_tire_aspects():
     """API สำหรับดึงรายการ aspect_ratio ตาม width ที่เลือก"""
     try:
+        # รับพารามิเตอร์ width
         width = request.args.get('width')
         if not width:
             return jsonify({
@@ -310,6 +319,7 @@ def api_tire_aspects():
                 'error': 'Width parameter is required'
             }), 400
         
+        # เชื่อมต่อฐานข้อมูล
         cursor = get_cursor()
         
         # ดึง aspect_ratio ที่ไม่ซ้ำสำหรับ width ที่เลือก
@@ -320,6 +330,7 @@ def api_tire_aspects():
             ORDER BY aspect_ratio ASC
         """, (width,))
         
+        # แปลงผลลัพธ์เป็น list ของ aspect_ratio
         aspects = [row['aspect_ratio'] for row in cursor.fetchall()]
         
         return jsonify({
@@ -328,6 +339,7 @@ def api_tire_aspects():
         })
         
     except Exception as e:
+        # จัดการ error และแสดงข้อมูล debug
         print(f"Error in api_tire_aspects: {e}")
         return jsonify({
             'success': False,
@@ -338,15 +350,18 @@ def api_tire_aspects():
 def api_tire_rims():
     """API สำหรับดึงรายการ rim_diameter ตาม width และ aspect_ratio ที่เลือก"""
     try:
+        # รับพารามิเตอร์ width และ aspect
         width = request.args.get('width')
         aspect = request.args.get('aspect')
         
+        # ตรวจสอบว่ามีพารามิเตอร์ครบถ้วนหรือไม่
         if not width or not aspect:
             return jsonify({
                 'success': False,
                 'error': 'Width and aspect parameters are required'
             }), 400
         
+        # เชื่อมต่อฐานข้อมูล
         cursor = get_cursor()
         
         # ดึง rim_diameter ที่ไม่ซ้ำสำหรับ width และ aspect_ratio ที่เลือก
@@ -357,6 +372,7 @@ def api_tire_rims():
             ORDER BY rim_diameter ASC
         """, (width, aspect))
         
+        # แปลงผลลัพธ์เป็น list ของ rim_diameter
         rims = [row['rim_diameter'] for row in cursor.fetchall()]
         
         return jsonify({
@@ -365,6 +381,7 @@ def api_tire_rims():
         })
         
     except Exception as e:
+        # จัดการ error และแสดงข้อมูล debug
         print(f"Error in api_tire_rims: {e}")
         return jsonify({
             'success': False,
@@ -375,9 +392,10 @@ def api_tire_rims():
 def api_customer_detail(customer_id):
     """API สำหรับดึงข้อมูลลูกค้า"""
     try:
+        # เชื่อมต่อฐานข้อมูล
         cursor = get_cursor()
         
-        # ดึงข้อมูลลูกค้า
+        # ดึงข้อมูลลูกค้าจากตาราง customers และ users
         cursor.execute("""
             SELECT c.customer_id, c.first_name, c.last_name, c.phone, c.email,
                    u.username, u.avatar_filename, u.created_at
@@ -387,14 +405,14 @@ def api_customer_detail(customer_id):
         """, (customer_id,))
         customer = cursor.fetchone()
         
+        # ตรวจสอบว่าพบลูกค้าหรือไม่
         if not customer:
             return jsonify({
                 'success': False,
                 'error': 'Customer not found'
             }), 404
         
-        
-        # ดึงข้อมูลรถ
+        # ดึงข้อมูลรถของลูกค้าจากตาราง vehicles
         cursor.execute("""
             SELECT v.vehicle_id, v.license_plate, v.license_province,
                    v.brand_name, v.model_name, v.production_year, v.color,
@@ -415,6 +433,7 @@ def api_customer_detail(customer_id):
         })
         
     except Exception as e:
+        # จัดการ error และแสดงข้อมูล debug
         print(f"Error in api_customer_detail: {e}")
         return jsonify({
             'success': False,
@@ -425,16 +444,17 @@ def api_customer_detail(customer_id):
 def api_bookings():
     """API สำหรับดึงข้อมูลการจอง"""
     try:
-        # รับพารามิเตอร์
+        # รับพารามิเตอร์ pagination และ filter
         page, per_page = validate_pagination_params(
             request.args.get('page'), 
             request.args.get('per_page')
         )
         
+        # รับพารามิเตอร์สำหรับการกรองข้อมูลการจอง
         status_filter = request.args.get('status')
         customer_id = request.args.get('customer_id')
         
-        # สร้าง query
+        # สร้าง SQL query หลักสำหรับดึงข้อมูลการจอง
         base_query = """
             SELECT b.booking_id, b.booking_date, b.status,
                    c.customer_id, c.first_name, c.last_name, c.phone,
@@ -447,7 +467,7 @@ def api_bookings():
         
         params = []
         
-        # เพิ่มเงื่อนไขการกรอง
+        # เพิ่มเงื่อนไขการกรองตามพารามิเตอร์ที่ส่งมา
         if status_filter:
             base_query += " AND b.status = %s"
             params.append(status_filter)
@@ -456,22 +476,22 @@ def api_bookings():
             base_query += " AND b.customer_id = %s"
             params.append(customer_id)
         
-        # นับจำนวนทั้งหมด
+        # นับจำนวนรายการทั้งหมดสำหรับ pagination
         count_query = f"SELECT COUNT(*) as total FROM ({base_query}) as subquery"
         cursor = get_cursor()
         cursor.execute(count_query, params)
         total = cursor.fetchone()['total']
         
-        # คำนวณ pagination
+        # คำนวณค่า offset และจำนวนหน้าทั้งหมด
         offset = (page - 1) * per_page
         total_pages = (total + per_page - 1) // per_page
         
-        # เพิ่ม ORDER BY และ LIMIT
+        # เพิ่ม ORDER BY และ LIMIT สำหรับ pagination
         base_query += " ORDER BY b.booking_date DESC"
         base_query += " LIMIT %s OFFSET %s"
         params.extend([per_page, offset])
         
-        # ดึงข้อมูล
+        # ดึงข้อมูลการจองตามเงื่อนไขที่กำหนด
         cursor.execute(base_query, params)
         bookings = cursor.fetchall()
         
@@ -842,49 +862,46 @@ def get_booking_availability():
         if not service_date:
             return jsonify({'success': False, 'error': 'service_date is required'}), 400
         
-        # ข้อมูลทดสอบสำหรับวันที่ 2025-01-12
-        test_data = {
-            '2025-01-12': {
-                '09:00': 3,  # เต็ม 3 คิว
-                '10:00': 2,  # 2 คิว
-                '11:00': 1,  # 1 คิว
-                '13:00': 0,  # ว่าง
-                '14:00': 0,  # ว่าง
-                '15:00': 0   # ว่าง
-            }
-        }
-        
-        # ตรวจสอบว่ามีข้อมูลทดสอบหรือไม่
-        if service_date in test_data:
-            booking_counts = test_data[service_date]
-        else:
-            # ถ้าไม่มีข้อมูลทดสอบ ให้ดึงจากฐานข้อมูลจริง
-            try:
-                cursor = get_cursor()
+        # ดึงข้อมูลจากฐานข้อมูลจริง
+        try:
+            cursor = get_cursor()
+            
+            # ตรวจสอบจำนวนการจองในแต่ละชั่วโมง
+            cursor.execute('''
+                SELECT service_time, COUNT(*) as booking_count
+                FROM bookings 
+                WHERE service_date = %s AND status != 'ยกเลิก'
+                GROUP BY service_time
+            ''', (service_date,))
+            
+            booking_counts = {}
+            for row in cursor.fetchall():
+                # แปลง service_time เป็น string format
+                service_time = row['service_time']
+                if hasattr(service_time, 'total_seconds'):
+                    # ถ้าเป็น timedelta object
+                    total_seconds = int(service_time.total_seconds())
+                    hours = total_seconds // 3600
+                    minutes = (total_seconds % 3600) // 60
+                    time_str = f"{hours:02d}:{minutes:02d}"
+                elif hasattr(service_time, 'strftime'):
+                    # ถ้าเป็น time object
+                    time_str = service_time.strftime('%H:%M')
+                else:
+                    # ถ้าเป็น string หรือ format อื่น
+                    time_str = str(service_time)
+                    if ':' in time_str:
+                        # แปลง format ให้เป็น HH:MM
+                        parts = time_str.split(':')
+                        if len(parts) >= 2:
+                            time_str = f"{parts[0].zfill(2)}:{parts[1].zfill(2)}"
                 
-                # ตรวจสอบจำนวนการจองในแต่ละชั่วโมง
-                cursor.execute('''
-                    SELECT service_time, COUNT(*) as booking_count
-                    FROM bookings 
-                    WHERE service_date = %s AND status != 'ยกเลิก'
-                    GROUP BY service_time
-                ''', (service_date,))
+                booking_counts[time_str] = row['booking_count']
                 
-                booking_counts = {}
-                for row in cursor.fetchall():
-                    # แปลง service_time เป็น string format
-                    if hasattr(row['service_time'], 'total_seconds'):
-                        total_seconds = int(row['service_time'].total_seconds())
-                        hours = total_seconds // 3600
-                        minutes = (total_seconds % 3600) // 60
-                        time_str = f"{hours:02d}:{minutes:02d}"
-                    else:
-                        time_str = str(row['service_time'])
-                    booking_counts[time_str] = row['booking_count']
-            except Exception as db_error:
-                print(f"Database error: {db_error}")
-                # ถ้าฐานข้อมูลมีปัญหา ให้ใช้ข้อมูลว่าง
-                booking_counts = {}
+        except Exception as db_error:
+            print(f"Database error: {db_error}")
+            # ถ้าฐานข้อมูลมีปัญหา ให้ใช้ข้อมูลว่าง
+            booking_counts = {}
         
         # สร้างรายการเวลาที่มีให้เลือก
         available_times = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00']
@@ -984,26 +1001,32 @@ def get_booking_customers():
 
 @api.route('/api/cancel-booking/<int:booking_id>', methods=['POST'])
 def cancel_booking(booking_id):
-    """ยกเลิกการจอง"""
+    """API สำหรับยกเลิกการจองโดยลูกค้า"""
     try:
+        # ตรวจสอบว่าลูกค้าเข้าสู่ระบบหรือไม่
+        if 'customer_id' not in session:
+            return jsonify({'success': False, 'message': 'กรุณาเข้าสู่ระบบก่อน'}), 401
+        
+        customer_id = session['customer_id']
         cursor = get_cursor()
         
-        # ตรวจสอบว่าการจองมีอยู่และสถานะเป็น "รอดำเนินการ"
+        # ตรวจสอบว่าการจองนี้เป็นของลูกค้าที่เข้าสู่ระบบหรือไม่
         cursor.execute('''
-            SELECT booking_id, status, customer_id 
+            SELECT booking_id, status 
             FROM bookings 
-            WHERE booking_id = %s
-        ''', (booking_id,))
+            WHERE booking_id = %s AND customer_id = %s
+        ''', (booking_id, customer_id))
         
         booking = cursor.fetchone()
         
         if not booking:
-            return jsonify({'success': False, 'message': 'ไม่พบการจองนี้'}), 404
+            return jsonify({'success': False, 'message': 'ไม่พบการจองหรือไม่มีสิทธิ์ยกเลิก'}), 404
         
+        # ตรวจสอบสถานะการจอง
         if booking['status'] != 'รอดำเนินการ':
-            return jsonify({'success': False, 'message': 'ไม่สามารถยกเลิกการจองที่สถานะนี้ได้'}), 400
+            return jsonify({'success': False, 'message': 'ไม่สามารถยกเลิกการจองที่สถานะ: ' + booking['status']}), 400
         
-        # อัปเดตสถานะเป็น "ยกเลิก"
+        # อัปเดตสถานะการจองเป็น 'ยกเลิก'
         cursor.execute('''
             UPDATE bookings 
             SET status = 'ยกเลิก' 
@@ -1015,5 +1038,5 @@ def cancel_booking(booking_id):
         return jsonify({'success': True, 'message': 'ยกเลิกการจองเรียบร้อยแล้ว'})
         
     except Exception as e:
-        print(f"Error canceling booking: {e}")
+        print(f"Error in cancel_booking: {e}")
         return jsonify({'success': False, 'message': 'เกิดข้อผิดพลาดในการยกเลิกการจอง'}), 500

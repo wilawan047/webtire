@@ -1187,7 +1187,7 @@ def booking_history():
         # สร้าง query พื้นฐาน
         base_query = """
             SELECT b.booking_id, b.booking_date, b.service_date, b.service_time, b.status, b.note,
-                   v.license_plate, v.brand_name, v.model_name
+                   v.license_plate, v.license_province, v.brand_name, v.model_name
             FROM bookings b
             JOIN vehicles v ON b.vehicle_id = v.vehicle_id
             WHERE b.customer_id = %s
@@ -1548,7 +1548,7 @@ def update_avatar():
                 upload_folder = current_app.config['PROFILE_UPLOAD_FOLDER']
                 os.makedirs(upload_folder, exist_ok=True)
                 
-                # บันทึกไฟล์ใน upload folder
+                # บันทึกไฟล์
                 file_path = os.path.join(upload_folder, filename)
                 print(f"Attempting to save file to: {file_path}")
                 print(f"Upload folder exists: {os.path.exists(upload_folder)}")
@@ -1564,34 +1564,14 @@ def update_avatar():
                 else:
                     print(f"File successfully saved to: {file_path}")
                 
-                # สำหรับ Railway: ไฟล์จะถูก serve จาก temp directory โดยตรง
-                # ไม่ต้อง copy ไปยัง static folder เพราะ Railway ใช้ ephemeral filesystem
-                if not current_app.config.get('RAILWAY_ENVIRONMENT'):
-                    # Local development: copy ไฟล์ไปยัง static directory
-                    static_folder = os.path.join(current_app.static_folder, 'uploads', 'profile')
-                    os.makedirs(static_folder, exist_ok=True)
-                    static_file_path = os.path.join(static_folder, filename)
-                    
-                    import shutil
-                    shutil.copy2(file_path, static_file_path)
-                    print(f"File copied to static folder: {static_file_path}")
-                else:
-                    print(f"Railway environment: File served from temp directory: {file_path}")
-                
                 # ลบไฟล์เก่าถ้ามี
                 cursor = get_cursor()
                 cursor.execute('SELECT avatar_filename FROM users WHERE user_id = (SELECT user_id FROM customers WHERE customer_id = %s)', (customer_id,))
                 user_data = cursor.fetchone()
                 if user_data and user_data.get('avatar_filename'):
-                    # ลบไฟล์เก่าจาก upload folder
                     old_file_path = os.path.join(current_app.config['PROFILE_UPLOAD_FOLDER'], user_data['avatar_filename'])
                     if os.path.exists(old_file_path):
                         os.remove(old_file_path)
-                    
-                    # ลบไฟล์เก่าจาก static folder
-                    old_static_path = os.path.join(current_app.static_folder, 'uploads', 'profile', user_data['avatar_filename'])
-                    if os.path.exists(old_static_path):
-                        os.remove(old_static_path)
                 
                 # อัปเดตฐานข้อมูล
                 cursor.execute('''
@@ -1604,9 +1584,8 @@ def update_avatar():
                 print(f"Updated database with filename: {filename}")
                 print(f"Customer ID: {customer_id}")
                 
-                
-                # อัปเดต session ให้ตรงกับฐานข้อมูล
-                session['customer_avatar'] = filename  # เก็บแค่ filename
+                # อัปเดต session
+                session['customer_avatar'] = filename
                 session.permanent = True  # ทำให้ session อยู่ถาวร
                 
                 print(f"Updated session with avatar: {filename}")
