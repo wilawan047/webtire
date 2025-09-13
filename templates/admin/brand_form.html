@@ -150,8 +150,14 @@
   </script>
 
   {% if request.args.get('success') %}
-  <script>
-    showSuccessModal('{{ "แก้ไขยี่ห้อสำเร็จ!" if brand else "เพิ่มยี่ห้อสำเร็จ!" }}', '{{ "ข้อมูลยี่ห้อยางถูกแก้ไขเรียบร้อยแล้ว" if brand else "ยี่ห้อยางใหม่ถูกเพิ่มลงในระบบเรียบร้อยแล้ว" }}');
-  </script>
+    {% if brand %}
+    <script>
+      showSuccessModal('แก้ไขยี่ห้อสำเร็จ!', 'ข้อมูลยี่ห้อยางถูกแก้ไขเรียบร้อยแล้ว');
+    </script>
+    {% else %}
+    <script>
+      showSuccessModal('เพิ่มยี่ห้อสำเร็จ!', 'ยี่ห้อยางใหม่ถูกเพิ่มลงในระบบเรียบร้อยแล้ว');
+    </script>
+    {% endif %}
   {% endif %}
 {% endblock %}

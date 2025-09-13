@@ -63,22 +63,24 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       
       <!-- Tab Navigation -->
-      <div class="tab-nav" style="display: flex; border-bottom: 2px solid #e5e7eb; margin-bottom: 1.5rem;">
-        <button type="button" class="tab-button active" onclick="showTab('vehicle')" onmouseover="this.style.color='#0c5e28'" onmouseout="this.style.color='#0c5e28'" style="flex: 1; padding: 12px 16px; text-align: center; background: none; border: none; cursor: pointer; font-weight: 600; color: #0c5e28; position: relative; transition: all 0.3s ease; border-bottom: 3px solid #0c5e28;">ข้อมูลรถ</button>
-        <button type="button" class="tab-button" onclick="showTab('customer')" onmouseover="this.style.color='#0c5e28'" onmouseout="if(!this.classList.contains('active')) this.style.color='#6b7280'" style="flex: 1; padding: 12px 16px; text-align: center; background: none; border: none; cursor: pointer; font-weight: 500; color: #6b7280; position: relative; transition: all 0.3s ease;">ข้อมูลลูกค้า</button>
-        <button type="button" class="tab-button" onclick="showTab('booking')" onmouseover="this.style.color='#0c5e28'" onmouseout="if(!this.classList.contains('active')) this.style.color='#6b7280'" style="flex: 1; padding: 12px 16px; text-align: center; background: none; border: none; cursor: pointer; font-weight: 500; color: #6b7280; position: relative; transition: all 0.3s ease;">ข้อมูลการจอง</button>
-        <button type="button" class="tab-button" onclick="showTab('services')" onmouseover="this.style.color='#0c5e28'" onmouseout="if(!this.classList.contains('active')) this.style.color='#6b7280'" style="flex: 1; padding: 12px 16px; text-align: center; background: none; border: none; cursor: pointer; font-weight: 500; color: #6b7280; position: relative; transition: all 0.3s ease;">บริการที่ต้องการ</button>
+      <div class="tab-nav bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-2 mb-8 shadow-sm">
+        <div class="flex justify-between gap-2">
+          <button type="button" class="tab-button bg-transparent text-gray-600 hover:bg-white hover:text-green-700 hover:shadow-md" onclick="showTab('vehicle')" style="padding: 14px 24px; text-align: center; border: none; cursor: pointer; font-weight: 500; border-radius: 10px; transition: all 0.3s ease; white-space: nowrap; flex: 1; min-width: 0;">ข้อมูลรถ</button>
+          <button type="button" class="tab-button bg-transparent text-gray-600 hover:bg-white hover:text-green-700 hover:shadow-md" onclick="showTab('customer')" style="padding: 14px 24px; text-align: center; border: none; cursor: pointer; font-weight: 500; border-radius: 10px; transition: all 0.3s ease; white-space: nowrap; flex: 1; min-width: 0;">ข้อมูลลูกค้า</button>
+          <button type="button" class="tab-button bg-transparent text-gray-600 hover:bg-white hover:text-green-700 hover:shadow-md" onclick="showTab('booking')" style="padding: 14px 24px; text-align: center; border: none; cursor: pointer; font-weight: 500; border-radius: 10px; transition: all 0.3s ease; white-space: nowrap; flex: 1; min-width: 0;">ข้อมูลการจอง</button>
+          <button type="button" class="tab-button bg-transparent text-gray-600 hover:bg-white hover:text-green-700 hover:shadow-md" onclick="showTab('services')" style="padding: 14px 24px; text-align: center; border: none; cursor: pointer; font-weight: 500; border-radius: 10px; transition: all 0.3s ease; white-space: nowrap; flex: 1; min-width: 0;">บริการที่ต้องการ</button>
+        </div>
       </div>
       
       <!-- Tab Content -->
       <!-- ข้อมูลรถ -->
       <div id="vehicle" class="tab-content active mb-8">
-        <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">ข้อมูลรถ</h3>
+        <h3 class="text-lg font-semibold mb-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg shadow-md">ข้อมูลรถ</h3>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <!-- ประเภทรถ -->
           <div class="col-span-full">
-            <label class="block text-sm font-medium text-green-800 mb-2">ประเภทรถ <span class="text-red-600">*</span></label>
+            <label class="block text-sm font-medium text-green-800 mb-2">ประเภทรถ</label>
             <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4">
               {% for vt in vehicle_types %}
               <label class="inline-flex items-center">
@@ -129,7 +131,7 @@
               <!-- ทะเบียนรถ -->
               <div class="flex-1">
                 <label for="license_plate" class="block mb-1 text-sm font-medium text-green-800">
-                  ทะเบียนรถ (เช่น บษ 9990)
+                  ทะเบียนรถ (เช่น บษ 9990) <span class="text-red-600">*</span>
                 </label>
                 <input type="text" id="license_plate" name="license_plate" 
                        value="{{ booking.license_plate if booking and booking.license_plate and booking.license_plate != 'None' else '' }}"
@@ -139,7 +141,7 @@
               <!-- จังหวัด -->
               <div class="flex-1">
                 <label for="license_province" class="block mb-1 text-sm font-medium text-green-800">
-                  จังหวัด
+                  จังหวัด <span class="text-red-600">*</span>
                 </label>
                 <select id="license_province" name="license_province" 
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
@@ -208,7 +210,7 @@
       
       <!-- ข้อมูลลูกค้า -->
       <div id="customer" class="tab-content mb-8">
-        <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">ข้อมูลลูกค้า</h3>
+        <h3 class="text-lg font-semibold mb-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg shadow-md">ข้อมูลลูกค้า</h3>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           
@@ -249,7 +251,7 @@
 
       <!-- ข้อมูลการจอง -->
       <div id="booking" class="tab-content mb-8">
-        <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">ข้อมูลการจอง</h3>
+        <h3 class="text-lg font-semibold mb-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg shadow-md">ข้อมูลการจอง</h3>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- วันที่เข้าใช้บริการร -->
@@ -277,8 +279,6 @@
               <div class="flex items-center">
                 <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
                 <span class="text-green-600">ว่าง</span>
-                <div class="w-3 h-3 bg-yellow-500 rounded-full mr-2 ml-4"></div>
-                <span class="text-yellow-600">เกือบเต็ม</span>
                 <div class="w-3 h-3 bg-red-500 rounded-full mr-2 ml-4"></div>
                 <span class="text-red-600">เต็ม</span>
               </div>
@@ -299,7 +299,7 @@
         
         <!-- หมายเหตุ -->
         <div class="mt-4">
-          <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">หมายเหตุ</h3>
+          <h3 class="text-lg font-semibold mb-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg shadow-md">หมายเหตุ</h3>
           <textarea id="note" name="note" rows="3" 
                     placeholder="กรุณาระบุรายละเอียดเพิ่มเติม (ถ้ามี)"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">{{ booking.note if booking and booking.note else '' }}</textarea>
@@ -310,7 +310,7 @@
 
       <!-- บริการที่ต้องการ -->
       <div id="services" class="tab-content mb-8">
-        <h3 class="text-lg font-semibold mb-4" style="color: #0c5e28; background-color: #0c5e28; color: white; padding: 8px 12px; border-radius: 4px;">บริการที่ต้องการ</h3>
+        <h3 class="text-lg font-semibold mb-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg shadow-md">บริการที่ต้องการ</h3>
         <div class="space-y-6">
           {% for category, services in service_groups.items() %}
           <div>
@@ -359,7 +359,7 @@
                     <div class="flex justify-between items-center mb-2">
                       <h4 class="font-semibold text-gray-800">ยางด้านหลัง</h4>
                       <button type="button" id="copyFrontToRear" 
-                              class="text-xs px-3 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 hover:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-500 border border-blue-300 rounded-md"
+                              class="text-xs px-3 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 rounded-lg shadow-md transition duration-200"
                               title="คัดลอกข้อมูลยางหน้าไปยังยางหลัง">
                         คัดลอกจากยางหน้า
                       </button>
@@ -403,7 +403,7 @@
               <div class="flex justify-between items-center mb-2">
                 <h4 class="font-semibold text-gray-800">DOT ของยาง</h4>
                 <button type="button" id="copyDotToAll" 
-                        class="text-xs px-3 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 hover:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-500 border border-blue-300 rounded-md w-auto"
+                        class="text-xs px-3 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 rounded-lg shadow-md transition duration-200 w-auto"
                         title="คัดลอกข้อมูล DOT จากหน้าซ้ายไปยังส่วนอื่น ๆ">
                   คัดลอกทั้งหมด
                 </button>
@@ -520,11 +520,11 @@
       <!-- ปุ่มส่งฟอร์ม -->
       <div class="mt-8 flex justify-end gap-4">
         <a href="{{ url_for('admin.booking_list') }}" 
-           class="px-6 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-200">
+           class="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-semibold shadow-sm">
           ยกเลิก
         </a>
         <button type="submit" 
-                class="px-6 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200">
+                class="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 transition duration-200 shadow-md">
           บันทึกการจอง
         </button>
       </div>
@@ -544,18 +544,29 @@ function showTab(tabName) {
   // รีเซ็ตทุก tab button
   var tabButtons = document.querySelectorAll('.tab-button');
   tabButtons.forEach(function(button) {
+    // รีเซ็ตเป็น inactive state
+    button.className = 'tab-button bg-transparent text-gray-600 hover:bg-white hover:text-green-700 hover:shadow-md';
+    
+    // เพิ่ม style attributes
+    button.style.padding = '14px 24px';
+    button.style.textAlign = 'center';
+    button.style.border = 'none';
+    button.style.cursor = 'pointer';
     button.style.fontWeight = '500';
-    button.style.color = '#6b7280';
-    button.style.borderBottom = 'none';
+    button.style.borderRadius = '10px';
+    button.style.transition = 'all 0.3s ease';
+    button.style.whiteSpace = 'nowrap';
+    button.style.flex = '1';
+    button.style.minWidth = '0';
   });
   
   // แสดง tab content ที่เลือก
   document.getElementById(tabName).style.display = 'block';
   
   // อัปเดต active tab button
-  event.target.style.fontWeight = '600';
-  event.target.style.color = '#0c5e28';
-  event.target.style.borderBottom = '3px solid #0c5e28';
+  var activeButton = event.target;
+  activeButton.className = 'tab-button bg-white shadow-md text-green-700';
+  activeButton.style.fontWeight = '600';
 }
 
 // JavaScript สำหรับ dropdown ยาง
@@ -1125,16 +1136,8 @@ function getNextAvailableDate(dateString) {
                 console.log(`Updating option ${option.value}:`, timeData);
                 
                 if (timeData.available) {
-                    if (timeData.remaining === 3) {
-                        option.textContent = `${timeDisplay} (ว่าง)`;
-                        option.style.color = '#16a34a';
-                    } else if (timeData.remaining === 2) {
-                        option.textContent = `${timeDisplay} (ว่าง 2 คิว)`;
-                        option.style.color = '#16a34a';
-                    } else if (timeData.remaining === 1) {
-                        option.textContent = `${timeDisplay} (ว่าง 1 คิว)`;
-                        option.style.color = '#eab308';
-                    }
+                    option.textContent = `${timeDisplay} (ว่าง)`;
+                    option.style.color = '#16a34a';
                     option.disabled = false;
                 } else {
                     option.textContent = `${timeDisplay} (เต็ม)`;
