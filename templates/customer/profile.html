@@ -282,14 +282,14 @@
                             // อัปเดต src ของรูปภาพด้วย cache busting
                             const avatarImg = document.querySelector('#profile-avatar');
                             if (avatarImg && newFilename) {
-                                avatarImg.src = `/static/uploads/profile/${newFilename}?v=${timestamp}`;
+                                avatarImg.src = `/uploaded_file/${newFilename}?v=${timestamp}`;
                             }
                             
                             // อัปเดตรูปภาพใน header ด้วย
                             console.log('Updating header avatar...');
                             const headerAvatar = document.querySelector('#header-avatar');
                             if (headerAvatar && newFilename) {
-                                headerAvatar.src = `/static/uploads/profile/${newFilename}?v=${timestamp}`;
+                                headerAvatar.src = `/uploaded_file/${newFilename}?v=${timestamp}`;
                                 console.log('Updated existing header avatar');
                             } else if (newFilename) {
                                 // ถ้าไม่มี header-avatar ให้สร้างใหม่
@@ -302,7 +302,7 @@
                                     // สร้าง img ใหม่
                                     const newHeaderImg = document.createElement('img');
                                     newHeaderImg.id = 'header-avatar';
-                                    newHeaderImg.src = `/static/uploads/profile/${newFilename}?v=${timestamp}`;
+                                    newHeaderImg.src = `/uploaded_file/${newFilename}?v=${timestamp}`;
                                     newHeaderImg.alt = 'โปรไฟล์';
                                     newHeaderImg.className = 'w-10 h-10 rounded-full border-2 border-white object-cover';
                                     newHeaderImg.onerror = function() {
@@ -342,7 +342,7 @@
                                 // สร้างรูปใหม่
                                 const newImg = document.createElement('img');
                                 newImg.id = 'profile-avatar';
-                                newImg.src = `/static/uploads/profile/${newFilename}?v=${timestamp}`;
+                                newImg.src = `/uploaded_file/${newFilename}?v=${timestamp}`;
                                 newImg.alt = 'Profile Avatar';
                                 newImg.className = 'w-32 h-32 rounded-full object-cover border-4 border-green-200 shadow-lg';
                                 newImg.onerror = function() {
@@ -424,7 +424,7 @@
         if (avatarUpdated === '1' && newFilename) {
             // สร้างรูปภาพใหม่
             const newImg = document.createElement('img');
-            newImg.src = `/static/uploads/profile/${newFilename}?t=${new Date().getTime()}`;
+            newImg.src = `/uploaded_file/${newFilename}?t=${new Date().getTime()}`;
             newImg.alt = 'Profile Avatar';
             newImg.className = 'w-32 h-32 rounded-full object-cover border-4 border-green-200 shadow-lg';
             

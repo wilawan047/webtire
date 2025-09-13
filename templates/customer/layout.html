@@ -43,7 +43,7 @@
                   class="block focus:outline-none"
                   onclick="toggleProfileMenu(event)">
             {% if session.get('customer_avatar') %}
-              <img id="header-avatar" src="{{ url_for('static', filename='uploads/profile/' ~ session.get('customer_avatar')) }}?v={{ range(1, 10000) | random }}"
+              <img id="header-avatar" src="{{ url_for('uploaded_file', filename=session.get('customer_avatar')) }}?v={{ range(1, 10000) | random }}"
                   alt="โปรไฟล์"
                   class="w-10 h-10 rounded-full border-2 border-white object-cover"
                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -288,7 +288,7 @@
                   // สร้าง img ใหม่
                   const newHeaderImg = document.createElement('img');
                   newHeaderImg.id = 'header-avatar';
-                  newHeaderImg.src = `/static/uploads/profile/${avatarFilename}?v=${timestamp}`;
+                  newHeaderImg.src = `/uploaded_file/${avatarFilename}?v=${timestamp}`;
                   newHeaderImg.alt = 'โปรไฟล์';
                   newHeaderImg.className = 'w-10 h-10 rounded-full border-2 border-white object-cover';
                   newHeaderImg.onerror = function() {
