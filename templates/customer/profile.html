@@ -289,6 +289,34 @@
                             const headerAvatar = document.querySelector('#header-avatar');
                             if (headerAvatar && newFilename) {
                                 headerAvatar.src = `/static/uploads/profile/${newFilename}?v=${timestamp}`;
+                            } else if (newFilename) {
+                                // ถ้าไม่มี header-avatar ให้สร้างใหม่
+                                const profileMenuButton = document.querySelector('#profileMenuButton');
+                                if (profileMenuButton) {
+                                    // ลบ element เก่าทั้งหมด
+                                    profileMenuButton.innerHTML = '';
+                                    
+                                    // สร้าง img ใหม่
+                                    const newHeaderImg = document.createElement('img');
+                                    newHeaderImg.id = 'header-avatar';
+                                    newHeaderImg.src = `/static/uploads/profile/${newFilename}?v=${timestamp}`;
+                                    newHeaderImg.alt = 'โปรไฟล์';
+                                    newHeaderImg.className = 'w-10 h-10 rounded-full border-2 border-white object-cover';
+                                    newHeaderImg.onerror = function() {
+                                        this.style.display = 'none';
+                                        this.nextElementSibling.style.display = 'flex';
+                                    };
+                                    
+                                    // สร้าง div fallback
+                                    const fallbackDiv = document.createElement('div');
+                                    fallbackDiv.className = 'w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold border-2 border-white';
+                                    fallbackDiv.style.display = 'none';
+                                    fallbackDiv.textContent = '{{ session.get("customer_username","U")[0]|upper }}';
+                                    
+                                    // เพิ่ม elements
+                                    profileMenuButton.appendChild(newHeaderImg);
+                                    profileMenuButton.appendChild(fallbackDiv);
+                                }
                             }
                             
                             // อัปเดต session ในหน้าโปรไฟล์ (สำหรับการแสดงผลทันที)
@@ -319,6 +347,11 @@
                                 
                                 // เพิ่มรูปใหม่
                                 avatarContainer.insertBefore(newImg, avatarContainer.firstChild);
+                            }
+                            
+                            // อัปเดตรูปใน header
+                            if (typeof updateHeaderAvatar === 'function') {
+                                updateHeaderAvatar();
                             }
                         }, 1000);
                     } else {
@@ -384,8 +417,18 @@
             // เพิ่มรูปภาพใหม่
             avatarContainer.insertBefore(newImg, avatarContainer.firstChild);
             
+            // อัปเดตรูปใน header
+            if (typeof updateHeaderAvatar === 'function') {
+                updateHeaderAvatar();
+            }
+            
             // ลบพารามิเตอร์ออกจาก URL
             history.replaceState({}, document.title, window.location.pathname);
+        }
+        
+        // อัปเดตรูปใน header เมื่อโหลดหน้า
+        if (typeof updateHeaderAvatar === 'function') {
+            updateHeaderAvatar();
         }
         
         // Set up avatar upload handling

@@ -261,6 +261,22 @@
           }
 
 
+          // ฟังก์ชันอัปเดตรูปโปรไฟล์ใน header
+          function updateHeaderAvatar() {
+            const headerAvatar = document.querySelector('#header-avatar');
+            if (headerAvatar && headerAvatar.src) {
+              // เพิ่ม timestamp เพื่อบังคับให้โหลดใหม่
+              const timestamp = new Date().getTime();
+              const currentSrc = headerAvatar.src.split('?')[0];
+              headerAvatar.src = currentSrc + '?v=' + timestamp;
+            }
+          }
+
+          // อัปเดตรูปโปรไฟล์เมื่อโหลดหน้า
+          document.addEventListener('DOMContentLoaded', function() {
+            updateHeaderAvatar();
+          });
+
           // Close dropdowns when clicking outside
           document.addEventListener('click', function(e) {
             // Desktop profile dropdown
