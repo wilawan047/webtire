@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from database import get_cursor
+from database import get_cursor, get_db
 from utils import validate_pagination_params, validate_sort_params
 from datetime import datetime
 from utils import get_device_type
