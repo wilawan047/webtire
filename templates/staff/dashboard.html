@@ -190,15 +190,19 @@
 </div>
 
 <script>
-// ตรวจสอบการจองใหม่ทุก 30 วินาที
+// ระบบแจ้งเตือนแบบ Real-time
 let lastBookingCount = parseInt('{{ total_bookings }}');
+let isPageVisible = true;
 
+// ตรวจสอบการจองใหม่แบบ polling
 function checkForNewBookings() {
+    if (!isPageVisible) return; // ไม่ตรวจสอบเมื่อหน้าไม่ active
+    
     fetch('/api/bookings?per_page=1')
         .then(response => response.json())
         .then(data => {
             if (data.success && data.total > lastBookingCount) {
-                showNewBookingAlert();
+                showNewBookingAlert(data.total - lastBookingCount);
                 lastBookingCount = data.total;
             }
         })
@@ -207,14 +211,23 @@ function checkForNewBookings() {
         });
 }
 
-function showNewBookingAlert() {
+function showNewBookingAlert(count = 1) {
     const alert = document.getElementById('newBookingAlert');
     if (alert) {
+        const message = count > 1 ? `มีการจองใหม่ ${count} รายการ!` : 'มีการจองใหม่!';
+        alert.querySelector('span').textContent = message;
         alert.classList.remove('hidden');
-        // ซ่อนอัตโนมัติหลังจาก 10 วินาที
+        
+        // เพิ่มเสียงแจ้งเตือน
+        try {
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU5k9n1unEiBC13yO/eizEIHWq+8+OWT');
+            audio.play().catch(() => {}); // ไม่แสดง error ถ้าเล่นไม่ได้
+        } catch (e) {}
+        
+        // ซ่อนอัตโนมัติหลังจาก 15 วินาที
         setTimeout(() => {
             hideNewBookingAlert();
-        }, 10000);
+        }, 15000);
     }
 }
 
@@ -225,7 +238,25 @@ function hideNewBookingAlert() {
     }
 }
 
+// ตรวจสอบเมื่อหน้าเว็บ active/inactive
+document.addEventListener('visibilitychange', function() {
+    isPageVisible = !document.hidden;
+    if (isPageVisible) {
+        // เมื่อกลับมา active ให้ตรวจสอบทันที
+        checkForNewBookings();
+    }
+});
+
+// ตรวจสอบเมื่อหน้าถูก focus
+window.addEventListener('focus', function() {
+    isPageVisible = true;
+    checkForNewBookings();
+});
+
 // เริ่มตรวจสอบการจองใหม่
-setInterval(checkForNewBookings, 30000); // ทุก 30 วินาที
+setInterval(checkForNewBookings, 10000); // ทุก 10 วินาที (เร็วขึ้น)
+
+// ตรวจสอบทันทีเมื่อโหลดหน้า
+setTimeout(checkForNewBookings, 2000);
 </script>
 {% endblock %}

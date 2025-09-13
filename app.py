@@ -152,7 +152,7 @@ def index():
 # Route สำหรับแสดงรูปภาพจาก upload folder
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
-    """แสดงรูปภาพจาก upload folder"""
+    """แสดงรูปภาพจาก upload folder - รองรับทั้ง Local และ Railway"""
     try:
         # ตรวจสอบว่าเป็นไฟล์รูปภาพหรือไม่
         if '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']:
@@ -169,10 +169,11 @@ def uploaded_file(filename):
                 file_path = os.path.join(folder, filename)
                 if os.path.exists(file_path):
                     from flask import send_file
-                    return send_file(file_path)
+                    return send_file(file_path, mimetype='image/jpeg')
             
             # ถ้าไม่เจอไฟล์ ให้แสดงรูป default
             from flask import abort
+            print(f"File not found: {filename}")
             abort(404)
         else:
             abort(404)

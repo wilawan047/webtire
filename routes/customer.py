@@ -1564,14 +1564,19 @@ def update_avatar():
                 else:
                     print(f"File successfully saved to: {file_path}")
                 
-                # Copy ไฟล์ไปยัง static directory สำหรับ serving
-                static_folder = os.path.join(current_app.static_folder, 'uploads', 'profile')
-                os.makedirs(static_folder, exist_ok=True)
-                static_file_path = os.path.join(static_folder, filename)
-                
-                import shutil
-                shutil.copy2(file_path, static_file_path)
-                print(f"File copied to static folder: {static_file_path}")
+                # สำหรับ Railway: ไฟล์จะถูก serve จาก temp directory โดยตรง
+                # ไม่ต้อง copy ไปยัง static folder เพราะ Railway ใช้ ephemeral filesystem
+                if not current_app.config.get('RAILWAY_ENVIRONMENT'):
+                    # Local development: copy ไฟล์ไปยัง static directory
+                    static_folder = os.path.join(current_app.static_folder, 'uploads', 'profile')
+                    os.makedirs(static_folder, exist_ok=True)
+                    static_file_path = os.path.join(static_folder, filename)
+                    
+                    import shutil
+                    shutil.copy2(file_path, static_file_path)
+                    print(f"File copied to static folder: {static_file_path}")
+                else:
+                    print(f"Railway environment: File served from temp directory: {file_path}")
                 
                 # ลบไฟล์เก่าถ้ามี
                 cursor = get_cursor()
@@ -1598,6 +1603,7 @@ def update_avatar():
                 
                 print(f"Updated database with filename: {filename}")
                 print(f"Customer ID: {customer_id}")
+                
                 
                 # อัปเดต session ให้ตรงกับฐานข้อมูล
                 session['customer_avatar'] = filename  # เก็บแค่ filename

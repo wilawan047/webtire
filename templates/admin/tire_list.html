@@ -84,7 +84,7 @@
           <td class="px-6 py-4 text-center font-semibold text-gray-800 whitespace-nowrap">{{ (page - 1) * 10 + loop.index }}</td>
           <td class="px-6 py-4 text-center whitespace-nowrap">
             {% if t.tire_image_url %}
-              <img src="{{ url_for('static', filename='uploads/tires/' ~ t.tire_image_url) }}" alt="รูปยาง" class="h-12 w-12 object-contain mx-auto rounded-lg shadow-md border-2 border-gray-100">
+              <img src="{{ url_for('uploaded_file', filename=t.tire_image_url) }}" alt="รูปยาง" class="h-12 w-12 object-contain mx-auto rounded-lg shadow-md border-2 border-gray-100">
             {% else %}
               <img src="{{ url_for('static', filename='uploads/tires/no-image.png') }}" alt="รูปยางเริ่มต้น" class="h-12 w-12 object-contain mx-auto rounded-lg shadow-md border-2 border-gray-100 opacity-50">
             {% endif %}

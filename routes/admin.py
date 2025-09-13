@@ -338,11 +338,12 @@ def add_tire():
             file = request.files.get('tire_image')
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
-                # สร้างโฟลเดอร์ถ้ายังไม่มี
-                upload_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'tires')
+                # ใช้ temp directory สำหรับ Railway
+                upload_folder = current_app.config['TIRE_UPLOAD_FOLDER']
                 os.makedirs(upload_folder, exist_ok=True)
                 # บันทึกไฟล์
-                file.save(os.path.join(upload_folder, filename))
+                file_path = os.path.join(upload_folder, filename)
+                file.save(file_path)
                 tire_image_url = filename
             
             query = """
@@ -474,31 +475,20 @@ def edit_tire(tire_id):
             # จัดการไฟล์รูปภาพ
             tire_image_url = None
             file = request.files.get('tire_image')
-            print(f"Debug - File received: {file}")
-            print(f"Debug - File filename: {file.filename if file else 'None'}")
-            
             if file and file.filename and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
-                print(f"Debug - Secure filename: {filename}")
                 
-                # สร้างโฟลเดอร์ถ้ายังไม่มี
-                upload_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'tires')
+                # ใช้ temp directory สำหรับ Railway
+                upload_folder = current_app.config['TIRE_UPLOAD_FOLDER']
                 os.makedirs(upload_folder, exist_ok=True)
-                print(f"Debug - Upload folder: {upload_folder}")
                 
                 # บันทึกไฟล์
                 file_path = os.path.join(upload_folder, filename)
                 file.save(file_path)
-                print(f"Debug - File saved to: {file_path}")
                 
                 # ตรวจสอบว่าไฟล์ถูกบันทึกจริงหรือไม่
                 if os.path.exists(file_path):
                     tire_image_url = filename
-                    print(f"Debug - File successfully saved, tire_image_url: {tire_image_url}")
-                else:
-                    print(f"Debug - File was not saved successfully")
-            else:
-                print(f"Debug - File validation failed: file={file}, filename={file.filename if file else 'None'}, allowed={allowed_file(file.filename) if file and file.filename else 'False'}")
             
             # ประกอบ full_size
             full_size = ''
@@ -2006,10 +1996,11 @@ def add_promotion():
         file = request.files.get('promotion_image')
         if file and file.filename and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            # สร้างโฟลเดอร์ promotions ถ้ายังไม่มี
+            # ใช้ temp directory สำหรับ Railway
             promotions_folder = current_app.config['PROMOTION_UPLOAD_FOLDER']
             os.makedirs(promotions_folder, exist_ok=True)
-            file.save(os.path.join(promotions_folder, filename))
+            file_path = os.path.join(promotions_folder, filename)
+            file.save(file_path)
             image_url = filename
         try:
             cursor.execute('''INSERT INTO promotions (title, description, start_date, end_date, image_url) VALUES (%s, %s, %s, %s, %s)''',
@@ -2166,8 +2157,8 @@ def dashboard_chart_data():
 @admin.route('/home-slider')
 @admin_required
 def home_slider():
-    # สร้างโฟลเดอร์ถ้ายังไม่มี
-    slider_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'home_slider')
+    # ใช้ temp directory สำหรับ Railway
+    slider_folder = current_app.config['SLIDER_UPLOAD_FOLDER']
     os.makedirs(slider_folder, exist_ok=True)
     
     # ดึงรายการไฟล์รูปภาพ
@@ -2188,10 +2179,12 @@ def upload_slider_image():
     file = request.files.get('slider_image')
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        slider_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'home_slider')
+        # ใช้ temp directory สำหรับ Railway
+        slider_folder = current_app.config['SLIDER_UPLOAD_FOLDER']
         os.makedirs(slider_folder, exist_ok=True)
         
-        file.save(os.path.join(slider_folder, filename))
+        file_path = os.path.join(slider_folder, filename)
+        file.save(file_path)
         flash('อัปโหลดรูปภาพสำเร็จ')
     else:
         flash('ไฟล์ไม่ถูกต้อง')
@@ -2201,7 +2194,8 @@ def upload_slider_image():
 @admin.route('/home-slider/delete/<filename>', methods=['POST'])
 @admin_required
 def delete_slider_image(filename):
-    slider_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'home_slider')
+    # ใช้ temp directory สำหรับ Railway
+    slider_folder = current_app.config['SLIDER_UPLOAD_FOLDER']
     file_path = os.path.join(slider_folder, filename)
     
     if os.path.exists(file_path):

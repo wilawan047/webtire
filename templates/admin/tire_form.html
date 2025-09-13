@@ -175,7 +175,7 @@
                     <!-- Default upload content หรือแสดงรูปปัจจุบัน -->
                     <div id="defaultUploadContent" class="w-full h-full flex flex-col items-center justify-center space-y-3 pointer-events-none">
                         {% if tire and tire.tire_image_url %}
-                            <img src="{{ url_for('static', filename='uploads/tires/' ~ tire.tire_image_url) }}" alt="รูปยางปัจจุบัน" class="max-h-40 rounded-lg shadow-lg border-2 border-gray-200">
+                            <img src="{{ url_for('uploaded_file', filename=tire.tire_image_url) }}" alt="รูปยางปัจจุบัน" class="max-h-40 rounded-lg shadow-lg border-2 border-gray-200">
                             <p class="text-sm text-gray-600">รูปภาพปัจจุบัน - คลิกเพื่อเปลี่ยน</p>
                         {% else %}
                             <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">

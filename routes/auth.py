@@ -120,6 +120,7 @@ def customer_login():
                 session['role'] = 'customer'
                 session['customer_name'] = user['name']
                 session['customer_avatar'] = user['avatar_filename']
+                
 
                 # ตั้งค่าอายุ session
                 session.permanent = True

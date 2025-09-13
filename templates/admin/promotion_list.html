@@ -28,7 +28,7 @@
         <!-- รูปภาพโปรโมชัน - ขนาดคงที่ -->
         <div class="relative h-64 w-full overflow-hidden">
           {% if p.image_url %}
-            <img src="{{ url_for('static', filename='uploads/promotions/' ~ p.image_url) }}" 
+            <img src="{{ url_for('uploaded_file', filename=p.image_url) }}" 
                  alt="รูปโปรโมชัน" 
                  class="w-full h-full object-cover object-center" />
           {% else %}
