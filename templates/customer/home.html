@@ -124,9 +124,9 @@
                 </div>
 
                 <!-- Tire Diagram -->
-                <div class="flex justify-center mb-6">
+                <div class="flex justify-center ">
                     <div class="relative">
-                        <img src="{{ url_for('static', filename='uploads/tire_size/size.png') }}" alt="Tire Size Diagram" class="w-48 h-48 object-contain">
+                        <img src="{{ url_for('static', filename='uploads/tire_size/Tire Size.png') }}" alt="Tire Size Diagram" class="w-48 h-48 object-contain">
                     </div>
                 </div>
 
@@ -164,7 +164,7 @@
             <!-- Tab 2: ค้นหายางตามรุ่นรถ -->
             <div id="content-model" class="tab-content hidden">
                 <!-- Search Header -->
-                <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center justify-between">
                     <div class="flex items-center">
                         <svg class="w-5 h-5 text-green-900 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -173,10 +173,18 @@
                     </div>
                 </div>
 
+                <div class="flex justify-center mb-2">
+                    <div class="relative">
+                        <img src="{{ url_for('static', filename='uploads/tire_size/car.png') }}" alt="Tire Size Diagram" class="w-52 h-52 object-contain">
+                    </div>
+                </div>
+
                 <!-- Car Model Selection -->
                 <form action="{{ url_for('customer.tires') }}" method="GET" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-bold text-green-800 mb-1">ยี่ห้อรถ <span class="text-red-700">*</span></label>
+                        <div class="flex items-center">
+                            <label class="block text-sm font-bold text-green-800">ยี่ห้อรถ <span class="text-red-700">*</span></label>
+                        </div>
                         <select id="carBrandSelect" name="car_brand_id" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
                             <option value="">เลือกยี่ห้อรถ</option>
                         </select>
@@ -218,6 +226,12 @@
                     </div>
                 </div>
 
+                <div class="flex justify-center ">
+                    <div class="relative">
+                        <img src="{{ url_for('static', filename='uploads/tire_size/Tire Search.png') }}" alt="Tire Size Diagram" class="w-32 h-32 object-contain">
+                    </div>
+                </div>
+
                 <!-- General Search Form -->
                 <form action="{{ url_for('customer.tires') }}" method="GET" class="space-y-4">
                     <div>
@@ -254,6 +268,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const prevPromoBtn = document.getElementById('prev-promo');
     const nextPromoBtn = document.getElementById('next-promo');
     let autoSlideInterval;
+    
+    // ตรวจสอบว่าพบ elements หรือไม่
+    if (!promoSlider || !promoSlides.length) {
+        console.log('Promo slider elements not found, skipping slider initialization');
+        return;
+    }
 
     // ตรวจสอบว่ามีโปรโมชันหรือไม่
     if (totalPromoSlides === 0) {
@@ -349,8 +369,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Slider width:', promoSlider.style.width);
         console.log('Slider height:', promoSlider.style.height);
         console.log('Slide widths:', Array.from(promoSlides).map(slide => slide.style.width));
-        const container = document.querySelector('.promo-slider-container');
-        console.log('Container overflow:', container ? container.style.overflow : 'Container not found');
+        console.log('Container overflow:', document.querySelector('.promo-slider-container').style.overflow);
         console.log('Slider display:', promoSlider.style.display);
         console.log('Slider position:', promoSlider.style.position);
         console.log('=== END TEST ===');

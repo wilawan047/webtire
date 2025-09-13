@@ -122,11 +122,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // ฟังก์ชันเลือกวันที่
-    function selectDate(date) {
-        const dateStr = date.toISOString().split('T')[0];
-        checkQueueForDate(dateStr);
-    }
 
     // ฟังก์ชันสร้างปฏิทิน
     function generateCalendar() {
@@ -174,8 +169,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 dayElement.classList.add('text-gray-700', 'hover:bg-green-50');
             }
             
-            // เพิ่ม data attribute สำหรับวันที่
-            const dateStr = date.toISOString().split('T')[0];
+            // เพิ่ม data attribute สำหรับวันที่ (ใช้ local timezone)
+            const dateYear = date.getFullYear();
+            const dateMonth = String(date.getMonth() + 1).padStart(2, '0');
+            const dateDay = String(date.getDate()).padStart(2, '0');
+            const dateStr = `${dateYear}-${dateMonth}-${dateDay}`;
             dayElement.setAttribute('data-date', dateStr);
             
             // เพิ่ม event listener ก่อนสร้าง HTML
@@ -202,7 +200,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // ฟังก์ชันเลือกวันที่
     function selectDate(date) {
         console.log('Date clicked:', date);
-        const dateStr = date.toISOString().split('T')[0];
+        // ใช้ local timezone แทน UTC เพื่อป้องกันการเปลี่ยนวันที่
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
         console.log('Date string:', dateStr);
         checkQueueForDate(dateStr);
     }
@@ -224,7 +226,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const month = currentMonth.getMonth();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         
-        // โหลดข้อมูลสำหรับแต่ละวันในเดือน
+        // สร้าง array ของวันที่ที่ต้องโหลด
+        const datesToLoad = [];
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, month, day);
             const dateStr = date.toISOString().split('T')[0];
@@ -234,16 +237,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 continue;
             }
             
-            fetch(`/api/booking-availability?service_date=${dateStr}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        updateDayStatus(dateStr, data.availability);
-                    }
-                })
-                .catch(error => {
-                    console.log(`Error loading data for ${dateStr}:`, error);
+            datesToLoad.push(dateStr);
+        }
+        
+        // โหลดข้อมูลทีละ 3 วันเพื่อไม่ให้เกิดการโหลดพร้อมกันมากเกินไป
+        loadDatesInBatches(datesToLoad, 3);
+    }
+    
+    // ฟังก์ชันโหลดข้อมูลเป็น batch
+    function loadDatesInBatches(dates, batchSize) {
+        for (let i = 0; i < dates.length; i += batchSize) {
+            const batch = dates.slice(i, i + batchSize);
+            
+            // ใช้ setTimeout เพื่อให้แต่ละ batch โหลดทีหลัง
+            setTimeout(() => {
+                batch.forEach(dateStr => {
+                    fetch(`/api/booking-availability?service_date=${dateStr}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                updateDayStatus(dateStr, data.availability);
+                            }
+                        })
+                        .catch(error => {
+                            console.log(`Error loading data for ${dateStr}:`, error);
+                        });
                 });
+            }, i * 200); // หน่วงเวลา 200ms ระหว่างแต่ละ batch
         }
     }
 
