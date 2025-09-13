@@ -63,7 +63,8 @@
         </div>
 
         <!-- Personal Information -->
-        <div class="space-y-6">
+        <form id="profile-form" method="POST" action="{{ url_for('customer.profile') }}" class="space-y-6">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
             
             <!-- Username (Read-only) -->
@@ -114,11 +115,12 @@
                 <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
                     อีเมล
                 </label>
-                <input type="text" 
+                <input type="email" 
                        id="email" 
-                       value="{{ user.email or 'ไม่ระบุ' }}"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-                       readonly>
+                       name="email"
+                       value="{{ user.email or '' }}"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                       placeholder="กรอกอีเมล">
             </div>
 
             <!-- Created Date (Read-only) -->
@@ -139,7 +141,7 @@
                    class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
                     ยกเลิก
                 </a>
-                <button type="button" 
+                <button type="submit" 
                         id="save-profile-btn"
                         class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                     บันทึกข้อมูล
@@ -156,9 +158,44 @@
         const saveBtn = document.getElementById('save-profile-btn');
         if (saveBtn) {
             saveBtn.addEventListener('click', function(e) {
-                e.preventDefault();
+                // ไม่ต้อง preventDefault เพราะเป็น type="submit"
+                console.log('Saving profile data...');
                 
-                // Get form data
+                // ตรวจสอบข้อมูลที่จำเป็น
+                const name = document.getElementById('name').value.trim();
+                const phone = document.getElementById('phone').value.trim();
+                const email = document.getElementById('email').value.trim();
+                
+                if (!name) {
+                    showMessage('กรุณากรอกชื่อ-นามสกุล', 'error');
+                    return;
+                }
+                
+                if (!phone) {
+                    showMessage('กรุณากรอกเบอร์โทรศัพท์', 'error');
+                    return;
+                }
+                
+                if (!email) {
+                    showMessage('กรุณากรอกอีเมล', 'error');
+                    return;
+                }
+                
+                // ตรวจสอบรูปแบบอีเมล
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    showMessage('กรุณากรอกอีเมลให้ถูกต้อง', 'error');
+                    return;
+                }
+                
+                // ตรวจสอบรูปแบบเบอร์โทรศัพท์
+                const phoneRegex = /^[0-9]{10}$/;
+                if (!phoneRegex.test(phone.replace(/-/g, ''))) {
+                    showMessage('กรุณากรอกเบอร์โทรศัพท์ 10 หลัก', 'error');
+                    return;
+                }
+                
+                // ส่งข้อมูล
                 const form = document.getElementById('profile-form');
                 if (form) {
                     form.submit();
@@ -166,6 +203,21 @@
             });
         }
     });
+    
+    // ฟังก์ชันแสดงข้อความ
+    function showMessage(message, type) {
+        const messageBox = document.getElementById('message-box');
+        if (messageBox) {
+            messageBox.textContent = message;
+            messageBox.className = `p-3 rounded-lg text-sm font-medium mt-2 ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
+            messageBox.classList.remove('hidden');
+            
+            // ซ่อนข้อความหลังจาก 3 วินาที
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 3000);
+        }
+    }
     
     function previewImage(input) {
         if (input.files && input.files[0]) {

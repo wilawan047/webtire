@@ -1264,6 +1264,7 @@ def profile():
             # ดึงข้อมูลจากฟอร์ม
             name = request.form.get('name', '').strip()
             phone = request.form.get('phone', '').strip()
+            email = request.form.get('email', '').strip()
             
             # แยกชื่อและนามสกุล
             name_parts = name.split(' ', 1)
@@ -1274,9 +1275,9 @@ def profile():
             cursor = get_cursor()
             cursor.execute('''
                 UPDATE customers 
-                SET first_name = %s, last_name = %s, phone = %s 
+                SET first_name = %s, last_name = %s, phone = %s, email = %s 
                 WHERE customer_id = %s
-            ''', (first_name, last_name, phone, session.get('customer_id')))
+            ''', (first_name, last_name, phone, email, session.get('customer_id')))
             
             # อัปเดต name ในตาราง users ด้วย
             cursor.execute('''
