@@ -263,12 +263,52 @@
 
           // ฟังก์ชันอัปเดตรูปโปรไฟล์ใน header
           function updateHeaderAvatar() {
+            console.log('updateHeaderAvatar called');
             const headerAvatar = document.querySelector('#header-avatar');
             if (headerAvatar && headerAvatar.src) {
               // เพิ่ม timestamp เพื่อบังคับให้โหลดใหม่
               const timestamp = new Date().getTime();
               const currentSrc = headerAvatar.src.split('?')[0];
               headerAvatar.src = currentSrc + '?v=' + timestamp;
+              console.log('Updated header avatar src:', headerAvatar.src);
+            } else {
+              console.log('Header avatar not found, trying to create new one');
+              // ถ้าไม่มี header-avatar ให้สร้างใหม่
+              const profileMenuButton = document.querySelector('#profileMenuButton');
+              if (profileMenuButton) {
+                // ตรวจสอบว่ามีรูปโปรไฟล์ใน session หรือไม่
+                const hasAvatar = '{{ session.get("customer_avatar") }}' !== 'None' && '{{ session.get("customer_avatar") }}' !== '';
+                if (hasAvatar) {
+                  const avatarFilename = '{{ session.get("customer_avatar") }}';
+                  const timestamp = new Date().getTime();
+                  
+                  // ลบ element เก่าทั้งหมด
+                  profileMenuButton.innerHTML = '';
+                  
+                  // สร้าง img ใหม่
+                  const newHeaderImg = document.createElement('img');
+                  newHeaderImg.id = 'header-avatar';
+                  newHeaderImg.src = `/static/uploads/profile/${avatarFilename}?v=${timestamp}`;
+                  newHeaderImg.alt = 'โปรไฟล์';
+                  newHeaderImg.className = 'w-10 h-10 rounded-full border-2 border-white object-cover';
+                  newHeaderImg.onerror = function() {
+                    this.style.display = 'none';
+                    this.nextElementSibling.style.display = 'flex';
+                  };
+                  
+                  // สร้าง div fallback
+                  const fallbackDiv = document.createElement('div');
+                  fallbackDiv.className = 'w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold border-2 border-white';
+                  fallbackDiv.style.display = 'none';
+                  fallbackDiv.textContent = '{{ session.get("customer_username","U")[0]|upper }}';
+                  
+                  // เพิ่ม elements
+                  profileMenuButton.appendChild(newHeaderImg);
+                  profileMenuButton.appendChild(fallbackDiv);
+                  
+                  console.log('Created new header avatar with filename:', avatarFilename);
+                }
+              }
             }
           }
 

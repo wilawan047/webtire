@@ -274,9 +274,10 @@
                         }
                         
                         // อัปเดตรูปภาพทันทีโดยไม่ต้องรอ
-                            // ใช้ filename ที่ส่งกลับมาจาก server
-                            const newFilename = data.filename || '{{ user.avatar_filename if user.avatar_filename else "" }}';
-                            const timestamp = new Date().getTime();
+                        const newFilename = data.filename || '{{ user.avatar_filename if user.avatar_filename else "" }}';
+                        const timestamp = new Date().getTime();
+                        
+                        console.log('Updating avatar with filename:', newFilename);
                             
                             // อัปเดต src ของรูปภาพด้วย cache busting
                             const avatarImg = document.querySelector('#profile-avatar');
@@ -285,11 +286,14 @@
                             }
                             
                             // อัปเดตรูปภาพใน header ด้วย
+                            console.log('Updating header avatar...');
                             const headerAvatar = document.querySelector('#header-avatar');
                             if (headerAvatar && newFilename) {
                                 headerAvatar.src = `/static/uploads/profile/${newFilename}?v=${timestamp}`;
+                                console.log('Updated existing header avatar');
                             } else if (newFilename) {
                                 // ถ้าไม่มี header-avatar ให้สร้างใหม่
+                                console.log('Creating new header avatar...');
                                 const profileMenuButton = document.querySelector('#profileMenuButton');
                                 if (profileMenuButton) {
                                     // ลบ element เก่าทั้งหมด
@@ -315,6 +319,8 @@
                                     // เพิ่ม elements
                                     profileMenuButton.appendChild(newHeaderImg);
                                     profileMenuButton.appendChild(fallbackDiv);
+                                    
+                                    console.log('Created new header avatar with filename:', newFilename);
                                 }
                             }
                             
@@ -349,16 +355,24 @@
                             }
                             
                             // อัปเดตรูปใน header ทันที
+                            console.log('Calling updateHeaderAvatar function...');
                             if (typeof updateHeaderAvatar === 'function') {
                                 updateHeaderAvatar();
+                            } else {
+                                console.log('updateHeaderAvatar function not found');
                             }
                             
                             // อัปเดตรูปใน header ทันทีอีกครั้ง
                             setTimeout(() => {
+                                console.log('Calling updateHeaderAvatar function after timeout...');
                                 if (typeof updateHeaderAvatar === 'function') {
                                     updateHeaderAvatar();
+                                } else {
+                                    console.log('updateHeaderAvatar function not found after timeout');
                                 }
                             }, 500);
+                            
+                            
                             
                             
                             
@@ -426,16 +440,24 @@
             avatarContainer.insertBefore(newImg, avatarContainer.firstChild);
             
                             // อัปเดตรูปใน header ทันที
+                            console.log('Calling updateHeaderAvatar function...');
                             if (typeof updateHeaderAvatar === 'function') {
                                 updateHeaderAvatar();
+                            } else {
+                                console.log('updateHeaderAvatar function not found');
                             }
                             
                             // อัปเดตรูปใน header ทันทีอีกครั้ง
                             setTimeout(() => {
+                                console.log('Calling updateHeaderAvatar function after timeout...');
                                 if (typeof updateHeaderAvatar === 'function') {
                                     updateHeaderAvatar();
+                                } else {
+                                    console.log('updateHeaderAvatar function not found after timeout');
                                 }
                             }, 500);
+                            
+                            
                             
                             
                             
