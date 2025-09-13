@@ -103,6 +103,11 @@ def customer_login():
 
         try:
             cursor = get_cursor()
+            if not cursor:
+                print("Customer login error: No database cursor available")
+                flash("เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล กรุณาลองใหม่อีกครั้ง", "error")
+                return redirect(url_for('customer.home') + "#login")
+                
             cursor.execute("""
                 SELECT u.user_id, u.username, u.password_hash, u.name, u.avatar_filename, c.customer_id
                 FROM users u
@@ -110,6 +115,9 @@ def customer_login():
                 WHERE u.username = %s AND u.role_name = 'customer'
             """, (username,))
             user = cursor.fetchone()
+            
+            print(f"Customer login attempt for username: {username}")
+            print(f"User found: {user is not None}")
 
             if user and user['password_hash'] and verify_password(password, user['password_hash']):
                 session.clear()
@@ -135,6 +143,10 @@ def customer_login():
                 else:
                     return redirect(url_for('customer.home'))
             else:
+                print(f"Login failed for username: {username}")
+                print(f"User exists: {user is not None}")
+                if user:
+                    print(f"Password hash exists: {user.get('password_hash') is not None}")
                 flash("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง", "error")
                 return redirect(url_for('customer.home') + "#login")
 
