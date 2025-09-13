@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, g, current_app, jsonify
+from flask_wtf.csrf import CSRFError
 from database import get_cursor, get_db
 from utils import allowed_file
 from decorators import login_required, staff_required
@@ -9,6 +10,12 @@ from datetime import datetime, timedelta
 import time
 
 staff = Blueprint('staff', __name__, url_prefix='/staff')
+
+# CSRF Error Handler
+@staff.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    flash('CSRF token หมดอายุ กรุณาลองใหม่อีกครั้ง', 'error')
+    return redirect(request.url)
 
 @staff.route('/dashboard')
 @staff_required

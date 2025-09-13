@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, g, current_app, send_file
+from flask_wtf.csrf import CSRFError
 from database import get_cursor, get_db
 from utils import allowed_file
 from decorators import login_required, admin_required
@@ -16,6 +17,12 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
 admin = Blueprint('admin', __name__, url_prefix='/admin')
+
+# CSRF Error Handler
+@admin.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    flash('CSRF token หมดอายุ กรุณาลองใหม่อีกครั้ง', 'error')
+    return redirect(request.url)
 
 @admin.route('/tires')
 @admin_required

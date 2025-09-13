@@ -41,7 +41,7 @@
                     <div class="promo-slide flex-shrink-0 h-full relative">
                         <a href="{{ url_for('customer.promotion_detail', promotion_id=promotion.promotion_id) }}" class="block w-full h-full">
                             {% if promotion.image_url %}
-                                <img src="{{ url_for('uploaded_file', filename=promotion.image_url) }}" 
+                                <img src="{{ url_for('static', filename='uploads/promotions/' ~ promotion.image_url) }}" 
                                      alt="{{ promotion.title }}" 
                                      class="w-full h-full object-contain block select-none cursor-pointer hover:opacity-90 transition-opacity">
                             {% else %}

@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, g, current_app, jsonify, send_file
+from flask_wtf.csrf import CSRFError
 from database import get_cursor, get_db
 from decorators import owner_login_required
 import os
@@ -13,6 +14,12 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from datetime import datetime
 
 owner = Blueprint('owner', __name__, url_prefix='/owner')
+
+# CSRF Error Handler
+@owner.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    flash('CSRF token หมดอายุ กรุณาลองใหม่อีกครั้ง', 'error')
+    return redirect(request.url)
 
 @owner.route('/')
 @owner.route('/dashboard')

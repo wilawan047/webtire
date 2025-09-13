@@ -1,4 +1,4 @@
-{% extends "customer/layout.html" %}
+โปรโมชัน{% extends "customer/layout.html" %}
 
 {% block title %}ประวัติการจอง - {{ super() }}{% endblock %}
 
@@ -159,7 +159,7 @@
             </div>
             
             <!-- Pagination -->
-            {% if total_pages > 1 %}
+            {% if total_pages and total_pages > 1 %}
             <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                 <div class="flex-1 flex justify-between sm:hidden">
                     {% if page > 1 %}
@@ -168,7 +168,7 @@
                             ก่อนหน้า
                         </a>
                     {% endif %}
-                    {% if page < total_pages %}
+                    {% if total_pages and page < total_pages %}
                         <a href="{{ url_for('customer.booking_history', page=page+1) }}" 
                            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                             ถัดไป
@@ -193,12 +193,12 @@
                                 </a>
                             {% endif %}
                             
-                            {% for p in range(1, total_pages + 1) %}
+                            {% for p in range(1, (total_pages or 1) + 1) %}
                                 {% if p == page %}
                                     <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
                                         {{ p }}
                                     </span>
-                                {% elif p <= 3 or p > total_pages - 3 or (p >= page - 1 and p <= page + 1) %}
+                                {% elif p <= 3 or p > (total_pages or 1) - 3 or (p >= page - 1 and p <= page + 1) %}
                                     <a href="{{ url_for('customer.booking_history', page=p) }}" 
                                        class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
                                         {{ p }}
@@ -207,14 +207,14 @@
                                     <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
                                         ...
                                     </span>
-                                {% elif p == total_pages - 3 and page < total_pages - 5 %}
+                                {% elif p == (total_pages or 1) - 3 and page < (total_pages or 1) - 5 %}
                                     <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
                                         ...
                                     </span>
                                 {% endif %}
                             {% endfor %}
                             
-                            {% if page < total_pages %}
+                            {% if total_pages and page < total_pages %}
                                 <a href="{{ url_for('customer.booking_history', page=page+1) }}" 
                                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                     <span class="sr-only">Next</span>
@@ -550,6 +550,7 @@ function closeBookingDetailsModal() {
 }
 
 function cancelBooking(bookingId) {
+    console.log('Cancel booking clicked for ID:', bookingId);
     currentBookingId = bookingId;
     document.getElementById('cancelBookingModal').classList.remove('hidden');
 }
@@ -562,6 +563,8 @@ function closeCancelModal() {
 function confirmCancelBooking() {
     if (!currentBookingId) return;
     
+    console.log('Attempting to cancel booking:', currentBookingId);
+    
     fetch(`/api/cancel-booking/${currentBookingId}`, {
         method: 'POST',
         headers: {
@@ -569,8 +572,12 @@ function confirmCancelBooking() {
             'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
         if (data.success) {
             alert('ยกเลิกการจองเรียบร้อยแล้ว');
             location.reload(); // รีโหลดหน้าเพื่อแสดงสถานะใหม่
