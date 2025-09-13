@@ -148,8 +148,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ฟังก์ชันสร้างปฏิทิน
     function generateCalendar() {
+        console.log('generateCalendar called');
         const year = currentMonth.getFullYear();
         const month = currentMonth.getMonth();
+        
+        console.log('Current month:', year, month);
         
         // ตั้งชื่อเดือน
         const monthNames = [
@@ -158,6 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
         
         calendarTitle.textContent = `${monthNames[month]} ${year}`;
+        console.log('Calendar title set to:', calendarTitle.textContent);
         
         // หาวันแรกของเดือนและวันสุดท้าย
         const firstDay = new Date(year, month, 1);
@@ -165,9 +169,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const startDate = new Date(firstDay);
         startDate.setDate(startDate.getDate() - firstDay.getDay()); // เริ่มจากวันอาทิตย์
         
+        console.log('Start date:', startDate);
+        console.log('Calendar grid element:', calendarGrid);
+        
         calendarGrid.innerHTML = '';
         
         // สร้าง 42 วัน (6 สัปดาห์)
+        console.log('Creating 42 calendar days...');
         for (let i = 0; i < 42; i++) {
             const date = new Date(startDate);
             date.setDate(startDate.getDate() + i);
@@ -180,6 +188,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const isToday = date.toDateString() === new Date().toDateString();
             const isPast = date < new Date().setHours(0, 0, 0, 0);
             const isSunday = date.getDay() === 0;
+            
+            if (i < 5) { // Debug first 5 days
+                console.log(`Day ${i}:`, {
+                    date: date,
+                    dayNumber: dayNumber,
+                    isCurrentMonth: isCurrentMonth,
+                    isToday: isToday,
+                    isPast: isPast,
+                    isSunday: isSunday
+                });
+            }
             
             // ตั้งค่าสีและสไตล์
             if (!isCurrentMonth) {
@@ -214,19 +233,23 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             
             calendarGrid.appendChild(dayElement);
+            
+            if (i < 5) { // Debug first 5 days
+                console.log(`Added day ${i} to calendar grid:`, dayElement);
+            }
         }
         
         // โหลดข้อมูลสถานะคิวสำหรับเดือนนี้
         loadMonthAvailability();
     }
 
-    // ฟังก์ชันเลือกวันที่
-    function selectDate(date) {
-        console.log('Date clicked:', date);
-        const dateStr = date.toISOString().split('T')[0];
-        console.log('Date string:', dateStr);
-        checkQueueForDate(dateStr);
-    }
+    // ฟังก์ชันเลือกวันที่ (ลบฟังก์ชันซ้ำ)
+    // function selectDate(date) {
+    //     console.log('Date clicked:', date);
+    //     const dateStr = date.toISOString().split('T')[0];
+    //     console.log('Date string:', dateStr);
+    //     checkQueueForDate(dateStr);
+    // }
 
     // ฟังก์ชันเช็คคิวสำหรับวันที่เฉพาะ
     function checkQueueForDate(dateStr) {
