@@ -178,7 +178,13 @@ def uploaded_file(filename):
                 app.config['TIRE_UPLOAD_FOLDER'],
                 app.config['PROMOTION_UPLOAD_FOLDER'],
                 app.config['SLIDER_UPLOAD_FOLDER'],
-                app.config['LOGO_UPLOAD_FOLDER']
+                app.config['LOGO_UPLOAD_FOLDER'],
+                # เพิ่ม static/uploads สำหรับไฟล์เก่า
+                os.path.join(app.static_folder, 'uploads'),
+                os.path.join(app.static_folder, 'uploads', 'promotions'),
+                os.path.join(app.static_folder, 'uploads', 'tires'),
+                os.path.join(app.static_folder, 'uploads', 'profiles'),
+                os.path.join(app.static_folder, 'uploads', 'logos')
             ]
             
             for folder in upload_folders:
