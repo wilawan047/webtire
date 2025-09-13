@@ -1903,6 +1903,45 @@ def edit_user(user_id):
                         # เพิ่มข้อมูลใหม่
                         cursor.execute('INSERT INTO customers (user_id, first_name, last_name, email) VALUES (%s, %s, %s, %s)', 
                                      (user_id, first_name, last_name, email))
+                else:
+                    # ถ้าเปลี่ยนจาก customer เป็น role อื่น ให้ลบข้อมูล customer และข้อมูลที่เกี่ยวข้อง
+                    # ตรวจสอบว่ามีข้อมูล customer หรือไม่
+                    cursor.execute('SELECT customer_id FROM customers WHERE user_id=%s', (user_id,))
+                    existing_customer = cursor.fetchone()
+                    
+                    if existing_customer:
+                        customer_id = existing_customer['customer_id']
+                        
+                        # ลบข้อมูลที่เกี่ยวข้องกับ customer ตามลำดับ
+                        # 1. ลบ service_tires ที่เกี่ยวข้องกับ bookings ของ customer นี้
+                        cursor.execute('SELECT booking_id FROM bookings WHERE customer_id=%s', (customer_id,))
+                        booking_ids = [row['booking_id'] for row in cursor.fetchall()]
+                        if booking_ids:
+                            format_strings = ','.join(['%s'] * len(booking_ids))
+                            cursor.execute(f'DELETE FROM service_tires WHERE booking_id IN ({format_strings})', tuple(booking_ids))
+                            cursor.execute(f'DELETE FROM booking_item_options WHERE item_id IN (SELECT item_id FROM booking_items WHERE booking_id IN ({format_strings}))', tuple(booking_ids))
+                            cursor.execute(f'DELETE FROM booking_items WHERE booking_id IN ({format_strings})', tuple(booking_ids))
+                        
+                        # 2. ลบ bookings ของ customer นี้
+                        cursor.execute('DELETE FROM bookings WHERE customer_id=%s', (customer_id,))
+                        
+                        # 3. ลบ service_record_items ที่เกี่ยวข้องกับ service_records ของรถ customer นี้
+                        cursor.execute('SELECT vehicle_id FROM vehicles WHERE customer_id=%s', (customer_id,))
+                        vehicle_ids = [row['vehicle_id'] for row in cursor.fetchall()]
+                        if vehicle_ids:
+                            format_strings = ','.join(['%s'] * len(vehicle_ids))
+                            cursor.execute(f'SELECT service_record_id FROM service_records WHERE vehicle_id IN ({format_strings})', tuple(vehicle_ids))
+                            sr_ids = [row['service_record_id'] for row in cursor.fetchall()]
+                            if sr_ids:
+                                format_sr = ','.join(['%s'] * len(sr_ids))
+                                cursor.execute(f'DELETE FROM service_record_items WHERE service_record_id IN ({format_sr})', tuple(sr_ids))
+                            # ลบ service_records ของรถ customer นี้
+                            cursor.execute(f'DELETE FROM service_records WHERE vehicle_id IN ({format_strings})', tuple(vehicle_ids))
+                            # ลบ vehicles ของ customer นี้
+                            cursor.execute(f'DELETE FROM vehicles WHERE customer_id=%s', (customer_id,))
+                        
+                        # 4. ลบข้อมูล customer
+                        cursor.execute('DELETE FROM customers WHERE user_id=%s', (user_id,))
                 
                 get_db().commit()
                 flash('อัปเดตผู้ใช้สำเร็จ')
@@ -3199,6 +3238,325 @@ def website_stats_pdf():
             'error': str(e)
         }), 500
 
+
+# ===== BRAND MANAGEMENT ROUTES =====
+@admin.route('/brands')
+@admin_required
+def brand_list():
+    """หน้ารายการยี่ห้อยาง"""
+    cursor = get_cursor()
+    search = request.args.get('search', '').strip()
+    page = int(request.args.get('page', 1))
+    per_page = 10
+    offset = (page - 1) * per_page
+    
+    where = ''
+    params = []
+    
+    if search:
+        where = 'WHERE brand_name LIKE %s'
+        params = [f"%{search}%"]
+    
+    # นับจำนวนทั้งหมด
+    count_query = f"SELECT COUNT(*) FROM brands {where}"
+    cursor.execute(count_query, params)
+    total = list(cursor.fetchone().values())[0]
+    total_pages = (total + per_page - 1) // per_page
+    
+    # ดึงข้อมูลยี่ห้อ
+    query = f"""
+        SELECT b.brand_id, b.brand_name,
+               COUNT(t.tire_id) as tire_count,
+               COUNT(DISTINCT tm.model_id) as model_count
+        FROM brands b
+        LEFT JOIN tire_models tm ON b.brand_id = tm.brand_id
+        LEFT JOIN tires t ON tm.model_id = t.model_id
+        {where}
+        GROUP BY b.brand_id, b.brand_name
+        ORDER BY b.brand_name
+        LIMIT %s OFFSET %s
+    """
+    params += [per_page, offset]
+    cursor.execute(query, params)
+    brands = cursor.fetchall()
+    
+    return render_template('admin/brand_list.html',
+        brands=brands, search=search, page=page, total_pages=total_pages
+    )
+
+@admin.route('/brands/add', methods=['GET', 'POST'])
+@admin_required
+def add_brand():
+    """เพิ่มยี่ห้อยาง"""
+    cursor = get_cursor()
+    
+    if request.method == 'POST':
+        brand_name = request.form.get('brand_name', '').strip()
+        
+        if not brand_name:
+            flash('กรุณากรอกชื่อยี่ห้อ', 'error')
+            return render_template('admin/brand_form.html', brand=None)
+        
+        # ตรวจสอบว่ามียี่ห้อนี้อยู่แล้วหรือไม่
+        cursor.execute('SELECT brand_id FROM brands WHERE brand_name = %s', (brand_name,))
+        if cursor.fetchone():
+            flash('ยี่ห้อนี้มีอยู่แล้วในระบบ', 'error')
+            return render_template('admin/brand_form.html', brand=None)
+        
+        try:
+            cursor.execute('INSERT INTO brands (brand_name) VALUES (%s)', (brand_name,))
+            brand_id = cursor.lastrowid
+            get_db().commit()
+            flash('เพิ่มยี่ห้อยางสำเร็จ', 'success')
+            return redirect(url_for('admin.add_brand', success=1))
+        except Exception as e:
+            get_db().rollback()
+            flash(f'เกิดข้อผิดพลาด: {str(e)}', 'error')
+            return render_template('admin/brand_form.html', brand=None)
+    
+    return render_template('admin/brand_form.html', brand=None)
+
+@admin.route('/brands/edit/<int:brand_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_brand(brand_id):
+    """แก้ไขยี่ห้อยาง"""
+    cursor = get_cursor()
+    
+    if request.method == 'POST':
+        brand_name = request.form.get('brand_name', '').strip()
+        
+        if not brand_name:
+            flash('กรุณากรอกชื่อยี่ห้อ', 'error')
+            return render_template('admin/brand_form.html', brand={'brand_id': brand_id, 'brand_name': brand_name})
+        
+        # ตรวจสอบว่ามียี่ห้อนี้อยู่แล้วหรือไม่ (ยกเว้นตัวเอง)
+        cursor.execute('SELECT brand_id FROM brands WHERE brand_name = %s AND brand_id != %s', (brand_name, brand_id))
+        if cursor.fetchone():
+            flash('ยี่ห้อนี้มีอยู่แล้วในระบบ', 'error')
+            return render_template('admin/brand_form.html', brand={'brand_id': brand_id, 'brand_name': brand_name})
+        
+        try:
+            cursor.execute('UPDATE brands SET brand_name = %s WHERE brand_id = %s', (brand_name, brand_id))
+            get_db().commit()
+            flash('แก้ไขยี่ห้อยางสำเร็จ', 'success')
+            return redirect(url_for('admin.edit_brand', brand_id=brand_id, success=1))
+        except Exception as e:
+            get_db().rollback()
+            flash(f'เกิดข้อผิดพลาด: {str(e)}', 'error')
+            return render_template('admin/brand_form.html', brand={'brand_id': brand_id, 'brand_name': brand_name})
+    
+    # ดึงข้อมูลยี่ห้อ
+    cursor.execute('SELECT * FROM brands WHERE brand_id = %s', (brand_id,))
+    brand = cursor.fetchone()
+    
+    if not brand:
+        flash('ไม่พบยี่ห้อที่ต้องการแก้ไข', 'error')
+        return redirect(url_for('admin.brand_list'))
+    
+    return render_template('admin/brand_form.html', brand=brand)
+
+@admin.route('/brands/delete/<int:brand_id>', methods=['POST'])
+@admin_required
+def delete_brand(brand_id):
+    """ลบยี่ห้อยาง"""
+    cursor = get_cursor()
+    
+    try:
+        # ตรวจสอบว่ามียางที่ใช้ยี่ห้อนี้หรือไม่
+        cursor.execute('''
+            SELECT COUNT(*) as count FROM tires t
+            JOIN tire_models tm ON t.model_id = tm.model_id
+            WHERE tm.brand_id = %s
+        ''', (brand_id,))
+        tire_count = cursor.fetchone()['count']
+        
+        if tire_count > 0:
+            flash(f'ไม่สามารถลบยี่ห้อนี้ได้ เนื่องจากมียาง {tire_count} เส้นที่ใช้ยี่ห้อนี้', 'error')
+            return redirect(url_for('admin.brand_list'))
+        
+        cursor.execute('DELETE FROM brands WHERE brand_id = %s', (brand_id,))
+        get_db().commit()
+        flash('ลบยี่ห้อยางสำเร็จ', 'success')
+    except Exception as e:
+        get_db().rollback()
+        flash(f'เกิดข้อผิดพลาด: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.brand_list'))
+
+# ===== TIRE MODEL MANAGEMENT ROUTES =====
+@admin.route('/tire-models')
+@admin_required
+def tire_model_list():
+    """หน้ารายการรุ่นยาง"""
+    cursor = get_cursor()
+    search = request.args.get('search', '').strip()
+    brand_filter = request.args.get('brand', '').strip()
+    page = int(request.args.get('page', 1))
+    per_page = 10
+    offset = (page - 1) * per_page
+    
+    where_conditions = []
+    params = []
+    
+    if search:
+        where_conditions.append('tm.model_name LIKE %s')
+        params.append(f"%{search}%")
+    
+    if brand_filter:
+        where_conditions.append('b.brand_name = %s')
+        params.append(brand_filter)
+    
+    where = 'WHERE ' + ' AND '.join(where_conditions) if where_conditions else ''
+    
+    # นับจำนวนทั้งหมด
+    count_query = f"""
+        SELECT COUNT(*) FROM tire_models tm
+        JOIN brands b ON tm.brand_id = b.brand_id
+        {where}
+    """
+    cursor.execute(count_query, params)
+    total = list(cursor.fetchone().values())[0]
+    total_pages = (total + per_page - 1) // per_page
+    
+    # ดึงข้อมูลรุ่นยาง
+    query = f"""
+        SELECT tm.model_id, tm.model_name, tm.tire_category,
+               b.brand_name, b.brand_id,
+               COUNT(t.tire_id) as tire_count
+        FROM tire_models tm
+        JOIN brands b ON tm.brand_id = b.brand_id
+        LEFT JOIN tires t ON tm.model_id = t.model_id
+        {where}
+        GROUP BY tm.model_id, tm.model_name, tm.tire_category, b.brand_name, b.brand_id
+        ORDER BY b.brand_name, tm.model_name
+        LIMIT %s OFFSET %s
+    """
+    params += [per_page, offset]
+    cursor.execute(query, params)
+    models = cursor.fetchall()
+    
+    # ดึงรายการยี่ห้อสำหรับ filter
+    cursor.execute('SELECT brand_name FROM brands ORDER BY brand_name')
+    brands = [row['brand_name'] for row in cursor.fetchall()]
+    
+    return render_template('admin/tire_model_list.html',
+        models=models, brands=brands, search=search, brand_filter=brand_filter,
+        page=page, total_pages=total_pages
+    )
+
+@admin.route('/tire-models/add', methods=['GET', 'POST'])
+@admin_required
+def add_tire_model():
+    """เพิ่มรุ่นยาง"""
+    cursor = get_cursor()
+    
+    if request.method == 'POST':
+        model_name = request.form.get('model_name', '').strip()
+        brand_id = request.form.get('brand_id', '').strip()
+        tire_category = request.form.get('tire_category', '').strip()
+        
+        if not model_name or not brand_id or not tire_category:
+            flash('กรุณากรอกข้อมูลให้ครบถ้วน', 'error')
+            return render_template('admin/tire_model_form.html', model=None, brands=get_brands())
+        
+        # ตรวจสอบว่ารุ่นนี้มีอยู่แล้วหรือไม่
+        cursor.execute('SELECT model_id FROM tire_models WHERE model_name = %s AND brand_id = %s', (model_name, brand_id))
+        if cursor.fetchone():
+            flash('รุ่นยางนี้มีอยู่แล้วในยี่ห้อนี้', 'error')
+            return render_template('admin/tire_model_form.html', model=None, brands=get_brands())
+        
+        try:
+            cursor.execute('INSERT INTO tire_models (model_name, brand_id, tire_category) VALUES (%s, %s, %s)', 
+                         (model_name, brand_id, tire_category))
+            model_id = cursor.lastrowid
+            get_db().commit()
+            flash('เพิ่มรุ่นยางสำเร็จ', 'success')
+            return redirect(url_for('admin.add_tire_model', success=1))
+        except Exception as e:
+            get_db().rollback()
+            flash(f'เกิดข้อผิดพลาด: {str(e)}', 'error')
+            return render_template('admin/tire_model_form.html', model=None, brands=get_brands())
+    
+    return render_template('admin/tire_model_form.html', model=None, brands=get_brands())
+
+@admin.route('/tire-models/edit/<int:model_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_tire_model(model_id):
+    """แก้ไขรุ่นยาง"""
+    cursor = get_cursor()
+    
+    if request.method == 'POST':
+        model_name = request.form.get('model_name', '').strip()
+        brand_id = request.form.get('brand_id', '').strip()
+        tire_category = request.form.get('tire_category', '').strip()
+        
+        if not model_name or not brand_id or not tire_category:
+            flash('กรุณากรอกข้อมูลให้ครบถ้วน', 'error')
+            return render_template('admin/tire_model_form.html', 
+                                 model={'model_id': model_id, 'model_name': model_name, 'brand_id': brand_id, 'tire_category': tire_category}, 
+                                 brands=get_brands())
+        
+        # ตรวจสอบว่ารุ่นนี้มีอยู่แล้วหรือไม่ (ยกเว้นตัวเอง)
+        cursor.execute('SELECT model_id FROM tire_models WHERE model_name = %s AND brand_id = %s AND model_id != %s', 
+                      (model_name, brand_id, model_id))
+        if cursor.fetchone():
+            flash('รุ่นยางนี้มีอยู่แล้วในยี่ห้อนี้', 'error')
+            return render_template('admin/tire_model_form.html', 
+                                 model={'model_id': model_id, 'model_name': model_name, 'brand_id': brand_id, 'tire_category': tire_category}, 
+                                 brands=get_brands())
+        
+        try:
+            cursor.execute('UPDATE tire_models SET model_name = %s, brand_id = %s, tire_category = %s WHERE model_id = %s', 
+                         (model_name, brand_id, tire_category, model_id))
+            get_db().commit()
+            flash('แก้ไขรุ่นยางสำเร็จ', 'success')
+            return redirect(url_for('admin.edit_tire_model', model_id=model_id, success=1))
+        except Exception as e:
+            get_db().rollback()
+            flash(f'เกิดข้อผิดพลาด: {str(e)}', 'error')
+            return render_template('admin/tire_model_form.html', 
+                                 model={'model_id': model_id, 'model_name': model_name, 'brand_id': brand_id, 'tire_category': tire_category}, 
+                                 brands=get_brands())
+    
+    # ดึงข้อมูลรุ่นยาง
+    cursor.execute('SELECT * FROM tire_models WHERE model_id = %s', (model_id,))
+    model = cursor.fetchone()
+    
+    if not model:
+        flash('ไม่พบรุ่นยางที่ต้องการแก้ไข', 'error')
+        return redirect(url_for('admin.tire_model_list'))
+    
+    return render_template('admin/tire_model_form.html', model=model, brands=get_brands())
+
+@admin.route('/tire-models/delete/<int:model_id>', methods=['POST'])
+@admin_required
+def delete_tire_model(model_id):
+    """ลบรุ่นยาง"""
+    cursor = get_cursor()
+    
+    try:
+        # ตรวจสอบว่ามียางที่ใช้รุ่นนี้หรือไม่
+        cursor.execute('SELECT COUNT(*) as count FROM tires WHERE model_id = %s', (model_id,))
+        tire_count = cursor.fetchone()['count']
+        
+        if tire_count > 0:
+            flash(f'ไม่สามารถลบรุ่นยางนี้ได้ เนื่องจากมียาง {tire_count} เส้นที่ใช้รุ่นนี้', 'error')
+            return redirect(url_for('admin.tire_model_list'))
+        
+        cursor.execute('DELETE FROM tire_models WHERE model_id = %s', (model_id,))
+        get_db().commit()
+        flash('ลบรุ่นยางสำเร็จ', 'success')
+    except Exception as e:
+        get_db().rollback()
+        flash(f'เกิดข้อผิดพลาด: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.tire_model_list'))
+
+def get_brands():
+    """ฟังก์ชันช่วยสำหรับดึงรายการยี่ห้อ"""
+    cursor = get_cursor()
+    cursor.execute('SELECT brand_id, brand_name FROM brands ORDER BY brand_name')
+    return cursor.fetchall()
 
 @admin.route('/logout', methods=['POST', 'GET'])
 @admin_required

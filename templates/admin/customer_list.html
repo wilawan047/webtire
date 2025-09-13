@@ -27,7 +27,7 @@
       <option value="phone" {% if filter_by == 'phone' %}selected{% endif %}>เบอร์โทรศัพท์</option>
     </select>
     <input type="text" name="search" value="{{ search or '' }}" placeholder="ค้นหาลูกค้า..." class="border-2 border-green-200 p-3 rounded-xl bg-white text-gray-700 font-medium w-64 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 hover:border-green-400 shadow-sm">
-    <button class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 active:from-blue-700 active:to-blue-800 transition-all duration-200 font-semibold shadow-lg flex items-center gap-3 transform hover:scale-105 hover:shadow-xl" type="submit">
+    <button class="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl hover:from-green-600 hover:to-green-700 active:from-green-700 active:to-green-800 transition-all duration-200 font-semibold shadow-lg flex items-center gap-3 transform hover:scale-105 hover:shadow-xl" type="submit">
       <div class="w-5 h-5 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
       </div>
@@ -116,7 +116,7 @@
       
       <!-- Buttons -->
       <div class="flex justify-center space-x-4">
-        <button onclick="hideDeleteModal()" class="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl hover:from-gray-200 hover:to-gray-300 hover:scale-105 transition-all duration-200 font-medium min-w-[80px] border border-gray-300 shadow-md">
+        <button onclick="hideDeleteModal()" class="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium min-w-[80px] shadow-sm">
           ยกเลิก
         </button>
         <form id="deleteForm" method="post" class="inline">
