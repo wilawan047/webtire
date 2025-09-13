@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, g
 from flask_wtf.csrf import CSRFProtect
-from flask_cors import CORS
+from flask_cors import CORS  # type: ignore
 from werkzeug.exceptions import RequestEntityTooLarge
 from config import Config
 from database import get_db, close_db_connection, ensure_page_views_table

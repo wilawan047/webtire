@@ -186,7 +186,7 @@
             <!-- รูปภาพยาง (บนสุดใน mobile, ซ้ายใน desktop) -->
             <div class="flex-shrink-0 mb-6 md:mb-0 md:mr-8 relative">
                 {% if tire.tire_image_url %}
-                  <img src="{{ url_for('static', filename='uploads/tires/' + tire.tire_image_url) }}"
+                  <img src="{{ url_for('uploaded_file', filename=tire.tire_image_url) }}"
                        alt="{{ brand }} Tire"
                        class="w-48 h-48 md:w-56 md:h-56 object-contain rounded-xl tire-image mx-auto group-hover:scale-105 transition-transform duration-300"
                        style="width: 192px; height: 192px; min-width: 192px; min-height: 192px;"

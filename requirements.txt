@@ -28,3 +28,4 @@ structlog==23.2.0
 
 # Monitoring (Optional)
 sentry-sdk[flask]==1.38.0
+flask-cors
