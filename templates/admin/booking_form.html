@@ -1172,10 +1172,13 @@ function getNextAvailableDate(dateString) {
         // ตรวจสอบวันที่ที่เลือก
         serviceDateInput.addEventListener('change', function() {
             var selectedDate = this.value;
+            console.log('Date input changed to:', selectedDate);
             if (selectedDate && isInvalidDate(selectedDate)) {
+                console.log('Invalid date detected, correcting...');
                 showInvalidDateAlert();
                 this.value = getNextAvailableDate(selectedDate);
             } else if (selectedDate) {
+                console.log('Valid date selected, checking availability...');
                 // ตรวจสอบความพร้อมของแต่ละชั่วโมง
                 checkTimeAvailability(selectedDate);
             }

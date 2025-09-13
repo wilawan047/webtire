@@ -229,6 +229,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     console.log('Initial tire data:', tire);
     console.log('Initial brandId:', brandId);
+    console.log('Available brands:', window.allBrands);
+    console.log('Available models:', window.allModels);
     
     // Setup image preview functionality
     setupImagePreview();
@@ -246,6 +248,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     // สำหรับหน้า add tire ให้โหลด models ทั้งหมดก่อน
     await loadModels(null, safeValue(tire?.model_id));
     await loadOptions(null, tire);
+    
+    // สำหรับหน้าเพิ่มยางใหม่ ให้โหลดข้อมูลทั้งหมด
+    if (!tire) {
+        console.log('Loading data for new tire form');
+        await loadBrands(null);
+        await loadModels(null, null);
+        await loadOptions(null, null);
+    }
 
     // Preselect all dropdowns and checkboxes after all loads
     if (tire) {

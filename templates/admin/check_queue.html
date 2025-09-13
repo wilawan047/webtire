@@ -137,7 +137,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ฟังก์ชันเลือกวันที่
     function selectDate(date) {
-        const dateStr = date.toISOString().split('T')[0];
+        // แก้ไขปัญหา timezone โดยใช้ local date
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        console.log('Selected date string:', dateStr);
         checkQueueForDate(dateStr);
     }
 
@@ -187,8 +192,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 dayElement.classList.add('text-gray-700', 'hover:bg-green-50');
             }
             
-            // เพิ่ม data attribute สำหรับวันที่
-            const dateStr = date.toISOString().split('T')[0];
+            // เพิ่ม data attribute สำหรับวันที่ (ใช้ local date)
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
             dayElement.setAttribute('data-date', dateStr);
             
             // เพิ่ม event listener ก่อนสร้าง HTML
