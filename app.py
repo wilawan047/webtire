@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, g
 from flask_wtf.csrf import CSRFProtect
+from flask_cors import CORS
 from werkzeug.exceptions import RequestEntityTooLarge
 from config import Config
 from database import get_db, close_db_connection, ensure_page_views_table
@@ -13,6 +14,7 @@ from routes.owner import owner
 from routes.customer import customer
 import os
 import time
+import logging
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 
@@ -20,8 +22,11 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# ตั้งค่า MAX_CONTENT_LENGTH สำหรับการอัปโหลดไฟล์
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB
+# ตั้งค่า production mode
+if not app.config.get('DEBUG', False):
+    app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB for production
+else:
+    app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB for development
 
 # ตั้งค่าการเชื่อมต่อฐานข้อมูล
 # NOTE: ใช้ port 3307 ห้ามแก้กลับเป็น 3306
@@ -37,8 +42,19 @@ database.DB_CONFIG.update({
 # ตั้งค่า CSRF protection
 csrf = CSRFProtect(app)
 
+# ตั้งค่า CORS สำหรับ production
+CORS(app, origins=app.config.get('CORS_ORIGINS', ['*']))
+
 # ตั้งค่า database teardown
 app.teardown_request(close_db_connection)
+
+# ตั้งค่า logging สำหรับ production
+if not app.config.get('DEBUG', False):
+    logging.basicConfig(level=logging.INFO)
+    app.logger.setLevel(logging.INFO)
+else:
+    logging.basicConfig(level=logging.DEBUG)
+    app.logger.setLevel(logging.DEBUG)
 
 # สร้างโฟลเดอร์สำหรับอัปโหลดไฟล์
 upload_folders = [

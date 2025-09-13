@@ -5,14 +5,19 @@ from datetime import timedelta
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
+    # Security - ใช้ environment variable สำหรับ production
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'defaultsecret'
 
-    # Database (ไม่แตะ)
+    # Database - Railway MySQL
     DB_HOST = os.environ.get('DB_HOST', 'switchyard.proxy.rlwy.net')
     DB_PORT = int(os.environ.get('DB_PORT', 21922))
     DB_USER = os.environ.get('DB_USER', 'root')
     DB_PASSWORD = os.environ.get('DB_PASSWORD', 'mxAiijYOvjVtdUrdtVCVyMygyvxOFOhO')
     DB_NAME = os.environ.get('DB_NAME', 'railway')
+    
+    # Production settings
+    DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
+    TESTING = False
 
     # ✅ Upload folders → ใช้ temp directory สำหรับ Railway deployment
     # ใน Railway ใช้ temporary directory เพื่อหลีกเลี่ยงปัญหา ephemeral filesystem
@@ -58,5 +63,21 @@ class Config:
     # Gmail API (preferred for Gmail users)
     GMAIL_API_KEY = os.environ.get('GMAIL_API_KEY', '')
     
-    # App URL for reset links
-    APP_URL = os.environ.get('APP_URL', 'http://localhost:5000')
+    # App URL for reset links - ใช้ Railway URL สำหรับ production
+    APP_URL = os.environ.get('APP_URL', 'https://tireweb-production.up.railway.app')
+    
+    # Session configuration for production
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=24)
+    SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'true').lower() == 'true'
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    
+    # CORS settings for production
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*').split(',')
+    
+    # Logging configuration
+    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+    
+    # Performance settings
+    MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10MB for production
+    SEND_FILE_MAX_AGE_DEFAULT = 31536000  # 1 year cache for static files

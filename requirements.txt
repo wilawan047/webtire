@@ -1,8 +1,30 @@
+# Core Flask
 Flask==2.3.3
 Flask-WTF==1.1.1
 Werkzeug==2.3.7
-reportlab==4.0.4
+
+# Database
 PyMySQL==1.1.0
-python-dotenv==1.0.0
 mysql-connector-python==8.2.0
+
+# Production Server
 gunicorn==21.2.0
+
+# PDF Generation
+reportlab==4.0.4
+
+# Environment & Configuration
+python-dotenv==1.0.0
+
+# Security & Performance
+cryptography==41.0.7
+bcrypt==4.1.2
+
+# CORS Support
+Flask-CORS==4.0.0
+
+# Logging
+structlog==23.2.0
+
+# Monitoring (Optional)
+sentry-sdk[flask]==1.38.0
