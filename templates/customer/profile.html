@@ -273,8 +273,7 @@
                             }, 3000);
                         }
                         
-                        // อัปเดตรูปภาพโดยไม่ต้อง reload หน้า
-                        setTimeout(() => {
+                        // อัปเดตรูปภาพทันทีโดยไม่ต้องรอ
                             // ใช้ filename ที่ส่งกลับมาจาก server
                             const newFilename = data.filename || '{{ user.avatar_filename if user.avatar_filename else "" }}';
                             const timestamp = new Date().getTime();
@@ -349,11 +348,20 @@
                                 avatarContainer.insertBefore(newImg, avatarContainer.firstChild);
                             }
                             
-                            // อัปเดตรูปใน header
+                            // อัปเดตรูปใน header ทันที
                             if (typeof updateHeaderAvatar === 'function') {
                                 updateHeaderAvatar();
                             }
-                        }, 1000);
+                            
+                            // อัปเดตรูปใน header ทันทีอีกครั้ง
+                            setTimeout(() => {
+                                if (typeof updateHeaderAvatar === 'function') {
+                                    updateHeaderAvatar();
+                                }
+                            }, 500);
+                            
+                            
+                            
                     } else {
                         throw new Error(data.message || 'Upload failed');
                     }
@@ -417,10 +425,20 @@
             // เพิ่มรูปภาพใหม่
             avatarContainer.insertBefore(newImg, avatarContainer.firstChild);
             
-            // อัปเดตรูปใน header
-            if (typeof updateHeaderAvatar === 'function') {
-                updateHeaderAvatar();
-            }
+                            // อัปเดตรูปใน header ทันที
+                            if (typeof updateHeaderAvatar === 'function') {
+                                updateHeaderAvatar();
+                            }
+                            
+                            // อัปเดตรูปใน header ทันทีอีกครั้ง
+                            setTimeout(() => {
+                                if (typeof updateHeaderAvatar === 'function') {
+                                    updateHeaderAvatar();
+                                }
+                            }, 500);
+                            
+                            
+                            
             
             // ลบพารามิเตอร์ออกจาก URL
             history.replaceState({}, document.title, window.location.pathname);
