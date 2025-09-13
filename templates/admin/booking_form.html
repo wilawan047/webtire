@@ -258,7 +258,7 @@
           <div>
             <label class="block text-sm font-medium text-green-800 mb-1">วันที่เข้าใช้บริการ <span class="text-red-600">*</span></label>
             <input type="date" name="service_date" id="service_date"
-                   value="{% if booking and booking.service_date %}{{ booking.service_date.strftime('%Y-%m-%d') if booking.service_date.strftime else booking.service_date }}{% else %}{% endif %}"
+                   value="{% if booking and booking.service_date %}{{ booking.service_date.strftime('%Y-%m-%d') if booking.service_date.strftime else booking.service_date }}{% else %}{{ tomorrow.strftime('%Y-%m-%d') if tomorrow else '' }}{% endif %}"
                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
           </div>
           

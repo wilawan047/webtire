@@ -81,3 +81,7 @@ class Config:
     # Performance settings
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10MB for production
     SEND_FILE_MAX_AGE_DEFAULT = 31536000  # 1 year cache for static files
+    
+    # Pagination settings
+    DEFAULT_PER_PAGE = 10
+    MAX_PER_PAGE = 100

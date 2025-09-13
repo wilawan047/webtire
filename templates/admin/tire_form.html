@@ -253,9 +253,9 @@
 // ข้อมูลยาง
 window.tireData = {};
 // ข้อมูลรุ่นยาง
-window.allModels = [];
+window.allModels = {{ models | tojson }};
 // ข้อมูลยี่ห้อ
-window.allBrands = [];
+window.allBrands = {{ brands | tojson }};
 </script>
 console.log('=== TEMPLATE DATA LOADED ===');
 console.log('Template loaded - Brands:', window.allBrands);
