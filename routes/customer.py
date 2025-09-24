@@ -1312,7 +1312,7 @@ def profile():
             flash('ไม่พบข้อมูลลูกค้า', 'error')
             return redirect(url_for('customer.home'))
         
-        return render_customer_template('customer/profile.html', user=user)
+        return render_customer_template('customer/profile_simple.html', user=user)
         
     except Exception as e:
         flash('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error')
@@ -1545,25 +1545,25 @@ def update_avatar():
                 timestamp = int(time.time() * 1000)
                 filename = f"{customer_id}_{timestamp}_{secure_filename(file.filename)}"
                 
-                # สร้างโฟลเดอร์ถ้ายังไม่มี
+                # ใช้ safe_file_save function
+                from utils import safe_file_save
                 upload_folder = current_app.config['PROFILE_UPLOAD_FOLDER']
+                
+                # สร้างโฟลเดอร์ถ้ายังไม่มี
                 os.makedirs(upload_folder, exist_ok=True)
                 
-                # บันทึกไฟล์
-                file_path = os.path.join(upload_folder, filename)
-                print(f"Attempting to save file to: {file_path}")
-                print(f"Upload folder exists: {os.path.exists(upload_folder)}")
-                print(f"Upload folder: {upload_folder}")
+                # บันทึกไฟล์ด้วย safe_file_save
+                success, file_path = safe_file_save(file, upload_folder, filename)
                 
-                file.save(file_path)
+                if not success:
+                    print(f"Error: File not saved to {upload_folder}/{filename}")
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'success': False, 'message': 'เกิดข้อผิดพลาดในการบันทึกไฟล์'})
+                    else:
+                        flash('เกิดข้อผิดพลาดในการบันทึกไฟล์', 'error')
+                        return redirect(url_for('customer.profile'))
                 
-                # ตรวจสอบว่าไฟล์ถูกบันทึกจริง
-                if not os.path.exists(file_path):
-                    print(f"Error: File not saved to {file_path}")
-                    flash('เกิดข้อผิดพลาดในการบันทึกไฟล์', 'error')
-                    return redirect(url_for('customer.profile'))
-                else:
-                    print(f"File successfully saved to: {file_path}")
+                print(f"File successfully saved to: {file_path}")
                 
                 # ลบไฟล์เก่าถ้ามี
                 cursor = get_cursor()
@@ -1572,7 +1572,11 @@ def update_avatar():
                 if user_data and user_data.get('avatar_filename'):
                     old_file_path = os.path.join(current_app.config['PROFILE_UPLOAD_FOLDER'], user_data['avatar_filename'])
                     if os.path.exists(old_file_path):
-                        os.remove(old_file_path)
+                        try:
+                            os.remove(old_file_path)
+                            print(f"Deleted old file: {old_file_path}")
+                        except Exception as e:
+                            print(f"Error deleting old file: {e}")
                 
                 # อัปเดตฐานข้อมูล
                 cursor.execute('''
@@ -1613,8 +1617,10 @@ def update_avatar():
             
     except Exception as e:
         print(f"Error updating avatar: {e}")
+        import traceback
+        traceback.print_exc()
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': False, 'message': 'เกิดข้อผิดพลาดในการอัปเดตรูปโปรไฟล์'})
+            return jsonify({'success': False, 'message': f'เกิดข้อผิดพลาดในการอัปเดตรูปโปรไฟล์: {str(e)}'})
         else:
             flash('เกิดข้อผิดพลาดในการอัปเดตรูปโปรไฟล์', 'error')
     

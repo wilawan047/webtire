@@ -278,37 +278,27 @@
             
             reader.readAsDataURL(input.files[0]);
             
-            // ดึง CSRF token ใหม่ก่อนส่ง
-            fetch('/get-csrf-token')
-                .then(response => response.json())
-                .then(tokenData => {
-                    // อัปเดต CSRF token
-                    document.getElementById('avatar-csrf-token').value = tokenData.csrf_token;
-                    
-                    // ส่งฟอร์มอัปโหลดรูปอัตโนมัติ
-                    const avatarForm = document.getElementById('avatar-upload-form');
-                    if (avatarForm) {
-                        // สร้าง FormData และส่งด้วย fetch เพื่อไม่ให้หน้าโหลดใหม่
-                        const formData = new FormData();
-                        
-                        // เพิ่มไฟล์รูปภาพ
-                        const fileInput = document.getElementById('avatar-input');
-                        if (fileInput.files[0]) {
-                            formData.append('avatar', fileInput.files[0]);
-                        }
-                        
-                        // ใช้ CSRF token ใหม่
-                        formData.append('csrf_token', tokenData.csrf_token);
-                        
-                        return fetch('/update-avatar', {
-                            method: 'POST',
-                            body: formData,
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest'
-                            }
-                        });
-                    }
-                })
+            // ส่งฟอร์มอัปโหลดรูปอัตโนมัติ
+            const formData = new FormData();
+            
+            // เพิ่มไฟล์รูปภาพ
+            const fileInput = document.getElementById('avatar-input');
+            if (fileInput.files[0]) {
+                formData.append('avatar', fileInput.files[0]);
+            }
+            
+            // ใช้ CSRF token ที่มีอยู่
+            const csrfToken = document.getElementById('avatar-csrf-token').value;
+            formData.append('csrf_token', csrfToken);
+            
+            // ส่ง request
+            fetch('/update-avatar', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
